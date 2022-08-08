@@ -1,0 +1,3 @@
+- [Examples](index.md)
+- Notebooks
+    - notebooks/*.md

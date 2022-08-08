@@ -1,0 +1,32 @@
+[tool.pytest.ini_options]
+minversion = "6.0"
+addopts = "-ra --cov=evotorch"
+testpaths = ["tests"]
+
+[tool.black]
+line-length = 120
+include = '\.pyi?$'
+extend-exclude = '''
+/(
+  # Exclude files and directories
+  # black will exclude everything in .gitignore by default
+)/
+'''
+
+[tool.isort]
+line_length = 120
+multi_line_output = 3
+include_trailing_comma = true
+known_third_party = ["numpy", "pytest", "torch"]
+known_local_folder = "evotorch"
+force_grid_wrap = 0
+use_parentheses = true
+
+[tool.setuptools_scm]
+write_to = "src/evotorch/__version.py"
+write_to_template = '__version__ = "{version}"'
+fallback_version = "0.0"
+
+[build-system]
+requires = ["setuptools>=42", "wheel", "setuptools_scm[toml]>=3.4"]
+build-backend = "setuptools.build_meta"

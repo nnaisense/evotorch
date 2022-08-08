@@ -1,0 +1,39 @@
+name: build-docs
+on:
+  push:
+    branches:
+      - docs/*
+    tags:
+      - "v[0-9]+.*"
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout source files
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python 🐍
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.9
+          architecture: x64
+          cache: 'pip'
+          cache-dependency-path: 'setup.cfg'
+
+      - name: Install Python dependencies
+        run: pip install .[doc]
+
+      - name: Configure Git user
+        run: |
+          git config --local user.name "github-actions[bot]"
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Deploy with mike (tag_ 🚀
+        if: ${{ github.ref_type == 'tag' }}
+        run: mike deploy --push --rebase --update-aliases ${{ github.ref_name }} latest
+
+      - name: Deploy with mike (branch) 🚀
+        if: ${{ github.ref_type == 'branch' }}
+        run: mike deploy --push --rebase docs-latest

@@ -1,0 +1,38 @@
+name: publish-pypi
+on:
+  push:
+    tags:
+      - "v[0-9]+.*"
+jobs:
+  publish:
+    if: ${{ github.repository == 'nnaisense/evotorch' }}
+
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout source files
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Set up Python 🐍
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.9
+          architecture: x64
+          cache: 'pip'
+          cache-dependency-path: 'setup.cfg'
+
+      - name: Install Python dependencies
+        run: pip install --upgrade build
+
+      - name: Build package
+        run: python -m build
+
+      - name: Publish package to Test PyPI
+        uses: pypa/gh-action-pypi-publish@master
+        with:
+          user: __token__
+          password: ${{ secrets.PYPI_API_TOKEN }}

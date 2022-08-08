@@ -1,0 +1,14 @@
+[run]
+omit =
+    */evotorch/__init__.py
+
+[report]
+exclude_lines =
+    pragma: no cover
+    raise AssertionError
+    raise NotImplementedError
+    raise TypeError
+    assert False
+    @abstractmethod
+    \.\.\.
+    if TYPE_CHECKING:
