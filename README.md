@@ -1,5 +1,7 @@
 <p align="center">
-    <img src="https://raw.githubusercontent.com/nnaisense/evotorch/master/docs/assets/evotorch.svg" />
+    <a href="https://evotorch.ai" rel="nofollow">
+        <img src="https://raw.githubusercontent.com/nnaisense/evotorch/master/docs/assets/evotorch.svg" />
+    </a>
 </p>
 
 <div align="center">
@@ -7,13 +9,16 @@
         <img src="https://img.shields.io/pypi/pyversions/evotorch" alt="Python" />
     </a>
     <a href="https://pypi.org/project/evotorch/" rel="nofollow">
-        <img src="https://img.shields.io/pypi/v/evotoch" alt="PyPI" />
+        <img src="https://img.shields.io/pypi/v/evotorch" alt="PyPI" />
     </a>
     <a href="https://github.com/nnaisense/evotorch/blob/master/LICENSE" rel="nofollow">
         <img src="https://img.shields.io/pypi/l/evotorch" alt="License" />
     </a>
+    <a href="https://docs.evotorch.ai" rel="nofollow">
+        <img src="https://github.com/nnaisense/evotorch/actions/workflows/docs.yaml/badge.svg" alt="Build" />
+    </a>
     <a href="https://github.com/nnaisense/evotorch/actions/workflows/test.yaml" rel="nofollow">
-        <img src="https://github.com/nnaisense/evotorch/actions/workflows/test.yaml/badge.svg?branch=master&event=push" alt="Test" />
+        <img src="https://github.com/nnaisense/evotorch/actions/workflows/test.yaml/badge.svg" alt="Test" />
     </a>
     <a href="https://github.com/psf/black" rel="nofollow">
         <img src="https://img.shields.io/badge/code%20style-black-000000.svg" alt="Code style: black" />
