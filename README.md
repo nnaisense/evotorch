@@ -7,7 +7,7 @@
         <img src="https://img.shields.io/pypi/pyversions/evotorch" alt="Python" />
     </a>
     <a href="https://pypi.org/project/evotorch/" rel="nofollow">
-        <img src="https://img.shields.io/pypi/v/evotoch" alt="PyPI" />
+        <img src="https://img.shields.io/pypi/v/evotorch" alt="PyPI" />
     </a>
     <a href="https://github.com/nnaisense/evotorch/blob/master/LICENSE" rel="nofollow">
         <img src="https://img.shields.io/pypi/l/evotorch" alt="License" />
