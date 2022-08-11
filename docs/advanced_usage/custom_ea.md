@@ -10,7 +10,6 @@ from evotorch.algorithms import SearchAlgorithm
 
 
 class MySearcher(SearchAlgorithm):
-
     def __init__(self, problem: Problem):
 
         super().__init__(problem)
@@ -56,8 +55,9 @@ To begin within, let's define the `__init__` function of our custom evolutionary
 
 ```python
 from typing import Optional
-from evotorch import Problem
+from evotorch import Problem, Solution
 from evotorch.algorithms.searchalgorithm import SearchAlgorithm, SinglePopulationAlgorithmMixin
+
 
 class SimpleGA(SearchAlgorithm, SinglePopulationAlgorithmMixin):
     def __init__(
@@ -75,13 +75,12 @@ class SimpleGA(SearchAlgorithm, SinglePopulationAlgorithmMixin):
             self,
             # Problem to work on:
             problem,
-
             # The remaining keyword arguments are for registering
             # the status getter methods.
             # The result of these status getter methods will
             # automatically be shown in the status dictionary.
             pop_best=self._get_pop_best,
-            pop_best_eval=self._get_pop_best_eval
+            pop_best_eval=self._get_pop_best_eval,
         )
         SinglePopulationAlgorithmMixin.__init__(
             self,
@@ -98,21 +97,28 @@ class SimpleGA(SearchAlgorithm, SinglePopulationAlgorithmMixin):
 
         # The following variable stores a copy of the current population's
         # best solution
-        self._pop_best: Optional[nxg.Solution] = None
+        self._pop_best: Optional[Solution] = None
 ```
 
 Creating the searcher will simply store all of the hyper-parameters, and create an initial population by sampling the uniform hyper-cube provided by `problem.initial_bounds`.
 
-It is worth noting the status methods that we registered when we called `super().__init__`:
+It is worth noting the status methods that we registered when we called `SearchAlgorithm.__init__`:
 
 ```python
-        pop_best=self._get_pop_best,
-        pop_best_eval=self._get_pop_best_eval
+# Call the __init__(...) method of the superclass
+SearchAlgorithm.__init__(
+    ...,
+    pop_best=self._get_pop_best,
+    pop_best_eval=self._get_pop_best_eval,
+)
 ```
 
 Registering these methods will automatically registered the status values `'pop_best'` and `'pop_best_eval'` in the `searcher.status` dictionary for use by loggers. The former tracks the best individual in the population, whereas the latter tracks the fitness of the best individual in the population. Then we simply need to define the two getter functions:
 
 ```python
+class SimpleGA(SearchAlgorithm, SinglePopulationAlgorithmMixin):
+    ...
+
     def _get_pop_best(self):
         return self._pop_best
 
@@ -123,35 +129,39 @@ Registering these methods will automatically registered the status values `'pop_
 and we can immediately access these values using
 
 ```python
-pop_best = searcher.status['pop_best']
-pop_best_fitness = searcher.status['pop_best_fitness']
+pop_best = searcher.status["pop_best"]
+pop_best_fitness = searcher.status["pop_best_fitness"]
 ```
 
 To complete the definition of our searcher, we need to define the `_step` function.
 
 ```python
+class SimpleGA(SearchAlgorithm, SinglePopulationAlgorithmMixin):
+    ...
 
     def _step(self):
         # If this is the very first iteration, this means that we have an unevaluated population.
-        if 'iter' in self.status:
+        if "iter" in self.status:
             # Evaluate the population
             self.problem.evaluate(self._population)
             # Sort the population
             self._population = self._population[self._population.argsort()]
 
         # Select the parents.
-        parents = self._population[:self._num_parents]
+        parents = self._population[: self._num_parents]
 
         # Pick a random parent for each child
         num_children = self._popsize - self._num_elites
-        parent_indices = self.problem.make_randint(num_children, n = self._num_parents)
+        parent_indices = self.problem.make_randint(num_children, n=self._num_parents)
         parent_values = parents.values[parent_indices]
 
         # Add gaussian noise
-        child_values = parent_values + self._mutation_power * self.problem.make_gaussian(num_children, self.problem.solution_length)
+        child_values = parent_values + self._mutation_power * self.problem.make_gaussian(
+            num_children, self.problem.solution_length
+        )
 
         # Overwrite all the non-elite solutions with the new generation
-        self._population.access_values()[self._num_elites:] = child_values
+        self._population.access_values()[self._num_elites :] = child_values
 
         # Evaluate and sort the new population
         self.problem.evaluate(self._population)
@@ -165,6 +175,9 @@ To complete the definition of our searcher, we need to define the `_step` functi
 and finally we require a property `population` to be defined for the `SinglePopulationAlgorithmMixin` to access for logging.
 
 ```python
+class SimpleGA(SearchAlgorithm, SinglePopulationAlgorithmMixin):
+    ...
+
     @property
     def population(self):
         return self._population
@@ -178,7 +191,7 @@ With our custom EA defined, we're ready to run a simple experiment. For this we 
 from evotorch.neuroevolution import GymNE
 
 prob = GymNE(
-    env_name='CartPole-v1',
+    env_name="CartPole-v1",
     network="""
     Linear(obs_length, 16)
     >> Tanh()
@@ -187,7 +200,7 @@ prob = GymNE(
     """,
     initial_bounds=(-0.0001, 0.0001),
     num_episodes=10,
-    num_actors = 1,
+    num_actors=1,
 )
 ```
 
@@ -196,13 +209,7 @@ We can instantiate our searcher as we would any other EvoTorch [SearchAlgorithm]
 ```python
 from evotorch.logging import PandasLogger, StdOutLogger
 
-ga = SimpleGA(
-    prob,
-    popsize=40,
-    num_elites=2,
-    num_parents=10,
-    mutation_power=0.02
-)
+ga = SimpleGA(prob, popsize=40, num_elites=2, num_parents=10, mutation_power=0.02)
 
 StdOutLogger(ga)
 pandas_logger = PandasLogger(ga)
@@ -218,7 +225,7 @@ Observing the `best_eval` status over time using the `pandas_logger` instance we
 
 ```python
 progress = pandas_logger.to_dataframe()
-progress['pop_best_eval'].plot()
+progress["pop_best_eval"].plot()
 ```
 
 <details class="abstract" open="open">
@@ -239,7 +246,7 @@ policy_net = prob.to_policy(center_solution)
 
 while True:
     result = prob.visualize(policy_net)
-    print('Visualised episode has cumulative reward:', result['cumulative_reward'])
+    print("Visualised episode has cumulative reward:", result["cumulative_reward"])
 ```
 
 to see a nice behaviour like:

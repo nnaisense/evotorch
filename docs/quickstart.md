@@ -37,19 +37,14 @@ Implementing this in PyTorch we have
 
 ```python
 def sphere(x: torch.Tensor) -> torch.Tensor:
-    return torch.sum(x.pow(2.))
+    return torch.sum(x.pow(2.0))
 ```
 
 To make this function visible to EvoTorch's algorithms, we simply wrap it up as a [Problem][evotorch.core.Problem] instance. To do this, we will need to specify that we want to minimise (`"min"`) the function, and the `solution_length` is $d$, in this case $d=10$. We will also specify that the initial bounds for solutions is in the range $(-1, 1)$, so that our algorithm knows roughly where to start.
 
 
 ```python
-problem = Problem(
-    "min",
-    sphere,
-    solution_length=10,
-    initial_bounds=(-1, 1)
-)
+problem = Problem("min", sphere, solution_length=10, initial_bounds=(-1, 1))
 ```
 
 ## Creating a searcher
@@ -80,7 +75,7 @@ searcher.step()
 ```
 
 ???+ abstract "Output"
-    ```python
+    ```bash
             iter : 1
         mean_eval : 268.27362060546875
       median_eval : 269.3234558105469
@@ -97,7 +92,7 @@ searcher.run(3)
 ```
 
 ???+ abstract "Output"
-    ```python
+    ```bash
             iter : 2
         mean_eval : 244.1479034423828
       median_eval : 223.21856689453125
@@ -132,18 +127,14 @@ import torch
 
 # Define a function to minimize
 def sphere(x: torch.Tensor) -> torch.Tensor:
-    return torch.sum(x.pow(2.))
+    return torch.sum(x.pow(2.0))
+
 
 # Define a Problem instance wrapping the function
 # Solutions have length 10
-problem = Problem(
-    "min",
-    sphere,
-    solution_length=10,
-    initial_bounds=(-1, 1)
-)
+problem = Problem("min", sphere, solution_length=10, initial_bounds=(-1, 1))
 
-# Instantaite a searcher
+# Instantiate a searcher
 searcher = SNES(problem, stdev_init=5)
 
 # Create a logger

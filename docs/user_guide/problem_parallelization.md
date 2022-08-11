@@ -10,8 +10,10 @@ To get started using Ray, you simply need to change the `num_actors` argument.
 import torch
 from evotorch import Problem
 
+
 def sphere(x: torch.Tensor) -> torch.Tensor:
-    return torch.sum(x.pow(2.))
+    return torch.sum(x.pow(2.0))
+
 
 problem = Problem(
     objective_sense="min",

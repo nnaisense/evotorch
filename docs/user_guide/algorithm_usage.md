@@ -8,15 +8,14 @@ Once a [SearchAlgorithm][evotorch.algorithms.searchalgorithm.SearchAlgorithm] in
 from evotorch import Problem
 from evotorch.algorithms import SNES
 import torch
+
+
 def sphere(x: torch.Tensor) -> torch.Tensor:
-    return torch.sum(x.pow(2.))
-problem = Problem(
-    'min',
-    sphere,
-    solution_length = 10,
-    initial_bounds = (-1, 1),
-)
-searcher = SNES(problem, stdev_init = 5)
+    return torch.sum(x.pow(2.0))
+
+
+problem = Problem("min", sphere, solution_length=10, initial_bounds=(-1, 1))
+searcher = SNES(problem, stdev_init=5)
 ```
 
 the main usage is to step the algorithm forward by a single generation
@@ -46,7 +45,7 @@ print([k for k in searcher.iter_status_keys()])
 Each status property can be accessed by its name
 
 ```python
-best_discovered_solution = searcher.status['best']
+best_discovered_solution = searcher.status["best"]
 ```
 
 All algorithms currently implemented in EvoTorch applied to single-objective problems will *at least* have the following status properties:
@@ -68,25 +67,25 @@ This is easy to observe, as running the following code,
 
 ```python
 prob = Problem(
-    'min',
+    "min",
     sphere,
-    solution_length = 10,
-    initial_bounds = (-1, 1),
-    dtype = torch.float16,
-    device = 'cuda:0',
+    solution_length=10,
+    initial_bounds=(-1, 1),
+    dtype=torch.float16,
+    device="cuda:0",
 )
-searcher = SNES(prob, stdev_init = 5)
+searcher = SNES(prob, stdev_init=5)
 searcher.run(10)
 ```
 
 and then printing the center of the search distribution using the `status` dictionary, will show that the resulting tensor is now using the `dtype` and `device` that was specified in the instantiation of `prob`
 
 ```python
-print(searcher.status['center'])
+print(searcher.status["center"])
 ```
 
 ???+ abstract "Output"
-    ```python
+    ```bash
     ReadOnlyTensor(
         tensor([-0.5435,  1.5527, -2.0664,  1.2012,  0.2749, -1.7686, -0.4634,  5.5039,
                 -1.4092, -0.7285, -0.3555, -1.5322, -0.9805, -1.7363, -4.3633, -3.1953,

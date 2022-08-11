@@ -16,13 +16,14 @@ from torch import nn
 
 N = 100
 X = torch.randn((N, 2))
-Y = X.sum(dim = -1, keepdim = True)
+Y = X.sum(dim=-1, keepdim=True)
 ```
 
 This can be wrapped up as a `torch.utils.data.TensorDataset` instance for convenience:
 
 ```python
 from torch.utils.data import TensorDataset, DataLoader
+
 train_dataset = TensorDataset(X, Y)
 ```
 
@@ -32,9 +33,9 @@ Creating a [SupervisedNE][evotorch.neuroevolution.supervisedne.SupervisedNE] ins
 from evotorch.neuroevolution import SupervisedNE
 
 sum_of_problem = SupervisedNE(
-    dataset=train_dataset,   # Use the training dataset generated earlier
-    network=nn.Sequential(nn.Linear(2,32), nn.ReLU(), nn.Linear(32, 1)),   # Using a simple MLP
-    minibatch_size=32,       # Solutions will be evaluated on minibatches of size 32
+    dataset=train_dataset,  # Use the training dataset generated earlier
+    network=nn.Sequential(nn.Linear(2, 32), nn.ReLU(), nn.Linear(32, 1)),  # Using a simple MLP
+    minibatch_size=32,  # Solutions will be evaluated on minibatches of size 32
     loss_func=nn.MSELoss(),  # Solutions will be evaluated using MSELoss
 )
 ```
@@ -45,11 +46,7 @@ Then each network evaluated by `sum_of_problem` will be assigned a fitness based
 from evotorch.algorithms import SNES
 from evotorch.logging import PandasLogger
 
-searcher = SNES(
-    sum_of_problem,
-    popsize = 50,
-    radius_init = 2.25
-)
+searcher = SNES(sum_of_problem, popsize=50, radius_init=2.25)
 logger = PandasLogger(searcher)
 searcher.run(500)
 logger.to_dataframe().mean_eval.plot()
@@ -75,7 +72,6 @@ then [SupervisedNE][evotorch.neuroevolution.supervisedne.SupervisedNE] should wo
 
 ```python
 class CustomSupervisedNE(SupervisedNE):
-
     def _make_dataloader(self) -> DataLoader:
         # Override to generate a custom dataloader
         ...

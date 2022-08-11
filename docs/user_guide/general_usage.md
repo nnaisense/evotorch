@@ -20,16 +20,13 @@ import torch
 
 # Create a Problem instance to solve
 def sphere(x: torch.Tensor) -> torch.Tensor:
-    return torch.sum(x.pow(2.))
-problem = Problem(
-    'min',
-    sphere,
-    solution_length = 10,
-    initial_bounds = (-1, 1),
-)
+    return torch.sum(x.pow(2.0))
+
+
+problem = Problem("min", sphere, solution_length=10, initial_bounds=(-1, 1))
 
 # Create a SearchAlgorithm instance to optimise the Problem instance
-searcher = SNES(problem, stdev_init = 5)
+searcher = SNES(problem, stdev_init=5)
 
 # Create loggers as desired
 stdout_logger = StdOutLogger(searcher)  # Status printed to the stdout
@@ -42,6 +39,6 @@ searcher.run(10)
 # Process the information accumulated by the loggers.
 ...
 progress = pandas_logger.to_dataframe()
-progress.mean_eval.plot() # Display a graph of the evolutionary progress by using the pandas data frame
+progress.mean_eval.plot()  # Display a graph of the evolutionary progress by using the pandas data frame
 ...
 ```

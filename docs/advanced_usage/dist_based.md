@@ -108,10 +108,8 @@ problem = GymNE(
 # Instantiate a PGPE algorithm to solve the problem
 searcher = PGPE(
     problem,
-
     # Base population size
     popsize=200,
-
     # For each generation, sample more solutions until the
     # number of simulator interactions reaches the given
     # threshold.
@@ -122,18 +120,14 @@ searcher = PGPE(
     # reach the ends of their episodes, we do not need to
     # re-sample. Otherwise, we re-sample.
     num_interactions=int(200 * 1000 * 0.75),
-
     # Stop re-sampling solutions if the current population size
     # reaches or exceeds this number.
     popsize_max=3200,
-
     # Learning rates
     center_learning_rate=0.0075,
     stdev_learning_rate=0.1,
-
     # Radius of the initial search distribution
     radius_init=0.27,
-
     # Use the ClipUp optimizer with the specified maximum speed
     optimizer="clipup",
     optimizer_config={"max_speed": 0.15},
