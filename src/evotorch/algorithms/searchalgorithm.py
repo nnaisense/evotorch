@@ -258,9 +258,7 @@ class SearchAlgorithm(LazyReporter):
 
     class MyNewAlgorithm(SearchAlgorithm):
         def __init__(self, problem: Problem):
-            SearchAlgorithm.__init__(
-                self, problem, status1=self._get_status1, status2=self._get_status2, ...
-            )
+            SearchAlgorithm.__init__(self, problem, status1=self._get_status1, status2=self._get_status2, ...)
 
         def _step(self):
             # Code that defines how a step of this algorithm

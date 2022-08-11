@@ -45,13 +45,8 @@ class SupervisedNE(NEProblem):
         loss = ...  # compute the loss here
         return loss
 
-    problem = SupervisedNE(
-        my_dataset,
-        MyTorchModuleClass,
-        my_loss_function,
-        minibatch_size=...,
-        ...
-    )
+
+    problem = SupervisedNE(my_dataset, MyTorchModuleClass, my_loss_function, minibatch_size=..., ...)
     ```
     """
 
@@ -95,7 +90,7 @@ class SupervisedNE(NEProblem):
                 scalar.
                 This argument can also be left as None, in which case it will
                 be expected that the method `_loss(self, y_hat, y)` is
-                overriden by the inheriting class.
+                overridden by the inheriting class.
             network_args: Optionally a dict-like object, storing keyword
                 arguments to be passed to the network while instantiating it.
             initial_bounds: Specifies an interval from which the values of the
@@ -131,8 +126,8 @@ class SupervisedNE(NEProblem):
                 If `num_actors` is given as something other than "num_gpus"
                 or "num_devices", and if you wish to assign GPUs to each
                 actor, then please see the argument `num_gpus_per_actor`.
-            common_minibatch: Whether or not the same minibatches will be
-                used when evaluating the solutions.
+            common_minibatch: Whether the same minibatches will be
+                used when evaluating the solutions or not.
             actor_config: A dictionary, representing the keyword arguments
                 to be passed to the options(...) used when creating the
                 ray actor objects. To be used for explicitly allocating
@@ -225,23 +220,23 @@ class SupervisedNE(NEProblem):
         This method, in its default state, does not contain an implementation.
         In the case where the `__init__` of `SupervisedNE` is not provided
         with a minibatch size, it will be expected that this method is
-        overriden by the inheriting class and that the operation of creating
+        overridden by the inheriting class and that the operation of creating
         a new DataLoader is defined here.
 
         Returns:
             The new DataLoader.
         """
-        return NotImplementedError
+        raise NotImplementedError
 
     def make_dataloader(self) -> DataLoader:
         """
         Make a new DataLoader.
 
         If the `__init__` of `SupervisedNE` was provided with a minibatch size
-        via the argument `minibatch_size`, then a new DataLoder will be made
+        via the argument `minibatch_size`, then a new DataLoader will be made
         with that minibatch size.
         Otherwise, it will be expected that the method `_make_dataloader(...)`
-        was overriden to contain details regarding how the DataLoader should be
+        was overridden to contain details regarding how the DataLoader should be
         created, and that method will be executed.
 
         Returns:
@@ -274,7 +269,7 @@ class SupervisedNE(NEProblem):
         This method, in its default state, does not contain an implementation.
         In the case where `__init__` of `SupervisedNE` class was not given
         a loss function via the argument `loss_func`, it will be expected
-        that this method is overriden by the inheriting class and that the
+        that this method is overridden by the inheriting class and that the
         operation of computing the loss is defined here.
 
         Args:

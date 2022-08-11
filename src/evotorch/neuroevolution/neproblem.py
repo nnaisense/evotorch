@@ -48,10 +48,8 @@ class NEProblem(Problem):
         fitness = ...
         return fitness
 
-    problem = NEProblem(
-        "min", MyTorchModuleClass, f,
-        ...
-    )
+
+    problem = NEProblem("min", MyTorchModuleClass, f, ...)
     ```
 
     which specifies that the problem's goal is to minimize the return of the
