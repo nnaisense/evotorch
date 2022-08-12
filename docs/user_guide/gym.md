@@ -115,7 +115,7 @@ print(problem.to_policy(problem.make_zeros(problem.solution_length)))
 ```
 
 ???+ abstract "Output"
-    ```bash
+    ```
     Sequential(
         (0): ObsNormLayer()
         (1): CustomPolicy(

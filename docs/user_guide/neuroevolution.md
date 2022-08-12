@@ -88,7 +88,7 @@ trained_network(torch.tensor([[1.0, 2.0, 3.0]]))
 ```
 
 ???+ abstract "Output"
-    ```bash
+    ```
         tensor([[53.2647]], grad_fn=<AddmmBackward0>)
     ```
 
@@ -99,7 +99,7 @@ trained_network(torch.tensor([[-1.0, 1.0, -1.0]]))
 ```
 
 ???+ abstract "Output"
-    ```bash
+    ```
         tensor([[-9.7548]], grad_fn=<AddmmBackward0>)
     ```
 
@@ -208,7 +208,7 @@ print(problem.parameterize_net(problem.make_zeros(problem.solution_length)))
 ```
 
 ???+ abstract "Output"
-    ```bash
+    ```
     Sequential(
         (0): Linear(in_features=3, out_features=32, bias=True)
         (1): Tanh()
@@ -236,7 +236,7 @@ print(problem.parameterize_net(problem.make_zeros(problem.solution_length)))
 ```
 
 ???+ abstract "Output"
-    ```bash
+    ```
     Sequential(
         (0): Linear(in_features=3, out_features=32, bias=True)
         (1): Tanh()
@@ -268,7 +268,7 @@ print(problem.parameterize_net(problem.make_zeros(problem.solution_length)))
 
 
 ???+ abstract "Output"
-    ```bash
+    ```
     MyNetwork(
         (lin1): Linear(in_features=3, out_features=32, bias=True)
         (act): Tanh()
@@ -317,7 +317,7 @@ print(problem.parameterize_net(problem.make_zeros(problem.solution_length)))
 ```
 
 ???+ abstract "Output"
-    ```bash
+    ```
     Sequential(
         (0): Linear(in_features=15, out_features=32, bias=True)
         (1): Tanh()
@@ -378,7 +378,7 @@ print(problem.parameterize_net(problem.make_zeros(problem.solution_length)))
 ```
 
 ???+ abstract "Output"
-    ```bash
+    ```
     MyNetwork(
         (lin1): Linear(in_features=3, out_features=17, bias=True)
         (act): Tanh()

@@ -80,7 +80,7 @@ searcher.run(3)
 ```
 
 ???+ abstract "Output"
-    ```bash
+    ```
             iter : 1
         mean_eval : 12.302145004272461
       median_eval : 12.144983291625977
@@ -135,7 +135,7 @@ for _ in range(3):
 ```
 
 ???+ abstract "Output"
-    ```bash
+    ```
     Last mu: tensor([ 0.5075, -0.0859, -0.4649,  0.6813,  0.1237, -0.5578, -0.8896,  0.2800,
             -0.4438,  0.1856])
     Last sigma: tensor([1., 1., 1., 1., 1., 1., 1., 1., 1., 1.])
@@ -171,7 +171,7 @@ searcher.run(3)
 ```
 
 ???+ abstract "Output"
-    ```bash
+    ```
             iter : 4
         mean_eval : 12.15910816192627
     pop_best_eval : 5.9899001121521

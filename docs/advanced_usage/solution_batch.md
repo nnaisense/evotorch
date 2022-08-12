@@ -29,7 +29,7 @@ print(batch.values)
 ```
 
 ???+ abstract "Output"
-    ```bash
+    ```
     ReadOnlyTensor(
         tensor([[-0.3779, -0.0910],
                 [-0.7356,  0.8931],
@@ -46,7 +46,7 @@ print(batch.evals)
 ```
 
 ???+ abstract "Output"
-    ```bash
+    ```
     ReadOnlyTensor(
         tensor([[nan],
                 [nan],
@@ -64,7 +64,7 @@ print(batch.evals)
 ```
 
 ???+ abstract "Output"
-    ```bash
+    ```
     ReadOnlyTensor(
         tensor([[0.1511],
                 [1.3387],
@@ -86,7 +86,7 @@ will update the values
 print(batch.values)
 ```
 ???+ abstract "Output"
-    ```bash
+    ```
     ReadOnlyTensor(
         tensor([[ 0.1206, -2.0179],
                 [-0.0508, -0.5009],
@@ -102,7 +102,7 @@ and clear the fitness values
 print(batch.evals)
 ```
 ???+ abstract "Output"
-    ```bash
+    ```
     ReadOnlyTensor(
         tensor([[nan],
                 [nan],
@@ -120,7 +120,7 @@ print(batch.evals)
 ```
 
 ???+ abstract "Output"
-    ```bash
+    ```
     ReadOnlyTensor(
         tensor([[0.5828],
                 [0.5208],
@@ -138,7 +138,7 @@ print(batch.evals)
 ```
 
 ???+ abstract "Output"
-    ```bash
+    ```
     ReadOnlyTensor(
         tensor([[nan],
                 [nan],
@@ -156,7 +156,7 @@ values = batch.access_values(keep_evals=True)
 print(batch.evals)
 ```
 ???+ abstract "Output"
-    ```bash
+    ```
     ReadOnlyTensor(
         tensor([[0.3775],
                 [0.2806],
@@ -188,7 +188,7 @@ will return a [SolutionBatch][evotorch.core.SolutionBatch] instance `last_3` whi
 print(last_3.values)
 ```
 ???+ abstract "Output"
-    ```bash
+    ```
     ReadOnlyTensor(
         tensor([[-1.3668, -0.4877],
                 [ 1.0296, -1.1230],
@@ -202,7 +202,7 @@ and the evaluations are exactly the evaluations of the last 3 solutions of `batc
 print(last_3.evals)
 ```
 ???+ abstract "Output"
-    ```bash
+    ```
     ReadOnlyTensor(
         tensor([[0.1781],
                 [0.3854],
@@ -218,7 +218,7 @@ print(last_3.values)
 ```
 
 ???+ abstract "Output"
-    ```bash
+    ```
     ReadOnlyTensor(
         tensor([[ 0.2202,  1.5362],
                 [ 0.5641, -0.0477],
@@ -233,7 +233,7 @@ print(batch.values)
 ```
 
 ???+ abstract "Output"
-    ```bash
+    ```
     ReadOnlyTensor(
         tensor([[ 0.1206, -2.0179],
                 [-0.0508, -0.5009],
@@ -251,7 +251,7 @@ print(second_batch.values)
 ```
 
 ???+ abstract "Output"
-    ```bash
+    ```
     ReadOnlyTensor(
         tensor([[ 0.0433, -0.6526],
                 [ 0.9731,  0.2553],
@@ -267,7 +267,7 @@ print(new_batch.values)
 ```
 
 ???+ abstract "Output"
-    ```bash
+    ```
     ReadOnlyTensor(
         tensor([[ 0.2202,  1.5362],
                 [ 0.5641, -0.0477],
@@ -290,7 +290,7 @@ print(solution1)
 ```
 
 ???+ abstract "Output"
-    ```bash
+    ```
     <Solution values=tensor([-0.0508, -0.5009]), evals=tensor([0.2806])>
     ```
 
@@ -314,7 +314,7 @@ print(solution1)
 ```
 
 ???+ abstract "Output"
-    ```bash
+    ```
     <Solution values=tensor([1., 2.]), evals=tensor([0.5000])>
     ```
 
@@ -325,7 +325,7 @@ print(batch.values)
 ```
 
 ???+ abstract "Output"
-    ```bash
+    ```
     ReadOnlyTensor(
         tensor([[ 0.1206, -2.0179],
                 [ 1.0000,  2.0000],

@@ -40,7 +40,7 @@ logger = StdOutLogger(searcher)
 searcher.run(3)
 ```
 ???+ abstract "Output"
-    ```bash
+    ```
                 iter : 1
             mean_eval : 166.8264923095703
         median_eval : 134.81417846679688

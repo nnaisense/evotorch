@@ -75,7 +75,7 @@ searcher.step()
 ```
 
 ???+ abstract "Output"
-    ```bash
+    ```
             iter : 1
         mean_eval : 268.27362060546875
       median_eval : 269.3234558105469
@@ -92,7 +92,7 @@ searcher.run(3)
 ```
 
 ???+ abstract "Output"
-    ```bash
+    ```
             iter : 2
         mean_eval : 244.1479034423828
       median_eval : 223.21856689453125
