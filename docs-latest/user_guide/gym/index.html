@@ -1863,15 +1863,15 @@
 </code></pre></div>
 <details class="abstract" open="open">
 <summary>Output</summary>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>Sequential<span class="o">(</span>
-<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>    <span class="o">(</span><span class="m">0</span><span class="o">)</span>: ObsNormLayer<span class="o">()</span>
-<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>    <span class="o">(</span><span class="m">1</span><span class="o">)</span>: CustomPolicy<span class="o">(</span>
-<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a>        <span class="o">(</span>lin1<span class="o">)</span>: Linear<span class="o">(</span><span class="nv">in_features</span><span class="o">=</span><span class="m">8</span>, <span class="nv">out_features</span><span class="o">=</span><span class="m">32</span>, <span class="nv">bias</span><span class="o">=</span>True<span class="o">)</span>
-<a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a>        <span class="o">(</span>act<span class="o">)</span>: Tanh<span class="o">()</span>
-<a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a>        <span class="o">(</span>lin2<span class="o">)</span>: Linear<span class="o">(</span><span class="nv">in_features</span><span class="o">=</span><span class="m">32</span>, <span class="nv">out_features</span><span class="o">=</span><span class="m">2</span>, <span class="nv">bias</span><span class="o">=</span>True<span class="o">)</span>
-<a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a>    <span class="o">)</span>
-<a id="__codelineno-7-8" name="__codelineno-7-8" href="#__codelineno-7-8"></a>    <span class="o">(</span><span class="m">2</span><span class="o">)</span>: ActClipLayer<span class="o">()</span>
-<a id="__codelineno-7-9" name="__codelineno-7-9" href="#__codelineno-7-9"></a><span class="o">)</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>Sequential(
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>    (0): ObsNormLayer()
+<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>    (1): CustomPolicy(
+<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a>        (lin1): Linear(in_features=8, out_features=32, bias=True)
+<a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a>        (act): Tanh()
+<a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a>        (lin2): Linear(in_features=32, out_features=2, bias=True)
+<a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a>    )
+<a id="__codelineno-7-8" name="__codelineno-7-8" href="#__codelineno-7-8"></a>    (2): ActClipLayer()
+<a id="__codelineno-7-9" name="__codelineno-7-9" href="#__codelineno-7-9"></a>)
 </code></pre></div>
 </details>
 <p>you will observe that the policy contains an <a class="autorefs autorefs-internal" href="../../reference/evotorch/neuroevolution/net/rl/#evotorch.neuroevolution.net.rl.ObsNormLayer">ObsNormLayer</a> which automatically applies observation normalization to the input to the policy, and an <a class="autorefs autorefs-internal" href="../../reference/evotorch/neuroevolution/net/rl/#evotorch.neuroevolution.net.rl.ActClipLayer">ActClipLayer</a> which automatically clips the actions to the space of the environment.</p>

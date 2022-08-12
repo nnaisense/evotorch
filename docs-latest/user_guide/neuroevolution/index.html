@@ -1847,7 +1847,7 @@
 </code></pre></div>
 <details class="abstract" open="open">
 <summary>Output</summary>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>    tensor<span class="o">([[</span><span class="m">53</span>.2647<span class="o">]]</span>, <span class="nv">grad_fn</span><span class="o">=</span>&lt;AddmmBackward0&gt;<span class="o">)</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>    tensor([[53.2647]], grad_fn=&lt;AddmmBackward0&gt;)
 </code></pre></div>
 </details>
 <p>or by passing an input that has a negative sum</p>
@@ -1855,7 +1855,7 @@
 </code></pre></div>
 <details class="abstract" open="open">
 <summary>Output</summary>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>    tensor<span class="o">([[</span>-9.7548<span class="o">]]</span>, <span class="nv">grad_fn</span><span class="o">=</span>&lt;AddmmBackward0&gt;<span class="o">)</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>    tensor([[-9.7548]], grad_fn=&lt;AddmmBackward0&gt;)
 </code></pre></div>
 </details>
 <p>Of course, you can also create a custom <a class="autorefs autorefs-internal" href="../../reference/evotorch/neuroevolution/neproblem/#evotorch.neuroevolution.neproblem.NEProblem">NEProblem</a> instance by inheriting from that class. In this case, you simply need to override the <code>_evaluate_network</code> function with your desired fitness function:</p>
@@ -1935,11 +1935,11 @@
 </code></pre></div>
 <details class="abstract" open="open">
 <summary>Output</summary>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a>Sequential<span class="o">(</span>
-<a id="__codelineno-17-2" name="__codelineno-17-2" href="#__codelineno-17-2"></a>    <span class="o">(</span><span class="m">0</span><span class="o">)</span>: Linear<span class="o">(</span><span class="nv">in_features</span><span class="o">=</span><span class="m">3</span>, <span class="nv">out_features</span><span class="o">=</span><span class="m">32</span>, <span class="nv">bias</span><span class="o">=</span>True<span class="o">)</span>
-<a id="__codelineno-17-3" name="__codelineno-17-3" href="#__codelineno-17-3"></a>    <span class="o">(</span><span class="m">1</span><span class="o">)</span>: Tanh<span class="o">()</span>
-<a id="__codelineno-17-4" name="__codelineno-17-4" href="#__codelineno-17-4"></a>    <span class="o">(</span><span class="m">2</span><span class="o">)</span>: Linear<span class="o">(</span><span class="nv">in_features</span><span class="o">=</span><span class="m">32</span>, <span class="nv">out_features</span><span class="o">=</span><span class="m">1</span>, <span class="nv">bias</span><span class="o">=</span>True<span class="o">)</span>
-<a id="__codelineno-17-5" name="__codelineno-17-5" href="#__codelineno-17-5"></a><span class="o">)</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a>Sequential(
+<a id="__codelineno-17-2" name="__codelineno-17-2" href="#__codelineno-17-2"></a>    (0): Linear(in_features=3, out_features=32, bias=True)
+<a id="__codelineno-17-3" name="__codelineno-17-3" href="#__codelineno-17-3"></a>    (1): Tanh()
+<a id="__codelineno-17-4" name="__codelineno-17-4" href="#__codelineno-17-4"></a>    (2): Linear(in_features=32, out_features=1, bias=True)
+<a id="__codelineno-17-5" name="__codelineno-17-5" href="#__codelineno-17-5"></a>)
 </code></pre></div>
 </details>
 <p>The third option is to pass to the <a class="autorefs autorefs-internal" href="../../reference/evotorch/neuroevolution/neproblem/#evotorch.neuroevolution.neproblem.NEProblem">NEProblem</a> class a function which returns a <code>torch.nn.Module</code> instance. For example, we can define a function which returns the above network:</p>
@@ -1960,11 +1960,11 @@
 </code></pre></div>
 <details class="abstract" open="open">
 <summary>Output</summary>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a>Sequential<span class="o">(</span>
-<a id="__codelineno-19-2" name="__codelineno-19-2" href="#__codelineno-19-2"></a>    <span class="o">(</span><span class="m">0</span><span class="o">)</span>: Linear<span class="o">(</span><span class="nv">in_features</span><span class="o">=</span><span class="m">3</span>, <span class="nv">out_features</span><span class="o">=</span><span class="m">32</span>, <span class="nv">bias</span><span class="o">=</span>True<span class="o">)</span>
-<a id="__codelineno-19-3" name="__codelineno-19-3" href="#__codelineno-19-3"></a>    <span class="o">(</span><span class="m">1</span><span class="o">)</span>: Tanh<span class="o">()</span>
-<a id="__codelineno-19-4" name="__codelineno-19-4" href="#__codelineno-19-4"></a>    <span class="o">(</span><span class="m">2</span><span class="o">)</span>: Linear<span class="o">(</span><span class="nv">in_features</span><span class="o">=</span><span class="m">32</span>, <span class="nv">out_features</span><span class="o">=</span><span class="m">3</span>, <span class="nv">bias</span><span class="o">=</span>True<span class="o">)</span>
-<a id="__codelineno-19-5" name="__codelineno-19-5" href="#__codelineno-19-5"></a><span class="o">)</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a>Sequential(
+<a id="__codelineno-19-2" name="__codelineno-19-2" href="#__codelineno-19-2"></a>    (0): Linear(in_features=3, out_features=32, bias=True)
+<a id="__codelineno-19-3" name="__codelineno-19-3" href="#__codelineno-19-3"></a>    (1): Tanh()
+<a id="__codelineno-19-4" name="__codelineno-19-4" href="#__codelineno-19-4"></a>    (2): Linear(in_features=32, out_features=3, bias=True)
+<a id="__codelineno-19-5" name="__codelineno-19-5" href="#__codelineno-19-5"></a>)
 </code></pre></div>
 </details>
 <p>As any class definition is callable through its <code>__init__</code> method, this also means that you can directly pass a <code>torch.nn.Module</code> <em>class</em> which will be instantiated. For example:</p>
@@ -1988,11 +1988,11 @@
 </code></pre></div>
 <details class="abstract" open="open">
 <summary>Output</summary>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-21-1" name="__codelineno-21-1" href="#__codelineno-21-1"></a>MyNetwork<span class="o">(</span>
-<a id="__codelineno-21-2" name="__codelineno-21-2" href="#__codelineno-21-2"></a>    <span class="o">(</span>lin1<span class="o">)</span>: Linear<span class="o">(</span><span class="nv">in_features</span><span class="o">=</span><span class="m">3</span>, <span class="nv">out_features</span><span class="o">=</span><span class="m">32</span>, <span class="nv">bias</span><span class="o">=</span>True<span class="o">)</span>
-<a id="__codelineno-21-3" name="__codelineno-21-3" href="#__codelineno-21-3"></a>    <span class="o">(</span>act<span class="o">)</span>: Tanh<span class="o">()</span>
-<a id="__codelineno-21-4" name="__codelineno-21-4" href="#__codelineno-21-4"></a>    <span class="o">(</span>lin2<span class="o">)</span>: Linear<span class="o">(</span><span class="nv">in_features</span><span class="o">=</span><span class="m">32</span>, <span class="nv">out_features</span><span class="o">=</span><span class="m">3</span>, <span class="nv">bias</span><span class="o">=</span>True<span class="o">)</span>
-<a id="__codelineno-21-5" name="__codelineno-21-5" href="#__codelineno-21-5"></a><span class="o">)</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-21-1" name="__codelineno-21-1" href="#__codelineno-21-1"></a>MyNetwork(
+<a id="__codelineno-21-2" name="__codelineno-21-2" href="#__codelineno-21-2"></a>    (lin1): Linear(in_features=3, out_features=32, bias=True)
+<a id="__codelineno-21-3" name="__codelineno-21-3" href="#__codelineno-21-3"></a>    (act): Tanh()
+<a id="__codelineno-21-4" name="__codelineno-21-4" href="#__codelineno-21-4"></a>    (lin2): Linear(in_features=32, out_features=3, bias=True)
+<a id="__codelineno-21-5" name="__codelineno-21-5" href="#__codelineno-21-5"></a>)
 </code></pre></div>
 </details>
 <h2 id="dynamically-parameterizing-networks">Dynamically Parameterizing Networks<a class="headerlink" href="#dynamically-parameterizing-networks" title="Permanent link">&para;</a></h2>
@@ -2026,11 +2026,11 @@
 </code></pre></div>
 <details class="abstract" open="open">
 <summary>Output</summary>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-25-1" name="__codelineno-25-1" href="#__codelineno-25-1"></a>Sequential<span class="o">(</span>
-<a id="__codelineno-25-2" name="__codelineno-25-2" href="#__codelineno-25-2"></a>    <span class="o">(</span><span class="m">0</span><span class="o">)</span>: Linear<span class="o">(</span><span class="nv">in_features</span><span class="o">=</span><span class="m">15</span>, <span class="nv">out_features</span><span class="o">=</span><span class="m">32</span>, <span class="nv">bias</span><span class="o">=</span>True<span class="o">)</span>
-<a id="__codelineno-25-3" name="__codelineno-25-3" href="#__codelineno-25-3"></a>    <span class="o">(</span><span class="m">1</span><span class="o">)</span>: Tanh<span class="o">()</span>
-<a id="__codelineno-25-4" name="__codelineno-25-4" href="#__codelineno-25-4"></a>    <span class="o">(</span><span class="m">2</span><span class="o">)</span>: Linear<span class="o">(</span><span class="nv">in_features</span><span class="o">=</span><span class="m">32</span>, <span class="nv">out_features</span><span class="o">=</span><span class="m">1</span>, <span class="nv">bias</span><span class="o">=</span>True<span class="o">)</span>
-<a id="__codelineno-25-5" name="__codelineno-25-5" href="#__codelineno-25-5"></a><span class="o">)</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-25-1" name="__codelineno-25-1" href="#__codelineno-25-1"></a>Sequential(
+<a id="__codelineno-25-2" name="__codelineno-25-2" href="#__codelineno-25-2"></a>    (0): Linear(in_features=15, out_features=32, bias=True)
+<a id="__codelineno-25-3" name="__codelineno-25-3" href="#__codelineno-25-3"></a>    (1): Tanh()
+<a id="__codelineno-25-4" name="__codelineno-25-4" href="#__codelineno-25-4"></a>    (2): Linear(in_features=32, out_features=1, bias=True)
+<a id="__codelineno-25-5" name="__codelineno-25-5" href="#__codelineno-25-5"></a>)
 </code></pre></div>
 </details>
 <p>Similarly, you can now use <code>d</code> as an argument in your function definition</p>
@@ -2074,11 +2074,11 @@
 </code></pre></div>
 <details class="abstract" open="open">
 <summary>Output</summary>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-30-1" name="__codelineno-30-1" href="#__codelineno-30-1"></a>MyNetwork<span class="o">(</span>
-<a id="__codelineno-30-2" name="__codelineno-30-2" href="#__codelineno-30-2"></a>    <span class="o">(</span>lin1<span class="o">)</span>: Linear<span class="o">(</span><span class="nv">in_features</span><span class="o">=</span><span class="m">3</span>, <span class="nv">out_features</span><span class="o">=</span><span class="m">17</span>, <span class="nv">bias</span><span class="o">=</span>True<span class="o">)</span>
-<a id="__codelineno-30-3" name="__codelineno-30-3" href="#__codelineno-30-3"></a>    <span class="o">(</span>act<span class="o">)</span>: Tanh<span class="o">()</span>
-<a id="__codelineno-30-4" name="__codelineno-30-4" href="#__codelineno-30-4"></a>    <span class="o">(</span>lin2<span class="o">)</span>: Linear<span class="o">(</span><span class="nv">in_features</span><span class="o">=</span><span class="m">17</span>, <span class="nv">out_features</span><span class="o">=</span><span class="m">1</span>, <span class="nv">bias</span><span class="o">=</span>True<span class="o">)</span>
-<a id="__codelineno-30-5" name="__codelineno-30-5" href="#__codelineno-30-5"></a><span class="o">)</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-30-1" name="__codelineno-30-1" href="#__codelineno-30-1"></a>MyNetwork(
+<a id="__codelineno-30-2" name="__codelineno-30-2" href="#__codelineno-30-2"></a>    (lin1): Linear(in_features=3, out_features=17, bias=True)
+<a id="__codelineno-30-3" name="__codelineno-30-3" href="#__codelineno-30-3"></a>    (act): Tanh()
+<a id="__codelineno-30-4" name="__codelineno-30-4" href="#__codelineno-30-4"></a>    (lin2): Linear(in_features=17, out_features=1, bias=True)
+<a id="__codelineno-30-5" name="__codelineno-30-5" href="#__codelineno-30-5"></a>)
 </code></pre></div>
 </details>
 <p>will instantiate <code>MyNetwork</code> with the <code>hidden_dim</code> variable set to that value -- in this case, <code>hidden_dim = 17</code>.</p>
