@@ -34,7 +34,7 @@ from evotorch.neuroevolution import SupervisedNE
 
 sum_of_problem = SupervisedNE(
     dataset=train_dataset,  # Use the training dataset generated earlier
-    network=nn.Sequential(nn.Linear(2, 32), nn.ReLU(), nn.Linear(32, 1)),  # Using a simple MLP
+    network=nn.Sequential(nn.Linear(2, 32), nn.ReLU(), nn.Linear(32, 1)),  # Simple MLP
     minibatch_size=32,  # Solutions will be evaluated on minibatches of size 32
     loss_func=nn.MSELoss(),  # Solutions will be evaluated using MSELoss
 )
@@ -80,7 +80,9 @@ class CustomSupervisedNE(SupervisedNE):
         # Override to define a custom loss function on network output yhat vs. target output y
         ...
 
-    def _evaluate_using_minibatch(self, network: nn.Module, batch: Any) -> Union[float, torch.Tensor]:
+    def _evaluate_using_minibatch(
+        self, network: nn.Module, batch: Any
+    ) -> Union[float, torch.Tensor]:
         # Override to modify how a network is evaluated on a minibatch
         ...
 

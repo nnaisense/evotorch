@@ -14,14 +14,18 @@ from evotorch.tools import dtype_of, device_of
 
 
 def sign_prediction_score(network: torch.nn.Module):
-    samples = torch.randn(
-        (32, 3), dtype=dtype_of(network), device=device_of(network)
-    )  # Generate 32 random gaussian vectors
-    network_out = network(samples)  # Apply the network to the gaussian vectors
-    sign_out = torch.sign(network_out[:, 0])  # Get the sign of the single output
-    sign_sum = torch.sign(samples.sum(dim=-1))  # Get the sign of the sum of the inputs
-    reward_gained = (sign_sum == sign_out).to(torch.float).sum()  # Number of times the network was correct
-    reward_lost = (sign_sum != sign_out).to(torch.float).sum()  # Number of times the network was incorrect
+    # Generate 32 random gaussian vectors
+    samples = torch.randn((32, 3), dtype=dtype_of(network), device=device_of(network))
+    # Apply the network to the gaussian vectors
+    network_out = network(samples)
+    # Get the sign of the single output
+    sign_out = torch.sign(network_out[:, 0])
+    # Get the sign of the sum of the inputs
+    sign_sum = torch.sign(samples.sum(dim=-1))
+    # Number of times the network was correct
+    reward_gained = (sign_sum == sign_out).to(torch.float).sum()
+    # Number of times the network was incorrect
+    reward_lost = (sign_sum != sign_out).to(torch.float).sum()
     return (reward_gained - reward_lost) / 32
 ```
 
@@ -31,9 +35,12 @@ A [NEProblem][evotorch.neuroevolution.neproblem.NEProblem] class can then be ins
 from evotorch.neuroevolution import NEProblem
 
 sign_prediction_problem = NEProblem(
-    objective_sense="max",  # The objective sense -- we wish to maximize the sign_prediction_score
-    network=torch.nn.Linear(3, 1),  # The network is a Linear layer mapping 3 inputs to 1 output
-    network_eval_func=sign_prediction_score,  # Networks will be evaluated according to sign_prediction_score
+    # The objective sense -- we wish to maximize the sign_prediction_score
+    objective_sense="max",
+    # The network is a Linear layer mapping 3 inputs to 1 output
+    network=torch.nn.Linear(3, 1),
+    # Networks will be evaluated according to sign_prediction_score
+    network_eval_func=sign_prediction_score,
 )
 ```
 
@@ -104,12 +111,18 @@ class CustomNE(NEProblem):
     ...
 
     def _evaluate_network(self, network: torch.nn.Module) -> torch.Tensor:
-        samples = self.make_gaussian((32, 3))  # Generate random gaussian vectors
-        network_out = network(samples)  # Apply the network to the gaussian vectors
-        sign_out = torch.sign(network_out[:, 0])  # Get the sign of the single output
-        sign_sum = torch.sign(samples.sum(dim=-1))  # Get the sign of the sum of the inputs
-        reward_gained = (sign_sum == sign_out).to(torch.float).sum()  # Number of times the network was correct
-        reward_lost = (sign_sum != sign_out).to(torch.float).sum()  # Number of times the network was incorrect
+        # Generate random gaussian vectors
+        samples = self.make_gaussian((32, 3))
+        # Apply the network to the gaussian vectors
+        network_out = network(samples)
+        # Get the sign of the single output
+        sign_out = torch.sign(network_out[:, 0])
+        # Get the sign of the sum of the inputs
+        sign_sum = torch.sign(samples.sum(dim=-1))
+        # Number of times the network was correct
+        reward_gained = (sign_sum == sign_out).to(torch.float).sum()
+        # Number of times the network was incorrect
+        reward_lost = (sign_sum != sign_out).to(torch.float).sum()
         return reward_gained - reward_lost
 ```
 
@@ -136,7 +149,8 @@ Ray will by default block all of the actors from using any GPU and therefore eve
 problem = NEProblem(
     ...,
     num_actors=16,
-    num_gpus_per_actors=(4 / 16),  # I have 4 GPUs and 16 CPUs, so I assign 0.25 GPUs per actor
+    # I have 4 GPUs and 16 CPUs, so I assign 0.25 GPUs per actor
+    num_gpus_per_actors=(4 / 16),
 )
 ```
 
@@ -170,7 +184,9 @@ Using the `num_actors`, `num_gpus_per_actor` arguments and the `network_device` 
 You can pass a string representation of the following form
 
 ```python
-policy_str = "torch.nn.Module(**args) >> torch.nn.Module(**args) >> torch.nn.Module(**args)"
+policy_str = (
+    "torch.nn.Module(**args) >> torch.nn.Module(**args) >> torch.nn.Module(**args)"
+)
 ```
 
 Which will create a [`torch.nn.Sequential`](https://pytorch.org/docs/stable/generated/torch.nn.Sequential.html) instance with each named torch `Module` class instantiated applied sequentially. For example, calling

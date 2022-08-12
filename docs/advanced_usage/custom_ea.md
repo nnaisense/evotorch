@@ -56,7 +56,10 @@ To begin within, let's define the `__init__` function of our custom evolutionary
 ```python
 from typing import Optional
 from evotorch import Problem, Solution
-from evotorch.algorithms.searchalgorithm import SearchAlgorithm, SinglePopulationAlgorithmMixin
+from evotorch.algorithms.searchalgorithm import (
+    SearchAlgorithm,
+    SinglePopulationAlgorithmMixin,
+)
 
 
 class SimpleGA(SearchAlgorithm, SinglePopulationAlgorithmMixin):
@@ -156,8 +159,10 @@ class SimpleGA(SearchAlgorithm, SinglePopulationAlgorithmMixin):
         parent_values = parents.values[parent_indices]
 
         # Add gaussian noise
-        child_values = parent_values + self._mutation_power * self.problem.make_gaussian(
-            num_children, self.problem.solution_length
+        child_values = (
+            parent_values
+            + self._mutation_power
+            * self.problem.make_gaussian(num_children, self.problem.solution_length)
         )
 
         # Overwrite all the non-elite solutions with the new generation

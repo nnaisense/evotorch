@@ -22,9 +22,13 @@ EvoTorch provides direct support for Neuroevolution of agents for `gym` environm
 from evotorch.neuroevolution import GymNE
 
 problem = GymNE(
-    env_name="LunarLanderContinuous-v2",  # Name of the environment
-    network="Linear(obs_length, act_length)",  # Linear policy mapping observations to actions
-    num_actors=4,  # Use 4 available CPUs. Note that you can modify this value, or use 'max' to exploit all available GPUs
+    # Name of the environment
+    env_name="LunarLanderContinuous-v2",
+    # Linear policy mapping observations to actions
+    network="Linear(obs_length, act_length)",
+    # Use 4 available CPUs. Note that you can modify this value,
+    # or use 'max' to exploit all available GPUs
+    num_actors=4,
 )
 ```
 

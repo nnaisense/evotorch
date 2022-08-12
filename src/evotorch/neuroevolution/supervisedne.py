@@ -46,7 +46,9 @@ class SupervisedNE(NEProblem):
         return loss
 
 
-    problem = SupervisedNE(my_dataset, MyTorchModuleClass, my_loss_function, minibatch_size=..., ...)
+    problem = SupervisedNE(
+        my_dataset, MyTorchModuleClass, my_loss_function, minibatch_size=..., ...
+    )
     ```
     """
 

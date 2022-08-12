@@ -221,14 +221,10 @@ def str_to_net(s: str, **constants) -> nn.Module:
     neural network structure:
 
     ```python
-    # fmt: off
     from torch import nn
 
     net = nn.Sequential(
-        nn.Linear(8, 16),
-        nn.Tanh(),
-        nn.Linear(16, 4, bias=False),
-        nn.ReLU()
+        nn.Linear(8, 16), nn.Tanh(), nn.Linear(16, 4, bias=False), nn.ReLU()
     )
     ```
 
@@ -236,18 +232,14 @@ def str_to_net(s: str, **constants) -> nn.Module:
     module via:
 
     ```python
-    # fmt: off
     from evotorch.neuroevolution.net import str_to_net
 
-    net = str_to_net(
-        "Linear(8, 16) >> Tanh() >> Linear(16, 4, bias=False) >> ReLU()"
-    )
+    net = str_to_net("Linear(8, 16) >> Tanh() >> Linear(16, 4, bias=False) >> ReLU()")
     ```
 
     The string can also be multi-line:
 
     ```python
-    # fmt: off
     net = str_to_net(
         '''
         Linear(8, 16)
@@ -261,7 +253,6 @@ def str_to_net(s: str, **constants) -> nn.Module:
     One can also define constants for using them in strings:
 
     ```python
-    # fmt: off
     net = str_to_net(
         '''
         Linear(input_size, hidden_size)
@@ -271,7 +262,7 @@ def str_to_net(s: str, **constants) -> nn.Module:
         ''',
         input_size=8,
         hidden_size=16,
-        output_size=4
+        output_size=4,
     )
     ```
 
