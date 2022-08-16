@@ -239,6 +239,14 @@ class GymNE(NEProblem):
         super()._prepare()
         self._get_env()
 
+    @property
+    def network_device(self) -> Device:
+        """The device on which the problem should place data e.g. the network
+        In the case of GymNE, supported Gym environments return numpy arrays on CPU which are converted to Tensors
+        Therefore, it is almost always optimal to place the network on CPU
+        """
+        return torch.device("cpu")
+
     def _rollout(
         self,
         *,
