@@ -11,7 +11,7 @@
       
       
       <link rel="icon" href="../../../../assets/favicon.ico">
-      <meta name="generator" content="mkdocs-1.3.1, mkdocs-material-8.4.0">
+      <meta name="generator" content="mkdocs-1.3.1, mkdocs-material-8.4.1">
     
     
       
@@ -1242,6 +1242,13 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#evotorch.neuroevolution.gymne.GymNE.network_device" class="md-nav__link">
+    network_device
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#evotorch.neuroevolution.gymne.GymNE.observation_normalization" class="md-nav__link">
     observation_normalization
   </a>
@@ -1840,6 +1847,13 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#evotorch.neuroevolution.gymne.GymNE.network_device" class="md-nav__link">
+    network_device
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#evotorch.neuroevolution.gymne.GymNE.observation_normalization" class="md-nav__link">
     observation_normalization
   </a>
@@ -2173,277 +2187,285 @@ the total reward obtained in a <code>gym</code> environment.</p>
 <a id="__codelineno-0-193" name="__codelineno-0-193" href="#__codelineno-0-193"></a>        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">_prepare</span><span class="p">()</span>
 <a id="__codelineno-0-194" name="__codelineno-0-194" href="#__codelineno-0-194"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_get_env</span><span class="p">()</span>
 <a id="__codelineno-0-195" name="__codelineno-0-195" href="#__codelineno-0-195"></a>
-<a id="__codelineno-0-196" name="__codelineno-0-196" href="#__codelineno-0-196"></a>    <span class="k">def</span> <span class="nf">_rollout</span><span class="p">(</span>
-<a id="__codelineno-0-197" name="__codelineno-0-197" href="#__codelineno-0-197"></a>        <span class="bp">self</span><span class="p">,</span>
-<a id="__codelineno-0-198" name="__codelineno-0-198" href="#__codelineno-0-198"></a>        <span class="o">*</span><span class="p">,</span>
-<a id="__codelineno-0-199" name="__codelineno-0-199" href="#__codelineno-0-199"></a>        <span class="n">policy</span><span class="p">:</span> <span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">,</span>
-<a id="__codelineno-0-200" name="__codelineno-0-200" href="#__codelineno-0-200"></a>        <span class="n">update_stats</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
-<a id="__codelineno-0-201" name="__codelineno-0-201" href="#__codelineno-0-201"></a>        <span class="n">visualize</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
-<a id="__codelineno-0-202" name="__codelineno-0-202" href="#__codelineno-0-202"></a>        <span class="n">decrease_rewards_by</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-<a id="__codelineno-0-203" name="__codelineno-0-203" href="#__codelineno-0-203"></a>    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
-<a id="__codelineno-0-204" name="__codelineno-0-204" href="#__codelineno-0-204"></a>        <span class="sd">&quot;&quot;&quot;Peform a rollout of a network&quot;&quot;&quot;</span>
-<a id="__codelineno-0-205" name="__codelineno-0-205" href="#__codelineno-0-205"></a>        <span class="k">if</span> <span class="n">decrease_rewards_by</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-<a id="__codelineno-0-206" name="__codelineno-0-206" href="#__codelineno-0-206"></a>            <span class="n">decrease_rewards_by</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_decrease_rewards_by</span>
-<a id="__codelineno-0-207" name="__codelineno-0-207" href="#__codelineno-0-207"></a>        <span class="k">else</span><span class="p">:</span>
-<a id="__codelineno-0-208" name="__codelineno-0-208" href="#__codelineno-0-208"></a>            <span class="n">decrease_rewards_by</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">decrease_rewards_by</span><span class="p">)</span>
-<a id="__codelineno-0-209" name="__codelineno-0-209" href="#__codelineno-0-209"></a>
-<a id="__codelineno-0-210" name="__codelineno-0-210" href="#__codelineno-0-210"></a>        <span class="n">reset_module_state</span><span class="p">(</span><span class="n">policy</span><span class="p">)</span>
-<a id="__codelineno-0-211" name="__codelineno-0-211" href="#__codelineno-0-211"></a>        <span class="n">env</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_env</span><span class="p">()</span>
-<a id="__codelineno-0-212" name="__codelineno-0-212" href="#__codelineno-0-212"></a>
-<a id="__codelineno-0-213" name="__codelineno-0-213" href="#__codelineno-0-213"></a>        <span class="n">observation</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_normalize_observation</span><span class="p">(</span><span class="n">reset_env</span><span class="p">(</span><span class="n">env</span><span class="p">),</span> <span class="n">update_stats</span><span class="o">=</span><span class="n">update_stats</span><span class="p">)</span>
-<a id="__codelineno-0-214" name="__codelineno-0-214" href="#__codelineno-0-214"></a>        <span class="k">if</span> <span class="n">visualize</span><span class="p">:</span>
-<a id="__codelineno-0-215" name="__codelineno-0-215" href="#__codelineno-0-215"></a>            <span class="n">env</span><span class="o">.</span><span class="n">render</span><span class="p">()</span>
-<a id="__codelineno-0-216" name="__codelineno-0-216" href="#__codelineno-0-216"></a>        <span class="n">t</span> <span class="o">=</span> <span class="mi">0</span>
+<a id="__codelineno-0-196" name="__codelineno-0-196" href="#__codelineno-0-196"></a>    <span class="nd">@property</span>
+<a id="__codelineno-0-197" name="__codelineno-0-197" href="#__codelineno-0-197"></a>    <span class="k">def</span> <span class="nf">network_device</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Device</span><span class="p">:</span>
+<a id="__codelineno-0-198" name="__codelineno-0-198" href="#__codelineno-0-198"></a>        <span class="sd">&quot;&quot;&quot;The device on which the problem should place data e.g. the network</span>
+<a id="__codelineno-0-199" name="__codelineno-0-199" href="#__codelineno-0-199"></a><span class="sd">        In the case of GymNE, supported Gym environments return numpy arrays on CPU which are converted to Tensors</span>
+<a id="__codelineno-0-200" name="__codelineno-0-200" href="#__codelineno-0-200"></a><span class="sd">        Therefore, it is almost always optimal to place the network on CPU</span>
+<a id="__codelineno-0-201" name="__codelineno-0-201" href="#__codelineno-0-201"></a><span class="sd">        &quot;&quot;&quot;</span>
+<a id="__codelineno-0-202" name="__codelineno-0-202" href="#__codelineno-0-202"></a>        <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">(</span><span class="s2">&quot;cpu&quot;</span><span class="p">)</span>
+<a id="__codelineno-0-203" name="__codelineno-0-203" href="#__codelineno-0-203"></a>
+<a id="__codelineno-0-204" name="__codelineno-0-204" href="#__codelineno-0-204"></a>    <span class="k">def</span> <span class="nf">_rollout</span><span class="p">(</span>
+<a id="__codelineno-0-205" name="__codelineno-0-205" href="#__codelineno-0-205"></a>        <span class="bp">self</span><span class="p">,</span>
+<a id="__codelineno-0-206" name="__codelineno-0-206" href="#__codelineno-0-206"></a>        <span class="o">*</span><span class="p">,</span>
+<a id="__codelineno-0-207" name="__codelineno-0-207" href="#__codelineno-0-207"></a>        <span class="n">policy</span><span class="p">:</span> <span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">,</span>
+<a id="__codelineno-0-208" name="__codelineno-0-208" href="#__codelineno-0-208"></a>        <span class="n">update_stats</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+<a id="__codelineno-0-209" name="__codelineno-0-209" href="#__codelineno-0-209"></a>        <span class="n">visualize</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+<a id="__codelineno-0-210" name="__codelineno-0-210" href="#__codelineno-0-210"></a>        <span class="n">decrease_rewards_by</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<a id="__codelineno-0-211" name="__codelineno-0-211" href="#__codelineno-0-211"></a>    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<a id="__codelineno-0-212" name="__codelineno-0-212" href="#__codelineno-0-212"></a>        <span class="sd">&quot;&quot;&quot;Peform a rollout of a network&quot;&quot;&quot;</span>
+<a id="__codelineno-0-213" name="__codelineno-0-213" href="#__codelineno-0-213"></a>        <span class="k">if</span> <span class="n">decrease_rewards_by</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+<a id="__codelineno-0-214" name="__codelineno-0-214" href="#__codelineno-0-214"></a>            <span class="n">decrease_rewards_by</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_decrease_rewards_by</span>
+<a id="__codelineno-0-215" name="__codelineno-0-215" href="#__codelineno-0-215"></a>        <span class="k">else</span><span class="p">:</span>
+<a id="__codelineno-0-216" name="__codelineno-0-216" href="#__codelineno-0-216"></a>            <span class="n">decrease_rewards_by</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">decrease_rewards_by</span><span class="p">)</span>
 <a id="__codelineno-0-217" name="__codelineno-0-217" href="#__codelineno-0-217"></a>
-<a id="__codelineno-0-218" name="__codelineno-0-218" href="#__codelineno-0-218"></a>        <span class="n">cumulative_reward</span> <span class="o">=</span> <span class="mf">0.0</span>
-<a id="__codelineno-0-219" name="__codelineno-0-219" href="#__codelineno-0-219"></a>
-<a id="__codelineno-0-220" name="__codelineno-0-220" href="#__codelineno-0-220"></a>        <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
-<a id="__codelineno-0-221" name="__codelineno-0-221" href="#__codelineno-0-221"></a>            <span class="n">observation</span><span class="p">,</span> <span class="n">raw_reward</span><span class="p">,</span> <span class="n">done</span><span class="p">,</span> <span class="n">info</span> <span class="o">=</span> <span class="n">take_step_in_env</span><span class="p">(</span><span class="n">env</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_use_policy</span><span class="p">(</span><span class="n">observation</span><span class="p">,</span> <span class="n">policy</span><span class="p">))</span>
-<a id="__codelineno-0-222" name="__codelineno-0-222" href="#__codelineno-0-222"></a>            <span class="n">reward</span> <span class="o">=</span> <span class="n">raw_reward</span> <span class="o">-</span> <span class="n">decrease_rewards_by</span>
-<a id="__codelineno-0-223" name="__codelineno-0-223" href="#__codelineno-0-223"></a>            <span class="n">t</span> <span class="o">+=</span> <span class="mi">1</span>
-<a id="__codelineno-0-224" name="__codelineno-0-224" href="#__codelineno-0-224"></a>            <span class="k">if</span> <span class="n">update_stats</span><span class="p">:</span>
-<a id="__codelineno-0-225" name="__codelineno-0-225" href="#__codelineno-0-225"></a>                <span class="bp">self</span><span class="o">.</span><span class="n">_interaction_count</span> <span class="o">+=</span> <span class="mi">1</span>
-<a id="__codelineno-0-226" name="__codelineno-0-226" href="#__codelineno-0-226"></a>
-<a id="__codelineno-0-227" name="__codelineno-0-227" href="#__codelineno-0-227"></a>            <span class="k">if</span> <span class="n">visualize</span><span class="p">:</span>
-<a id="__codelineno-0-228" name="__codelineno-0-228" href="#__codelineno-0-228"></a>                <span class="n">env</span><span class="o">.</span><span class="n">render</span><span class="p">()</span>
-<a id="__codelineno-0-229" name="__codelineno-0-229" href="#__codelineno-0-229"></a>
-<a id="__codelineno-0-230" name="__codelineno-0-230" href="#__codelineno-0-230"></a>            <span class="n">observation</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_normalize_observation</span><span class="p">(</span><span class="n">observation</span><span class="p">,</span> <span class="n">update_stats</span><span class="o">=</span><span class="n">update_stats</span><span class="p">)</span>
-<a id="__codelineno-0-231" name="__codelineno-0-231" href="#__codelineno-0-231"></a>
-<a id="__codelineno-0-232" name="__codelineno-0-232" href="#__codelineno-0-232"></a>            <span class="n">cumulative_reward</span> <span class="o">+=</span> <span class="n">reward</span>
-<a id="__codelineno-0-233" name="__codelineno-0-233" href="#__codelineno-0-233"></a>
-<a id="__codelineno-0-234" name="__codelineno-0-234" href="#__codelineno-0-234"></a>            <span class="k">if</span> <span class="n">done</span> <span class="ow">or</span> <span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">_episode_length</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">t</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_episode_length</span><span class="p">)):</span>
-<a id="__codelineno-0-235" name="__codelineno-0-235" href="#__codelineno-0-235"></a>                <span class="k">if</span> <span class="n">update_stats</span><span class="p">:</span>
-<a id="__codelineno-0-236" name="__codelineno-0-236" href="#__codelineno-0-236"></a>                    <span class="bp">self</span><span class="o">.</span><span class="n">_episode_count</span> <span class="o">+=</span> <span class="mi">1</span>
+<a id="__codelineno-0-218" name="__codelineno-0-218" href="#__codelineno-0-218"></a>        <span class="n">reset_module_state</span><span class="p">(</span><span class="n">policy</span><span class="p">)</span>
+<a id="__codelineno-0-219" name="__codelineno-0-219" href="#__codelineno-0-219"></a>        <span class="n">env</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_env</span><span class="p">()</span>
+<a id="__codelineno-0-220" name="__codelineno-0-220" href="#__codelineno-0-220"></a>
+<a id="__codelineno-0-221" name="__codelineno-0-221" href="#__codelineno-0-221"></a>        <span class="n">observation</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_normalize_observation</span><span class="p">(</span><span class="n">reset_env</span><span class="p">(</span><span class="n">env</span><span class="p">),</span> <span class="n">update_stats</span><span class="o">=</span><span class="n">update_stats</span><span class="p">)</span>
+<a id="__codelineno-0-222" name="__codelineno-0-222" href="#__codelineno-0-222"></a>        <span class="k">if</span> <span class="n">visualize</span><span class="p">:</span>
+<a id="__codelineno-0-223" name="__codelineno-0-223" href="#__codelineno-0-223"></a>            <span class="n">env</span><span class="o">.</span><span class="n">render</span><span class="p">()</span>
+<a id="__codelineno-0-224" name="__codelineno-0-224" href="#__codelineno-0-224"></a>        <span class="n">t</span> <span class="o">=</span> <span class="mi">0</span>
+<a id="__codelineno-0-225" name="__codelineno-0-225" href="#__codelineno-0-225"></a>
+<a id="__codelineno-0-226" name="__codelineno-0-226" href="#__codelineno-0-226"></a>        <span class="n">cumulative_reward</span> <span class="o">=</span> <span class="mf">0.0</span>
+<a id="__codelineno-0-227" name="__codelineno-0-227" href="#__codelineno-0-227"></a>
+<a id="__codelineno-0-228" name="__codelineno-0-228" href="#__codelineno-0-228"></a>        <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+<a id="__codelineno-0-229" name="__codelineno-0-229" href="#__codelineno-0-229"></a>            <span class="n">observation</span><span class="p">,</span> <span class="n">raw_reward</span><span class="p">,</span> <span class="n">done</span><span class="p">,</span> <span class="n">info</span> <span class="o">=</span> <span class="n">take_step_in_env</span><span class="p">(</span><span class="n">env</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_use_policy</span><span class="p">(</span><span class="n">observation</span><span class="p">,</span> <span class="n">policy</span><span class="p">))</span>
+<a id="__codelineno-0-230" name="__codelineno-0-230" href="#__codelineno-0-230"></a>            <span class="n">reward</span> <span class="o">=</span> <span class="n">raw_reward</span> <span class="o">-</span> <span class="n">decrease_rewards_by</span>
+<a id="__codelineno-0-231" name="__codelineno-0-231" href="#__codelineno-0-231"></a>            <span class="n">t</span> <span class="o">+=</span> <span class="mi">1</span>
+<a id="__codelineno-0-232" name="__codelineno-0-232" href="#__codelineno-0-232"></a>            <span class="k">if</span> <span class="n">update_stats</span><span class="p">:</span>
+<a id="__codelineno-0-233" name="__codelineno-0-233" href="#__codelineno-0-233"></a>                <span class="bp">self</span><span class="o">.</span><span class="n">_interaction_count</span> <span class="o">+=</span> <span class="mi">1</span>
+<a id="__codelineno-0-234" name="__codelineno-0-234" href="#__codelineno-0-234"></a>
+<a id="__codelineno-0-235" name="__codelineno-0-235" href="#__codelineno-0-235"></a>            <span class="k">if</span> <span class="n">visualize</span><span class="p">:</span>
+<a id="__codelineno-0-236" name="__codelineno-0-236" href="#__codelineno-0-236"></a>                <span class="n">env</span><span class="o">.</span><span class="n">render</span><span class="p">()</span>
 <a id="__codelineno-0-237" name="__codelineno-0-237" href="#__codelineno-0-237"></a>
-<a id="__codelineno-0-238" name="__codelineno-0-238" href="#__codelineno-0-238"></a>                <span class="n">final_info</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">cumulative_reward</span><span class="o">=</span><span class="n">cumulative_reward</span><span class="p">,</span> <span class="n">interaction_count</span><span class="o">=</span><span class="n">t</span><span class="p">)</span>
+<a id="__codelineno-0-238" name="__codelineno-0-238" href="#__codelineno-0-238"></a>            <span class="n">observation</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_normalize_observation</span><span class="p">(</span><span class="n">observation</span><span class="p">,</span> <span class="n">update_stats</span><span class="o">=</span><span class="n">update_stats</span><span class="p">)</span>
 <a id="__codelineno-0-239" name="__codelineno-0-239" href="#__codelineno-0-239"></a>
-<a id="__codelineno-0-240" name="__codelineno-0-240" href="#__codelineno-0-240"></a>                <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_info_keys</span><span class="p">:</span>
-<a id="__codelineno-0-241" name="__codelineno-0-241" href="#__codelineno-0-241"></a>                    <span class="k">if</span> <span class="n">k</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">final_info</span><span class="p">:</span>
-<a id="__codelineno-0-242" name="__codelineno-0-242" href="#__codelineno-0-242"></a>                        <span class="n">final_info</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">info</span><span class="p">[</span><span class="n">k</span><span class="p">]</span>
-<a id="__codelineno-0-243" name="__codelineno-0-243" href="#__codelineno-0-243"></a>
-<a id="__codelineno-0-244" name="__codelineno-0-244" href="#__codelineno-0-244"></a>                <span class="k">return</span> <span class="n">final_info</span>
+<a id="__codelineno-0-240" name="__codelineno-0-240" href="#__codelineno-0-240"></a>            <span class="n">cumulative_reward</span> <span class="o">+=</span> <span class="n">reward</span>
+<a id="__codelineno-0-241" name="__codelineno-0-241" href="#__codelineno-0-241"></a>
+<a id="__codelineno-0-242" name="__codelineno-0-242" href="#__codelineno-0-242"></a>            <span class="k">if</span> <span class="n">done</span> <span class="ow">or</span> <span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">_episode_length</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">t</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_episode_length</span><span class="p">)):</span>
+<a id="__codelineno-0-243" name="__codelineno-0-243" href="#__codelineno-0-243"></a>                <span class="k">if</span> <span class="n">update_stats</span><span class="p">:</span>
+<a id="__codelineno-0-244" name="__codelineno-0-244" href="#__codelineno-0-244"></a>                    <span class="bp">self</span><span class="o">.</span><span class="n">_episode_count</span> <span class="o">+=</span> <span class="mi">1</span>
 <a id="__codelineno-0-245" name="__codelineno-0-245" href="#__codelineno-0-245"></a>
-<a id="__codelineno-0-246" name="__codelineno-0-246" href="#__codelineno-0-246"></a>    <span class="nd">@property</span>
-<a id="__codelineno-0-247" name="__codelineno-0-247" href="#__codelineno-0-247"></a>    <span class="k">def</span> <span class="nf">_nonserialized_attribs</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
-<a id="__codelineno-0-248" name="__codelineno-0-248" href="#__codelineno-0-248"></a>        <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">_nonserialized_attribs</span> <span class="o">+</span> <span class="p">[</span><span class="s2">&quot;_env&quot;</span><span class="p">]</span>
-<a id="__codelineno-0-249" name="__codelineno-0-249" href="#__codelineno-0-249"></a>
-<a id="__codelineno-0-250" name="__codelineno-0-250" href="#__codelineno-0-250"></a>    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span>
-<a id="__codelineno-0-251" name="__codelineno-0-251" href="#__codelineno-0-251"></a>        <span class="bp">self</span><span class="p">,</span>
-<a id="__codelineno-0-252" name="__codelineno-0-252" href="#__codelineno-0-252"></a>        <span class="n">policy</span><span class="p">:</span> <span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">,</span>
-<a id="__codelineno-0-253" name="__codelineno-0-253" href="#__codelineno-0-253"></a>        <span class="o">*</span><span class="p">,</span>
-<a id="__codelineno-0-254" name="__codelineno-0-254" href="#__codelineno-0-254"></a>        <span class="n">update_stats</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
-<a id="__codelineno-0-255" name="__codelineno-0-255" href="#__codelineno-0-255"></a>        <span class="n">visualize</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
-<a id="__codelineno-0-256" name="__codelineno-0-256" href="#__codelineno-0-256"></a>        <span class="n">num_episodes</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-<a id="__codelineno-0-257" name="__codelineno-0-257" href="#__codelineno-0-257"></a>        <span class="n">decrease_rewards_by</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-<a id="__codelineno-0-258" name="__codelineno-0-258" href="#__codelineno-0-258"></a>    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
-<a id="__codelineno-0-259" name="__codelineno-0-259" href="#__codelineno-0-259"></a>        <span class="sd">&quot;&quot;&quot;Evaluate the policy parameters on the gym environment.&quot;&quot;&quot;</span>
-<a id="__codelineno-0-260" name="__codelineno-0-260" href="#__codelineno-0-260"></a>        <span class="k">if</span> <span class="n">num_episodes</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-<a id="__codelineno-0-261" name="__codelineno-0-261" href="#__codelineno-0-261"></a>            <span class="n">num_episodes</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_num_episodes</span>
-<a id="__codelineno-0-262" name="__codelineno-0-262" href="#__codelineno-0-262"></a>
-<a id="__codelineno-0-263" name="__codelineno-0-263" href="#__codelineno-0-263"></a>        <span class="k">try</span><span class="p">:</span>
-<a id="__codelineno-0-264" name="__codelineno-0-264" href="#__codelineno-0-264"></a>            <span class="n">policy</span><span class="o">.</span><span class="n">eval</span><span class="p">()</span>
-<a id="__codelineno-0-265" name="__codelineno-0-265" href="#__codelineno-0-265"></a>
-<a id="__codelineno-0-266" name="__codelineno-0-266" href="#__codelineno-0-266"></a>            <span class="n">episode_results</span> <span class="o">=</span> <span class="p">[</span>
-<a id="__codelineno-0-267" name="__codelineno-0-267" href="#__codelineno-0-267"></a>                <span class="bp">self</span><span class="o">.</span><span class="n">_rollout</span><span class="p">(</span>
-<a id="__codelineno-0-268" name="__codelineno-0-268" href="#__codelineno-0-268"></a>                    <span class="n">policy</span><span class="o">=</span><span class="n">policy</span><span class="p">,</span>
-<a id="__codelineno-0-269" name="__codelineno-0-269" href="#__codelineno-0-269"></a>                    <span class="n">update_stats</span><span class="o">=</span><span class="n">update_stats</span><span class="p">,</span>
-<a id="__codelineno-0-270" name="__codelineno-0-270" href="#__codelineno-0-270"></a>                    <span class="n">visualize</span><span class="o">=</span><span class="n">visualize</span><span class="p">,</span>
-<a id="__codelineno-0-271" name="__codelineno-0-271" href="#__codelineno-0-271"></a>                    <span class="n">decrease_rewards_by</span><span class="o">=</span><span class="n">decrease_rewards_by</span><span class="p">,</span>
-<a id="__codelineno-0-272" name="__codelineno-0-272" href="#__codelineno-0-272"></a>                <span class="p">)</span>
-<a id="__codelineno-0-273" name="__codelineno-0-273" href="#__codelineno-0-273"></a>                <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num_episodes</span><span class="p">)</span>
-<a id="__codelineno-0-274" name="__codelineno-0-274" href="#__codelineno-0-274"></a>            <span class="p">]</span>
-<a id="__codelineno-0-275" name="__codelineno-0-275" href="#__codelineno-0-275"></a>
-<a id="__codelineno-0-276" name="__codelineno-0-276" href="#__codelineno-0-276"></a>            <span class="n">results</span> <span class="o">=</span> <span class="n">_accumulate_all_across_dicts</span><span class="p">(</span><span class="n">episode_results</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_info_keys</span><span class="p">)</span>
-<a id="__codelineno-0-277" name="__codelineno-0-277" href="#__codelineno-0-277"></a>            <span class="k">return</span> <span class="n">results</span>
-<a id="__codelineno-0-278" name="__codelineno-0-278" href="#__codelineno-0-278"></a>        <span class="k">finally</span><span class="p">:</span>
-<a id="__codelineno-0-279" name="__codelineno-0-279" href="#__codelineno-0-279"></a>            <span class="n">policy</span><span class="o">.</span><span class="n">train</span><span class="p">()</span>
-<a id="__codelineno-0-280" name="__codelineno-0-280" href="#__codelineno-0-280"></a>
-<a id="__codelineno-0-281" name="__codelineno-0-281" href="#__codelineno-0-281"></a>    <span class="k">def</span> <span class="nf">visualize</span><span class="p">(</span>
-<a id="__codelineno-0-282" name="__codelineno-0-282" href="#__codelineno-0-282"></a>        <span class="bp">self</span><span class="p">,</span>
-<a id="__codelineno-0-283" name="__codelineno-0-283" href="#__codelineno-0-283"></a>        <span class="n">policy</span><span class="p">:</span> <span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">,</span>
-<a id="__codelineno-0-284" name="__codelineno-0-284" href="#__codelineno-0-284"></a>        <span class="o">*</span><span class="p">,</span>
-<a id="__codelineno-0-285" name="__codelineno-0-285" href="#__codelineno-0-285"></a>        <span class="n">update_stats</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
-<a id="__codelineno-0-286" name="__codelineno-0-286" href="#__codelineno-0-286"></a>        <span class="n">num_episodes</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
-<a id="__codelineno-0-287" name="__codelineno-0-287" href="#__codelineno-0-287"></a>        <span class="n">decrease_rewards_by</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-<a id="__codelineno-0-288" name="__codelineno-0-288" href="#__codelineno-0-288"></a>    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
-<a id="__codelineno-0-289" name="__codelineno-0-289" href="#__codelineno-0-289"></a>        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">run</span><span class="p">(</span>
-<a id="__codelineno-0-290" name="__codelineno-0-290" href="#__codelineno-0-290"></a>            <span class="n">policy</span><span class="o">=</span><span class="n">policy</span><span class="p">,</span>
-<a id="__codelineno-0-291" name="__codelineno-0-291" href="#__codelineno-0-291"></a>            <span class="n">update_stats</span><span class="o">=</span><span class="n">update_stats</span><span class="p">,</span>
-<a id="__codelineno-0-292" name="__codelineno-0-292" href="#__codelineno-0-292"></a>            <span class="n">visualize</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-<a id="__codelineno-0-293" name="__codelineno-0-293" href="#__codelineno-0-293"></a>            <span class="n">num_episodes</span><span class="o">=</span><span class="n">num_episodes</span><span class="p">,</span>
-<a id="__codelineno-0-294" name="__codelineno-0-294" href="#__codelineno-0-294"></a>            <span class="n">decrease_rewards_by</span><span class="o">=</span><span class="n">decrease_rewards_by</span><span class="p">,</span>
-<a id="__codelineno-0-295" name="__codelineno-0-295" href="#__codelineno-0-295"></a>        <span class="p">)</span>
-<a id="__codelineno-0-296" name="__codelineno-0-296" href="#__codelineno-0-296"></a>
-<a id="__codelineno-0-297" name="__codelineno-0-297" href="#__codelineno-0-297"></a>    <span class="k">def</span> <span class="nf">_ensure_obsnorm</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<a id="__codelineno-0-298" name="__codelineno-0-298" href="#__codelineno-0-298"></a>        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">observation_normalization</span><span class="p">:</span>
-<a id="__codelineno-0-299" name="__codelineno-0-299" href="#__codelineno-0-299"></a>            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;This feature can only be used when observation_normalization=True.&quot;</span><span class="p">)</span>
-<a id="__codelineno-0-300" name="__codelineno-0-300" href="#__codelineno-0-300"></a>
-<a id="__codelineno-0-301" name="__codelineno-0-301" href="#__codelineno-0-301"></a>    <span class="k">def</span> <span class="nf">get_observation_stats</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">RunningStat</span><span class="p">:</span>
-<a id="__codelineno-0-302" name="__codelineno-0-302" href="#__codelineno-0-302"></a>        <span class="sd">&quot;&quot;&quot;Get the observation stats&quot;&quot;&quot;</span>
-<a id="__codelineno-0-303" name="__codelineno-0-303" href="#__codelineno-0-303"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_ensure_obsnorm</span><span class="p">()</span>
-<a id="__codelineno-0-304" name="__codelineno-0-304" href="#__codelineno-0-304"></a>        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_obs_stats</span>
-<a id="__codelineno-0-305" name="__codelineno-0-305" href="#__codelineno-0-305"></a>
-<a id="__codelineno-0-306" name="__codelineno-0-306" href="#__codelineno-0-306"></a>    <span class="k">def</span> <span class="nf">_make_sync_data_for_actors</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
-<a id="__codelineno-0-307" name="__codelineno-0-307" href="#__codelineno-0-307"></a>        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">observation_normalization</span><span class="p">:</span>
-<a id="__codelineno-0-308" name="__codelineno-0-308" href="#__codelineno-0-308"></a>            <span class="k">return</span> <span class="nb">dict</span><span class="p">(</span><span class="n">obs_stats</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">get_observation_stats</span><span class="p">())</span>
-<a id="__codelineno-0-309" name="__codelineno-0-309" href="#__codelineno-0-309"></a>        <span class="k">else</span><span class="p">:</span>
-<a id="__codelineno-0-310" name="__codelineno-0-310" href="#__codelineno-0-310"></a>            <span class="k">return</span> <span class="kc">None</span>
-<a id="__codelineno-0-311" name="__codelineno-0-311" href="#__codelineno-0-311"></a>
-<a id="__codelineno-0-312" name="__codelineno-0-312" href="#__codelineno-0-312"></a>    <span class="k">def</span> <span class="nf">set_observation_stats</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rs</span><span class="p">:</span> <span class="n">RunningStat</span><span class="p">):</span>
-<a id="__codelineno-0-313" name="__codelineno-0-313" href="#__codelineno-0-313"></a>        <span class="sd">&quot;&quot;&quot;Set the observation stats&quot;&quot;&quot;</span>
-<a id="__codelineno-0-314" name="__codelineno-0-314" href="#__codelineno-0-314"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_ensure_obsnorm</span><span class="p">()</span>
-<a id="__codelineno-0-315" name="__codelineno-0-315" href="#__codelineno-0-315"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_obs_stats</span><span class="o">.</span><span class="n">reset</span><span class="p">()</span>
-<a id="__codelineno-0-316" name="__codelineno-0-316" href="#__codelineno-0-316"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_obs_stats</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">rs</span><span class="p">)</span>
-<a id="__codelineno-0-317" name="__codelineno-0-317" href="#__codelineno-0-317"></a>
-<a id="__codelineno-0-318" name="__codelineno-0-318" href="#__codelineno-0-318"></a>    <span class="k">def</span> <span class="nf">_use_sync_data_from_main</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">received</span><span class="p">:</span> <span class="nb">dict</span><span class="p">):</span>
-<a id="__codelineno-0-319" name="__codelineno-0-319" href="#__codelineno-0-319"></a>        <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">received</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-<a id="__codelineno-0-320" name="__codelineno-0-320" href="#__codelineno-0-320"></a>            <span class="k">if</span> <span class="n">k</span> <span class="o">==</span> <span class="s2">&quot;obs_stats&quot;</span><span class="p">:</span>
-<a id="__codelineno-0-321" name="__codelineno-0-321" href="#__codelineno-0-321"></a>                <span class="bp">self</span><span class="o">.</span><span class="n">set_observation_stats</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
-<a id="__codelineno-0-322" name="__codelineno-0-322" href="#__codelineno-0-322"></a>
-<a id="__codelineno-0-323" name="__codelineno-0-323" href="#__codelineno-0-323"></a>    <span class="k">def</span> <span class="nf">pop_observation_stats</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">RunningStat</span><span class="p">:</span>
-<a id="__codelineno-0-324" name="__codelineno-0-324" href="#__codelineno-0-324"></a>        <span class="sd">&quot;&quot;&quot;Get and clear the collected observation stats&quot;&quot;&quot;</span>
-<a id="__codelineno-0-325" name="__codelineno-0-325" href="#__codelineno-0-325"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_ensure_obsnorm</span><span class="p">()</span>
-<a id="__codelineno-0-326" name="__codelineno-0-326" href="#__codelineno-0-326"></a>        <span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_collected_stats</span>
-<a id="__codelineno-0-327" name="__codelineno-0-327" href="#__codelineno-0-327"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_collected_stats</span> <span class="o">=</span> <span class="n">RunningStat</span><span class="p">()</span>
-<a id="__codelineno-0-328" name="__codelineno-0-328" href="#__codelineno-0-328"></a>        <span class="k">return</span> <span class="n">result</span>
-<a id="__codelineno-0-329" name="__codelineno-0-329" href="#__codelineno-0-329"></a>
-<a id="__codelineno-0-330" name="__codelineno-0-330" href="#__codelineno-0-330"></a>    <span class="k">def</span> <span class="nf">_make_sync_data_for_main</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
-<a id="__codelineno-0-331" name="__codelineno-0-331" href="#__codelineno-0-331"></a>        <span class="n">result</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">episode_count</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">episode_count</span><span class="p">,</span> <span class="n">interaction_count</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">interaction_count</span><span class="p">)</span>
-<a id="__codelineno-0-332" name="__codelineno-0-332" href="#__codelineno-0-332"></a>
-<a id="__codelineno-0-333" name="__codelineno-0-333" href="#__codelineno-0-333"></a>        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">observation_normalization</span><span class="p">:</span>
-<a id="__codelineno-0-334" name="__codelineno-0-334" href="#__codelineno-0-334"></a>            <span class="n">result</span><span class="p">[</span><span class="s2">&quot;obs_stats_delta&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pop_observation_stats</span><span class="p">()</span>
-<a id="__codelineno-0-335" name="__codelineno-0-335" href="#__codelineno-0-335"></a>
+<a id="__codelineno-0-246" name="__codelineno-0-246" href="#__codelineno-0-246"></a>                <span class="n">final_info</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">cumulative_reward</span><span class="o">=</span><span class="n">cumulative_reward</span><span class="p">,</span> <span class="n">interaction_count</span><span class="o">=</span><span class="n">t</span><span class="p">)</span>
+<a id="__codelineno-0-247" name="__codelineno-0-247" href="#__codelineno-0-247"></a>
+<a id="__codelineno-0-248" name="__codelineno-0-248" href="#__codelineno-0-248"></a>                <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_info_keys</span><span class="p">:</span>
+<a id="__codelineno-0-249" name="__codelineno-0-249" href="#__codelineno-0-249"></a>                    <span class="k">if</span> <span class="n">k</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">final_info</span><span class="p">:</span>
+<a id="__codelineno-0-250" name="__codelineno-0-250" href="#__codelineno-0-250"></a>                        <span class="n">final_info</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">info</span><span class="p">[</span><span class="n">k</span><span class="p">]</span>
+<a id="__codelineno-0-251" name="__codelineno-0-251" href="#__codelineno-0-251"></a>
+<a id="__codelineno-0-252" name="__codelineno-0-252" href="#__codelineno-0-252"></a>                <span class="k">return</span> <span class="n">final_info</span>
+<a id="__codelineno-0-253" name="__codelineno-0-253" href="#__codelineno-0-253"></a>
+<a id="__codelineno-0-254" name="__codelineno-0-254" href="#__codelineno-0-254"></a>    <span class="nd">@property</span>
+<a id="__codelineno-0-255" name="__codelineno-0-255" href="#__codelineno-0-255"></a>    <span class="k">def</span> <span class="nf">_nonserialized_attribs</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<a id="__codelineno-0-256" name="__codelineno-0-256" href="#__codelineno-0-256"></a>        <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">_nonserialized_attribs</span> <span class="o">+</span> <span class="p">[</span><span class="s2">&quot;_env&quot;</span><span class="p">]</span>
+<a id="__codelineno-0-257" name="__codelineno-0-257" href="#__codelineno-0-257"></a>
+<a id="__codelineno-0-258" name="__codelineno-0-258" href="#__codelineno-0-258"></a>    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span>
+<a id="__codelineno-0-259" name="__codelineno-0-259" href="#__codelineno-0-259"></a>        <span class="bp">self</span><span class="p">,</span>
+<a id="__codelineno-0-260" name="__codelineno-0-260" href="#__codelineno-0-260"></a>        <span class="n">policy</span><span class="p">:</span> <span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">,</span>
+<a id="__codelineno-0-261" name="__codelineno-0-261" href="#__codelineno-0-261"></a>        <span class="o">*</span><span class="p">,</span>
+<a id="__codelineno-0-262" name="__codelineno-0-262" href="#__codelineno-0-262"></a>        <span class="n">update_stats</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+<a id="__codelineno-0-263" name="__codelineno-0-263" href="#__codelineno-0-263"></a>        <span class="n">visualize</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+<a id="__codelineno-0-264" name="__codelineno-0-264" href="#__codelineno-0-264"></a>        <span class="n">num_episodes</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<a id="__codelineno-0-265" name="__codelineno-0-265" href="#__codelineno-0-265"></a>        <span class="n">decrease_rewards_by</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<a id="__codelineno-0-266" name="__codelineno-0-266" href="#__codelineno-0-266"></a>    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<a id="__codelineno-0-267" name="__codelineno-0-267" href="#__codelineno-0-267"></a>        <span class="sd">&quot;&quot;&quot;Evaluate the policy parameters on the gym environment.&quot;&quot;&quot;</span>
+<a id="__codelineno-0-268" name="__codelineno-0-268" href="#__codelineno-0-268"></a>        <span class="k">if</span> <span class="n">num_episodes</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+<a id="__codelineno-0-269" name="__codelineno-0-269" href="#__codelineno-0-269"></a>            <span class="n">num_episodes</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_num_episodes</span>
+<a id="__codelineno-0-270" name="__codelineno-0-270" href="#__codelineno-0-270"></a>
+<a id="__codelineno-0-271" name="__codelineno-0-271" href="#__codelineno-0-271"></a>        <span class="k">try</span><span class="p">:</span>
+<a id="__codelineno-0-272" name="__codelineno-0-272" href="#__codelineno-0-272"></a>            <span class="n">policy</span><span class="o">.</span><span class="n">eval</span><span class="p">()</span>
+<a id="__codelineno-0-273" name="__codelineno-0-273" href="#__codelineno-0-273"></a>
+<a id="__codelineno-0-274" name="__codelineno-0-274" href="#__codelineno-0-274"></a>            <span class="n">episode_results</span> <span class="o">=</span> <span class="p">[</span>
+<a id="__codelineno-0-275" name="__codelineno-0-275" href="#__codelineno-0-275"></a>                <span class="bp">self</span><span class="o">.</span><span class="n">_rollout</span><span class="p">(</span>
+<a id="__codelineno-0-276" name="__codelineno-0-276" href="#__codelineno-0-276"></a>                    <span class="n">policy</span><span class="o">=</span><span class="n">policy</span><span class="p">,</span>
+<a id="__codelineno-0-277" name="__codelineno-0-277" href="#__codelineno-0-277"></a>                    <span class="n">update_stats</span><span class="o">=</span><span class="n">update_stats</span><span class="p">,</span>
+<a id="__codelineno-0-278" name="__codelineno-0-278" href="#__codelineno-0-278"></a>                    <span class="n">visualize</span><span class="o">=</span><span class="n">visualize</span><span class="p">,</span>
+<a id="__codelineno-0-279" name="__codelineno-0-279" href="#__codelineno-0-279"></a>                    <span class="n">decrease_rewards_by</span><span class="o">=</span><span class="n">decrease_rewards_by</span><span class="p">,</span>
+<a id="__codelineno-0-280" name="__codelineno-0-280" href="#__codelineno-0-280"></a>                <span class="p">)</span>
+<a id="__codelineno-0-281" name="__codelineno-0-281" href="#__codelineno-0-281"></a>                <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num_episodes</span><span class="p">)</span>
+<a id="__codelineno-0-282" name="__codelineno-0-282" href="#__codelineno-0-282"></a>            <span class="p">]</span>
+<a id="__codelineno-0-283" name="__codelineno-0-283" href="#__codelineno-0-283"></a>
+<a id="__codelineno-0-284" name="__codelineno-0-284" href="#__codelineno-0-284"></a>            <span class="n">results</span> <span class="o">=</span> <span class="n">_accumulate_all_across_dicts</span><span class="p">(</span><span class="n">episode_results</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_info_keys</span><span class="p">)</span>
+<a id="__codelineno-0-285" name="__codelineno-0-285" href="#__codelineno-0-285"></a>            <span class="k">return</span> <span class="n">results</span>
+<a id="__codelineno-0-286" name="__codelineno-0-286" href="#__codelineno-0-286"></a>        <span class="k">finally</span><span class="p">:</span>
+<a id="__codelineno-0-287" name="__codelineno-0-287" href="#__codelineno-0-287"></a>            <span class="n">policy</span><span class="o">.</span><span class="n">train</span><span class="p">()</span>
+<a id="__codelineno-0-288" name="__codelineno-0-288" href="#__codelineno-0-288"></a>
+<a id="__codelineno-0-289" name="__codelineno-0-289" href="#__codelineno-0-289"></a>    <span class="k">def</span> <span class="nf">visualize</span><span class="p">(</span>
+<a id="__codelineno-0-290" name="__codelineno-0-290" href="#__codelineno-0-290"></a>        <span class="bp">self</span><span class="p">,</span>
+<a id="__codelineno-0-291" name="__codelineno-0-291" href="#__codelineno-0-291"></a>        <span class="n">policy</span><span class="p">:</span> <span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">,</span>
+<a id="__codelineno-0-292" name="__codelineno-0-292" href="#__codelineno-0-292"></a>        <span class="o">*</span><span class="p">,</span>
+<a id="__codelineno-0-293" name="__codelineno-0-293" href="#__codelineno-0-293"></a>        <span class="n">update_stats</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+<a id="__codelineno-0-294" name="__codelineno-0-294" href="#__codelineno-0-294"></a>        <span class="n">num_episodes</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
+<a id="__codelineno-0-295" name="__codelineno-0-295" href="#__codelineno-0-295"></a>        <span class="n">decrease_rewards_by</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<a id="__codelineno-0-296" name="__codelineno-0-296" href="#__codelineno-0-296"></a>    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<a id="__codelineno-0-297" name="__codelineno-0-297" href="#__codelineno-0-297"></a>        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">run</span><span class="p">(</span>
+<a id="__codelineno-0-298" name="__codelineno-0-298" href="#__codelineno-0-298"></a>            <span class="n">policy</span><span class="o">=</span><span class="n">policy</span><span class="p">,</span>
+<a id="__codelineno-0-299" name="__codelineno-0-299" href="#__codelineno-0-299"></a>            <span class="n">update_stats</span><span class="o">=</span><span class="n">update_stats</span><span class="p">,</span>
+<a id="__codelineno-0-300" name="__codelineno-0-300" href="#__codelineno-0-300"></a>            <span class="n">visualize</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+<a id="__codelineno-0-301" name="__codelineno-0-301" href="#__codelineno-0-301"></a>            <span class="n">num_episodes</span><span class="o">=</span><span class="n">num_episodes</span><span class="p">,</span>
+<a id="__codelineno-0-302" name="__codelineno-0-302" href="#__codelineno-0-302"></a>            <span class="n">decrease_rewards_by</span><span class="o">=</span><span class="n">decrease_rewards_by</span><span class="p">,</span>
+<a id="__codelineno-0-303" name="__codelineno-0-303" href="#__codelineno-0-303"></a>        <span class="p">)</span>
+<a id="__codelineno-0-304" name="__codelineno-0-304" href="#__codelineno-0-304"></a>
+<a id="__codelineno-0-305" name="__codelineno-0-305" href="#__codelineno-0-305"></a>    <span class="k">def</span> <span class="nf">_ensure_obsnorm</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<a id="__codelineno-0-306" name="__codelineno-0-306" href="#__codelineno-0-306"></a>        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">observation_normalization</span><span class="p">:</span>
+<a id="__codelineno-0-307" name="__codelineno-0-307" href="#__codelineno-0-307"></a>            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;This feature can only be used when observation_normalization=True.&quot;</span><span class="p">)</span>
+<a id="__codelineno-0-308" name="__codelineno-0-308" href="#__codelineno-0-308"></a>
+<a id="__codelineno-0-309" name="__codelineno-0-309" href="#__codelineno-0-309"></a>    <span class="k">def</span> <span class="nf">get_observation_stats</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">RunningStat</span><span class="p">:</span>
+<a id="__codelineno-0-310" name="__codelineno-0-310" href="#__codelineno-0-310"></a>        <span class="sd">&quot;&quot;&quot;Get the observation stats&quot;&quot;&quot;</span>
+<a id="__codelineno-0-311" name="__codelineno-0-311" href="#__codelineno-0-311"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_ensure_obsnorm</span><span class="p">()</span>
+<a id="__codelineno-0-312" name="__codelineno-0-312" href="#__codelineno-0-312"></a>        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_obs_stats</span>
+<a id="__codelineno-0-313" name="__codelineno-0-313" href="#__codelineno-0-313"></a>
+<a id="__codelineno-0-314" name="__codelineno-0-314" href="#__codelineno-0-314"></a>    <span class="k">def</span> <span class="nf">_make_sync_data_for_actors</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+<a id="__codelineno-0-315" name="__codelineno-0-315" href="#__codelineno-0-315"></a>        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">observation_normalization</span><span class="p">:</span>
+<a id="__codelineno-0-316" name="__codelineno-0-316" href="#__codelineno-0-316"></a>            <span class="k">return</span> <span class="nb">dict</span><span class="p">(</span><span class="n">obs_stats</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">get_observation_stats</span><span class="p">())</span>
+<a id="__codelineno-0-317" name="__codelineno-0-317" href="#__codelineno-0-317"></a>        <span class="k">else</span><span class="p">:</span>
+<a id="__codelineno-0-318" name="__codelineno-0-318" href="#__codelineno-0-318"></a>            <span class="k">return</span> <span class="kc">None</span>
+<a id="__codelineno-0-319" name="__codelineno-0-319" href="#__codelineno-0-319"></a>
+<a id="__codelineno-0-320" name="__codelineno-0-320" href="#__codelineno-0-320"></a>    <span class="k">def</span> <span class="nf">set_observation_stats</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rs</span><span class="p">:</span> <span class="n">RunningStat</span><span class="p">):</span>
+<a id="__codelineno-0-321" name="__codelineno-0-321" href="#__codelineno-0-321"></a>        <span class="sd">&quot;&quot;&quot;Set the observation stats&quot;&quot;&quot;</span>
+<a id="__codelineno-0-322" name="__codelineno-0-322" href="#__codelineno-0-322"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_ensure_obsnorm</span><span class="p">()</span>
+<a id="__codelineno-0-323" name="__codelineno-0-323" href="#__codelineno-0-323"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_obs_stats</span><span class="o">.</span><span class="n">reset</span><span class="p">()</span>
+<a id="__codelineno-0-324" name="__codelineno-0-324" href="#__codelineno-0-324"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_obs_stats</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">rs</span><span class="p">)</span>
+<a id="__codelineno-0-325" name="__codelineno-0-325" href="#__codelineno-0-325"></a>
+<a id="__codelineno-0-326" name="__codelineno-0-326" href="#__codelineno-0-326"></a>    <span class="k">def</span> <span class="nf">_use_sync_data_from_main</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">received</span><span class="p">:</span> <span class="nb">dict</span><span class="p">):</span>
+<a id="__codelineno-0-327" name="__codelineno-0-327" href="#__codelineno-0-327"></a>        <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">received</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+<a id="__codelineno-0-328" name="__codelineno-0-328" href="#__codelineno-0-328"></a>            <span class="k">if</span> <span class="n">k</span> <span class="o">==</span> <span class="s2">&quot;obs_stats&quot;</span><span class="p">:</span>
+<a id="__codelineno-0-329" name="__codelineno-0-329" href="#__codelineno-0-329"></a>                <span class="bp">self</span><span class="o">.</span><span class="n">set_observation_stats</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+<a id="__codelineno-0-330" name="__codelineno-0-330" href="#__codelineno-0-330"></a>
+<a id="__codelineno-0-331" name="__codelineno-0-331" href="#__codelineno-0-331"></a>    <span class="k">def</span> <span class="nf">pop_observation_stats</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">RunningStat</span><span class="p">:</span>
+<a id="__codelineno-0-332" name="__codelineno-0-332" href="#__codelineno-0-332"></a>        <span class="sd">&quot;&quot;&quot;Get and clear the collected observation stats&quot;&quot;&quot;</span>
+<a id="__codelineno-0-333" name="__codelineno-0-333" href="#__codelineno-0-333"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_ensure_obsnorm</span><span class="p">()</span>
+<a id="__codelineno-0-334" name="__codelineno-0-334" href="#__codelineno-0-334"></a>        <span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_collected_stats</span>
+<a id="__codelineno-0-335" name="__codelineno-0-335" href="#__codelineno-0-335"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_collected_stats</span> <span class="o">=</span> <span class="n">RunningStat</span><span class="p">()</span>
 <a id="__codelineno-0-336" name="__codelineno-0-336" href="#__codelineno-0-336"></a>        <span class="k">return</span> <span class="n">result</span>
 <a id="__codelineno-0-337" name="__codelineno-0-337" href="#__codelineno-0-337"></a>
-<a id="__codelineno-0-338" name="__codelineno-0-338" href="#__codelineno-0-338"></a>    <span class="k">def</span> <span class="nf">update_observation_stats</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rs</span><span class="p">:</span> <span class="n">RunningStat</span><span class="p">):</span>
-<a id="__codelineno-0-339" name="__codelineno-0-339" href="#__codelineno-0-339"></a>        <span class="sd">&quot;&quot;&quot;Update the observation stats via another RunningStat instance&quot;&quot;&quot;</span>
-<a id="__codelineno-0-340" name="__codelineno-0-340" href="#__codelineno-0-340"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_ensure_obsnorm</span><span class="p">()</span>
-<a id="__codelineno-0-341" name="__codelineno-0-341" href="#__codelineno-0-341"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_obs_stats</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">rs</span><span class="p">)</span>
-<a id="__codelineno-0-342" name="__codelineno-0-342" href="#__codelineno-0-342"></a>
-<a id="__codelineno-0-343" name="__codelineno-0-343" href="#__codelineno-0-343"></a>    <span class="k">def</span> <span class="nf">_use_sync_data_from_actors</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">received</span><span class="p">:</span> <span class="nb">list</span><span class="p">):</span>
-<a id="__codelineno-0-344" name="__codelineno-0-344" href="#__codelineno-0-344"></a>        <span class="n">total_episode_count</span> <span class="o">=</span> <span class="mi">0</span>
-<a id="__codelineno-0-345" name="__codelineno-0-345" href="#__codelineno-0-345"></a>        <span class="n">total_interaction_count</span> <span class="o">=</span> <span class="mi">0</span>
-<a id="__codelineno-0-346" name="__codelineno-0-346" href="#__codelineno-0-346"></a>
-<a id="__codelineno-0-347" name="__codelineno-0-347" href="#__codelineno-0-347"></a>        <span class="k">for</span> <span class="n">data</span> <span class="ow">in</span> <span class="n">received</span><span class="p">:</span>
-<a id="__codelineno-0-348" name="__codelineno-0-348" href="#__codelineno-0-348"></a>            <span class="n">data</span><span class="p">:</span> <span class="nb">dict</span>
-<a id="__codelineno-0-349" name="__codelineno-0-349" href="#__codelineno-0-349"></a>            <span class="n">total_episode_count</span> <span class="o">+=</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;episode_count&quot;</span><span class="p">]</span>
-<a id="__codelineno-0-350" name="__codelineno-0-350" href="#__codelineno-0-350"></a>            <span class="n">total_interaction_count</span> <span class="o">+=</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;interaction_count&quot;</span><span class="p">]</span>
-<a id="__codelineno-0-351" name="__codelineno-0-351" href="#__codelineno-0-351"></a>            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">observation_normalization</span><span class="p">:</span>
-<a id="__codelineno-0-352" name="__codelineno-0-352" href="#__codelineno-0-352"></a>                <span class="bp">self</span><span class="o">.</span><span class="n">update_observation_stats</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;obs_stats_delta&quot;</span><span class="p">])</span>
-<a id="__codelineno-0-353" name="__codelineno-0-353" href="#__codelineno-0-353"></a>
-<a id="__codelineno-0-354" name="__codelineno-0-354" href="#__codelineno-0-354"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">set_episode_count</span><span class="p">(</span><span class="n">total_episode_count</span><span class="p">)</span>
-<a id="__codelineno-0-355" name="__codelineno-0-355" href="#__codelineno-0-355"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">set_interaction_count</span><span class="p">(</span><span class="n">total_interaction_count</span><span class="p">)</span>
-<a id="__codelineno-0-356" name="__codelineno-0-356" href="#__codelineno-0-356"></a>
-<a id="__codelineno-0-357" name="__codelineno-0-357" href="#__codelineno-0-357"></a>    <span class="k">def</span> <span class="nf">_make_pickle_data_for_main</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
-<a id="__codelineno-0-358" name="__codelineno-0-358" href="#__codelineno-0-358"></a>        <span class="c1"># For when the main Problem object (the non-remote one) gets pickled,</span>
-<a id="__codelineno-0-359" name="__codelineno-0-359" href="#__codelineno-0-359"></a>        <span class="c1"># this function returns the counters of this remote Problem instance,</span>
-<a id="__codelineno-0-360" name="__codelineno-0-360" href="#__codelineno-0-360"></a>        <span class="c1"># to be sent to the main one.</span>
-<a id="__codelineno-0-361" name="__codelineno-0-361" href="#__codelineno-0-361"></a>        <span class="k">return</span> <span class="nb">dict</span><span class="p">(</span><span class="n">interaction_count</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">interaction_count</span><span class="p">,</span> <span class="n">episode_count</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">episode_count</span><span class="p">)</span>
-<a id="__codelineno-0-362" name="__codelineno-0-362" href="#__codelineno-0-362"></a>
-<a id="__codelineno-0-363" name="__codelineno-0-363" href="#__codelineno-0-363"></a>    <span class="k">def</span> <span class="nf">_use_pickle_data_from_main</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">state</span><span class="p">:</span> <span class="nb">dict</span><span class="p">):</span>
-<a id="__codelineno-0-364" name="__codelineno-0-364" href="#__codelineno-0-364"></a>        <span class="c1"># For when a newly unpickled Problem object gets (re)parallelized,</span>
-<a id="__codelineno-0-365" name="__codelineno-0-365" href="#__codelineno-0-365"></a>        <span class="c1"># this function restores the inner states specific to this remote</span>
-<a id="__codelineno-0-366" name="__codelineno-0-366" href="#__codelineno-0-366"></a>        <span class="c1"># worker. In the case of GymNE, those inner states are episode</span>
-<a id="__codelineno-0-367" name="__codelineno-0-367" href="#__codelineno-0-367"></a>        <span class="c1"># and interaction counters.</span>
-<a id="__codelineno-0-368" name="__codelineno-0-368" href="#__codelineno-0-368"></a>        <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">state</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-<a id="__codelineno-0-369" name="__codelineno-0-369" href="#__codelineno-0-369"></a>            <span class="k">if</span> <span class="n">k</span> <span class="o">==</span> <span class="s2">&quot;episode_count&quot;</span><span class="p">:</span>
-<a id="__codelineno-0-370" name="__codelineno-0-370" href="#__codelineno-0-370"></a>                <span class="bp">self</span><span class="o">.</span><span class="n">set_episode_count</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
-<a id="__codelineno-0-371" name="__codelineno-0-371" href="#__codelineno-0-371"></a>            <span class="k">elif</span> <span class="n">k</span> <span class="o">==</span> <span class="s2">&quot;interaction_count&quot;</span><span class="p">:</span>
-<a id="__codelineno-0-372" name="__codelineno-0-372" href="#__codelineno-0-372"></a>                <span class="bp">self</span><span class="o">.</span><span class="n">set_interaction_count</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
-<a id="__codelineno-0-373" name="__codelineno-0-373" href="#__codelineno-0-373"></a>            <span class="k">else</span><span class="p">:</span>
-<a id="__codelineno-0-374" name="__codelineno-0-374" href="#__codelineno-0-374"></a>                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;When restoring the inner state of a remote worker, unrecognized state key: </span><span class="si">{</span><span class="n">k</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-<a id="__codelineno-0-375" name="__codelineno-0-375" href="#__codelineno-0-375"></a>
-<a id="__codelineno-0-376" name="__codelineno-0-376" href="#__codelineno-0-376"></a>    <span class="k">def</span> <span class="nf">_extra_status</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">batch</span><span class="p">:</span> <span class="n">SolutionBatch</span><span class="p">):</span>
-<a id="__codelineno-0-377" name="__codelineno-0-377" href="#__codelineno-0-377"></a>        <span class="k">return</span> <span class="nb">dict</span><span class="p">(</span><span class="n">total_interaction_count</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">interaction_count</span><span class="p">,</span> <span class="n">total_episode_count</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">episode_count</span><span class="p">)</span>
-<a id="__codelineno-0-378" name="__codelineno-0-378" href="#__codelineno-0-378"></a>
-<a id="__codelineno-0-379" name="__codelineno-0-379" href="#__codelineno-0-379"></a>    <span class="nd">@property</span>
-<a id="__codelineno-0-380" name="__codelineno-0-380" href="#__codelineno-0-380"></a>    <span class="k">def</span> <span class="nf">observation_normalization</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
-<a id="__codelineno-0-381" name="__codelineno-0-381" href="#__codelineno-0-381"></a>        <span class="sd">&quot;&quot;&quot;</span>
-<a id="__codelineno-0-382" name="__codelineno-0-382" href="#__codelineno-0-382"></a><span class="sd">        Get whether or not observation normalization is enabled.</span>
-<a id="__codelineno-0-383" name="__codelineno-0-383" href="#__codelineno-0-383"></a><span class="sd">        &quot;&quot;&quot;</span>
-<a id="__codelineno-0-384" name="__codelineno-0-384" href="#__codelineno-0-384"></a>        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_observation_normalization</span>
-<a id="__codelineno-0-385" name="__codelineno-0-385" href="#__codelineno-0-385"></a>
-<a id="__codelineno-0-386" name="__codelineno-0-386" href="#__codelineno-0-386"></a>    <span class="k">def</span> <span class="nf">set_episode_count</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n</span><span class="p">:</span> <span class="nb">int</span><span class="p">):</span>
-<a id="__codelineno-0-387" name="__codelineno-0-387" href="#__codelineno-0-387"></a>        <span class="sd">&quot;&quot;&quot;</span>
-<a id="__codelineno-0-388" name="__codelineno-0-388" href="#__codelineno-0-388"></a><span class="sd">        Set the episode count manually.</span>
-<a id="__codelineno-0-389" name="__codelineno-0-389" href="#__codelineno-0-389"></a><span class="sd">        &quot;&quot;&quot;</span>
-<a id="__codelineno-0-390" name="__codelineno-0-390" href="#__codelineno-0-390"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_episode_count</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
-<a id="__codelineno-0-391" name="__codelineno-0-391" href="#__codelineno-0-391"></a>
-<a id="__codelineno-0-392" name="__codelineno-0-392" href="#__codelineno-0-392"></a>    <span class="k">def</span> <span class="nf">set_interaction_count</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n</span><span class="p">:</span> <span class="nb">int</span><span class="p">):</span>
-<a id="__codelineno-0-393" name="__codelineno-0-393" href="#__codelineno-0-393"></a>        <span class="sd">&quot;&quot;&quot;</span>
-<a id="__codelineno-0-394" name="__codelineno-0-394" href="#__codelineno-0-394"></a><span class="sd">        Set the interaction count manually.</span>
-<a id="__codelineno-0-395" name="__codelineno-0-395" href="#__codelineno-0-395"></a><span class="sd">        &quot;&quot;&quot;</span>
-<a id="__codelineno-0-396" name="__codelineno-0-396" href="#__codelineno-0-396"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_interaction_count</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
-<a id="__codelineno-0-397" name="__codelineno-0-397" href="#__codelineno-0-397"></a>
-<a id="__codelineno-0-398" name="__codelineno-0-398" href="#__codelineno-0-398"></a>    <span class="nd">@property</span>
-<a id="__codelineno-0-399" name="__codelineno-0-399" href="#__codelineno-0-399"></a>    <span class="k">def</span> <span class="nf">interaction_count</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
-<a id="__codelineno-0-400" name="__codelineno-0-400" href="#__codelineno-0-400"></a>        <span class="sd">&quot;&quot;&quot;</span>
-<a id="__codelineno-0-401" name="__codelineno-0-401" href="#__codelineno-0-401"></a><span class="sd">        Get the total number of simulator interactions made.</span>
-<a id="__codelineno-0-402" name="__codelineno-0-402" href="#__codelineno-0-402"></a><span class="sd">        &quot;&quot;&quot;</span>
-<a id="__codelineno-0-403" name="__codelineno-0-403" href="#__codelineno-0-403"></a>        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_interaction_count</span>
-<a id="__codelineno-0-404" name="__codelineno-0-404" href="#__codelineno-0-404"></a>
-<a id="__codelineno-0-405" name="__codelineno-0-405" href="#__codelineno-0-405"></a>    <span class="nd">@property</span>
-<a id="__codelineno-0-406" name="__codelineno-0-406" href="#__codelineno-0-406"></a>    <span class="k">def</span> <span class="nf">episode_count</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
-<a id="__codelineno-0-407" name="__codelineno-0-407" href="#__codelineno-0-407"></a>        <span class="sd">&quot;&quot;&quot;</span>
-<a id="__codelineno-0-408" name="__codelineno-0-408" href="#__codelineno-0-408"></a><span class="sd">        Get the total number of episodes completed.</span>
-<a id="__codelineno-0-409" name="__codelineno-0-409" href="#__codelineno-0-409"></a><span class="sd">        &quot;&quot;&quot;</span>
-<a id="__codelineno-0-410" name="__codelineno-0-410" href="#__codelineno-0-410"></a>        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_episode_count</span>
-<a id="__codelineno-0-411" name="__codelineno-0-411" href="#__codelineno-0-411"></a>
-<a id="__codelineno-0-412" name="__codelineno-0-412" href="#__codelineno-0-412"></a>    <span class="k">def</span> <span class="nf">_get_local_episode_count</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
-<a id="__codelineno-0-413" name="__codelineno-0-413" href="#__codelineno-0-413"></a>        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">episode_count</span>
-<a id="__codelineno-0-414" name="__codelineno-0-414" href="#__codelineno-0-414"></a>
-<a id="__codelineno-0-415" name="__codelineno-0-415" href="#__codelineno-0-415"></a>    <span class="k">def</span> <span class="nf">_get_local_interaction_count</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
-<a id="__codelineno-0-416" name="__codelineno-0-416" href="#__codelineno-0-416"></a>        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">interaction_count</span>
-<a id="__codelineno-0-417" name="__codelineno-0-417" href="#__codelineno-0-417"></a>
-<a id="__codelineno-0-418" name="__codelineno-0-418" href="#__codelineno-0-418"></a>    <span class="k">def</span> <span class="nf">_evaluate_network</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">policy</span><span class="p">:</span> <span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]:</span>
-<a id="__codelineno-0-419" name="__codelineno-0-419" href="#__codelineno-0-419"></a>        <span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">run</span><span class="p">(</span>
-<a id="__codelineno-0-420" name="__codelineno-0-420" href="#__codelineno-0-420"></a>            <span class="n">policy</span><span class="p">,</span>
-<a id="__codelineno-0-421" name="__codelineno-0-421" href="#__codelineno-0-421"></a>            <span class="n">update_stats</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-<a id="__codelineno-0-422" name="__codelineno-0-422" href="#__codelineno-0-422"></a>            <span class="n">visualize</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-<a id="__codelineno-0-423" name="__codelineno-0-423" href="#__codelineno-0-423"></a>            <span class="n">num_episodes</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_num_episodes</span><span class="p">,</span>
-<a id="__codelineno-0-424" name="__codelineno-0-424" href="#__codelineno-0-424"></a>            <span class="n">decrease_rewards_by</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_decrease_rewards_by</span><span class="p">,</span>
-<a id="__codelineno-0-425" name="__codelineno-0-425" href="#__codelineno-0-425"></a>        <span class="p">)</span>
-<a id="__codelineno-0-426" name="__codelineno-0-426" href="#__codelineno-0-426"></a>        <span class="k">return</span> <span class="n">result</span><span class="p">[</span><span class="s2">&quot;cumulative_reward&quot;</span><span class="p">]</span>
-<a id="__codelineno-0-427" name="__codelineno-0-427" href="#__codelineno-0-427"></a>
-<a id="__codelineno-0-428" name="__codelineno-0-428" href="#__codelineno-0-428"></a>    <span class="k">def</span> <span class="nf">to_policy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">trainable_stats</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">clip_actions</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">:</span>
-<a id="__codelineno-0-429" name="__codelineno-0-429" href="#__codelineno-0-429"></a>        <span class="sd">&quot;&quot;&quot;</span>
-<a id="__codelineno-0-430" name="__codelineno-0-430" href="#__codelineno-0-430"></a><span class="sd">        Convert the given parameter vector to a policy as a PyTorch module.</span>
-<a id="__codelineno-0-431" name="__codelineno-0-431" href="#__codelineno-0-431"></a>
-<a id="__codelineno-0-432" name="__codelineno-0-432" href="#__codelineno-0-432"></a><span class="sd">        If the problem is configured to have observation normalization,</span>
-<a id="__codelineno-0-433" name="__codelineno-0-433" href="#__codelineno-0-433"></a><span class="sd">        the PyTorch module also contains an additional normalization layer.</span>
-<a id="__codelineno-0-434" name="__codelineno-0-434" href="#__codelineno-0-434"></a>
-<a id="__codelineno-0-435" name="__codelineno-0-435" href="#__codelineno-0-435"></a><span class="sd">        Args:</span>
-<a id="__codelineno-0-436" name="__codelineno-0-436" href="#__codelineno-0-436"></a><span class="sd">            x: An sequence of real numbers, containing the parameters</span>
-<a id="__codelineno-0-437" name="__codelineno-0-437" href="#__codelineno-0-437"></a><span class="sd">                of a policy. Can be a PyTorch tensor, a numpy array,</span>
-<a id="__codelineno-0-438" name="__codelineno-0-438" href="#__codelineno-0-438"></a><span class="sd">                or a SolutionVector.</span>
-<a id="__codelineno-0-439" name="__codelineno-0-439" href="#__codelineno-0-439"></a><span class="sd">            trainable_stats: Whether or not the observation stats within</span>
-<a id="__codelineno-0-440" name="__codelineno-0-440" href="#__codelineno-0-440"></a><span class="sd">                the observation normalization layer are to be stored as</span>
-<a id="__codelineno-0-441" name="__codelineno-0-441" href="#__codelineno-0-441"></a><span class="sd">                trainable parameters.</span>
-<a id="__codelineno-0-442" name="__codelineno-0-442" href="#__codelineno-0-442"></a><span class="sd">            clip_actions: Whether or not to add an action clipping layer so</span>
-<a id="__codelineno-0-443" name="__codelineno-0-443" href="#__codelineno-0-443"></a><span class="sd">                that the generated actions will always be within an</span>
-<a id="__codelineno-0-444" name="__codelineno-0-444" href="#__codelineno-0-444"></a><span class="sd">                acceptable range for the environment.</span>
-<a id="__codelineno-0-445" name="__codelineno-0-445" href="#__codelineno-0-445"></a><span class="sd">        Returns:</span>
-<a id="__codelineno-0-446" name="__codelineno-0-446" href="#__codelineno-0-446"></a><span class="sd">            The policy expressed by the parameters.</span>
-<a id="__codelineno-0-447" name="__codelineno-0-447" href="#__codelineno-0-447"></a><span class="sd">        &quot;&quot;&quot;</span>
-<a id="__codelineno-0-448" name="__codelineno-0-448" href="#__codelineno-0-448"></a>
-<a id="__codelineno-0-449" name="__codelineno-0-449" href="#__codelineno-0-449"></a>        <span class="n">policy</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">make_net</span><span class="p">(</span><span class="n">x</span><span class="p">)]</span>
-<a id="__codelineno-0-450" name="__codelineno-0-450" href="#__codelineno-0-450"></a>
-<a id="__codelineno-0-451" name="__codelineno-0-451" href="#__codelineno-0-451"></a>        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">observation_normalization</span><span class="p">:</span>
-<a id="__codelineno-0-452" name="__codelineno-0-452" href="#__codelineno-0-452"></a>            <span class="n">policy</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">ObsNormLayer</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_obs_stats</span><span class="p">,</span> <span class="n">trainable_stats</span><span class="o">=</span><span class="n">trainable_stats</span><span class="p">))</span>
-<a id="__codelineno-0-453" name="__codelineno-0-453" href="#__codelineno-0-453"></a>
-<a id="__codelineno-0-454" name="__codelineno-0-454" href="#__codelineno-0-454"></a>        <span class="k">if</span> <span class="n">clip_actions</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_get_env</span><span class="p">()</span><span class="o">.</span><span class="n">action_space</span><span class="p">,</span> <span class="n">gym</span><span class="o">.</span><span class="n">spaces</span><span class="o">.</span><span class="n">Box</span><span class="p">):</span>
-<a id="__codelineno-0-455" name="__codelineno-0-455" href="#__codelineno-0-455"></a>            <span class="n">policy</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ActClipLayer</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_get_env</span><span class="p">()</span><span class="o">.</span><span class="n">action_space</span><span class="p">))</span>
+<a id="__codelineno-0-338" name="__codelineno-0-338" href="#__codelineno-0-338"></a>    <span class="k">def</span> <span class="nf">_make_sync_data_for_main</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+<a id="__codelineno-0-339" name="__codelineno-0-339" href="#__codelineno-0-339"></a>        <span class="n">result</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">episode_count</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">episode_count</span><span class="p">,</span> <span class="n">interaction_count</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">interaction_count</span><span class="p">)</span>
+<a id="__codelineno-0-340" name="__codelineno-0-340" href="#__codelineno-0-340"></a>
+<a id="__codelineno-0-341" name="__codelineno-0-341" href="#__codelineno-0-341"></a>        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">observation_normalization</span><span class="p">:</span>
+<a id="__codelineno-0-342" name="__codelineno-0-342" href="#__codelineno-0-342"></a>            <span class="n">result</span><span class="p">[</span><span class="s2">&quot;obs_stats_delta&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pop_observation_stats</span><span class="p">()</span>
+<a id="__codelineno-0-343" name="__codelineno-0-343" href="#__codelineno-0-343"></a>
+<a id="__codelineno-0-344" name="__codelineno-0-344" href="#__codelineno-0-344"></a>        <span class="k">return</span> <span class="n">result</span>
+<a id="__codelineno-0-345" name="__codelineno-0-345" href="#__codelineno-0-345"></a>
+<a id="__codelineno-0-346" name="__codelineno-0-346" href="#__codelineno-0-346"></a>    <span class="k">def</span> <span class="nf">update_observation_stats</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rs</span><span class="p">:</span> <span class="n">RunningStat</span><span class="p">):</span>
+<a id="__codelineno-0-347" name="__codelineno-0-347" href="#__codelineno-0-347"></a>        <span class="sd">&quot;&quot;&quot;Update the observation stats via another RunningStat instance&quot;&quot;&quot;</span>
+<a id="__codelineno-0-348" name="__codelineno-0-348" href="#__codelineno-0-348"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_ensure_obsnorm</span><span class="p">()</span>
+<a id="__codelineno-0-349" name="__codelineno-0-349" href="#__codelineno-0-349"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_obs_stats</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">rs</span><span class="p">)</span>
+<a id="__codelineno-0-350" name="__codelineno-0-350" href="#__codelineno-0-350"></a>
+<a id="__codelineno-0-351" name="__codelineno-0-351" href="#__codelineno-0-351"></a>    <span class="k">def</span> <span class="nf">_use_sync_data_from_actors</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">received</span><span class="p">:</span> <span class="nb">list</span><span class="p">):</span>
+<a id="__codelineno-0-352" name="__codelineno-0-352" href="#__codelineno-0-352"></a>        <span class="n">total_episode_count</span> <span class="o">=</span> <span class="mi">0</span>
+<a id="__codelineno-0-353" name="__codelineno-0-353" href="#__codelineno-0-353"></a>        <span class="n">total_interaction_count</span> <span class="o">=</span> <span class="mi">0</span>
+<a id="__codelineno-0-354" name="__codelineno-0-354" href="#__codelineno-0-354"></a>
+<a id="__codelineno-0-355" name="__codelineno-0-355" href="#__codelineno-0-355"></a>        <span class="k">for</span> <span class="n">data</span> <span class="ow">in</span> <span class="n">received</span><span class="p">:</span>
+<a id="__codelineno-0-356" name="__codelineno-0-356" href="#__codelineno-0-356"></a>            <span class="n">data</span><span class="p">:</span> <span class="nb">dict</span>
+<a id="__codelineno-0-357" name="__codelineno-0-357" href="#__codelineno-0-357"></a>            <span class="n">total_episode_count</span> <span class="o">+=</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;episode_count&quot;</span><span class="p">]</span>
+<a id="__codelineno-0-358" name="__codelineno-0-358" href="#__codelineno-0-358"></a>            <span class="n">total_interaction_count</span> <span class="o">+=</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;interaction_count&quot;</span><span class="p">]</span>
+<a id="__codelineno-0-359" name="__codelineno-0-359" href="#__codelineno-0-359"></a>            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">observation_normalization</span><span class="p">:</span>
+<a id="__codelineno-0-360" name="__codelineno-0-360" href="#__codelineno-0-360"></a>                <span class="bp">self</span><span class="o">.</span><span class="n">update_observation_stats</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;obs_stats_delta&quot;</span><span class="p">])</span>
+<a id="__codelineno-0-361" name="__codelineno-0-361" href="#__codelineno-0-361"></a>
+<a id="__codelineno-0-362" name="__codelineno-0-362" href="#__codelineno-0-362"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">set_episode_count</span><span class="p">(</span><span class="n">total_episode_count</span><span class="p">)</span>
+<a id="__codelineno-0-363" name="__codelineno-0-363" href="#__codelineno-0-363"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">set_interaction_count</span><span class="p">(</span><span class="n">total_interaction_count</span><span class="p">)</span>
+<a id="__codelineno-0-364" name="__codelineno-0-364" href="#__codelineno-0-364"></a>
+<a id="__codelineno-0-365" name="__codelineno-0-365" href="#__codelineno-0-365"></a>    <span class="k">def</span> <span class="nf">_make_pickle_data_for_main</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<a id="__codelineno-0-366" name="__codelineno-0-366" href="#__codelineno-0-366"></a>        <span class="c1"># For when the main Problem object (the non-remote one) gets pickled,</span>
+<a id="__codelineno-0-367" name="__codelineno-0-367" href="#__codelineno-0-367"></a>        <span class="c1"># this function returns the counters of this remote Problem instance,</span>
+<a id="__codelineno-0-368" name="__codelineno-0-368" href="#__codelineno-0-368"></a>        <span class="c1"># to be sent to the main one.</span>
+<a id="__codelineno-0-369" name="__codelineno-0-369" href="#__codelineno-0-369"></a>        <span class="k">return</span> <span class="nb">dict</span><span class="p">(</span><span class="n">interaction_count</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">interaction_count</span><span class="p">,</span> <span class="n">episode_count</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">episode_count</span><span class="p">)</span>
+<a id="__codelineno-0-370" name="__codelineno-0-370" href="#__codelineno-0-370"></a>
+<a id="__codelineno-0-371" name="__codelineno-0-371" href="#__codelineno-0-371"></a>    <span class="k">def</span> <span class="nf">_use_pickle_data_from_main</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">state</span><span class="p">:</span> <span class="nb">dict</span><span class="p">):</span>
+<a id="__codelineno-0-372" name="__codelineno-0-372" href="#__codelineno-0-372"></a>        <span class="c1"># For when a newly unpickled Problem object gets (re)parallelized,</span>
+<a id="__codelineno-0-373" name="__codelineno-0-373" href="#__codelineno-0-373"></a>        <span class="c1"># this function restores the inner states specific to this remote</span>
+<a id="__codelineno-0-374" name="__codelineno-0-374" href="#__codelineno-0-374"></a>        <span class="c1"># worker. In the case of GymNE, those inner states are episode</span>
+<a id="__codelineno-0-375" name="__codelineno-0-375" href="#__codelineno-0-375"></a>        <span class="c1"># and interaction counters.</span>
+<a id="__codelineno-0-376" name="__codelineno-0-376" href="#__codelineno-0-376"></a>        <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">state</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+<a id="__codelineno-0-377" name="__codelineno-0-377" href="#__codelineno-0-377"></a>            <span class="k">if</span> <span class="n">k</span> <span class="o">==</span> <span class="s2">&quot;episode_count&quot;</span><span class="p">:</span>
+<a id="__codelineno-0-378" name="__codelineno-0-378" href="#__codelineno-0-378"></a>                <span class="bp">self</span><span class="o">.</span><span class="n">set_episode_count</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+<a id="__codelineno-0-379" name="__codelineno-0-379" href="#__codelineno-0-379"></a>            <span class="k">elif</span> <span class="n">k</span> <span class="o">==</span> <span class="s2">&quot;interaction_count&quot;</span><span class="p">:</span>
+<a id="__codelineno-0-380" name="__codelineno-0-380" href="#__codelineno-0-380"></a>                <span class="bp">self</span><span class="o">.</span><span class="n">set_interaction_count</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+<a id="__codelineno-0-381" name="__codelineno-0-381" href="#__codelineno-0-381"></a>            <span class="k">else</span><span class="p">:</span>
+<a id="__codelineno-0-382" name="__codelineno-0-382" href="#__codelineno-0-382"></a>                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;When restoring the inner state of a remote worker, unrecognized state key: </span><span class="si">{</span><span class="n">k</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<a id="__codelineno-0-383" name="__codelineno-0-383" href="#__codelineno-0-383"></a>
+<a id="__codelineno-0-384" name="__codelineno-0-384" href="#__codelineno-0-384"></a>    <span class="k">def</span> <span class="nf">_extra_status</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">batch</span><span class="p">:</span> <span class="n">SolutionBatch</span><span class="p">):</span>
+<a id="__codelineno-0-385" name="__codelineno-0-385" href="#__codelineno-0-385"></a>        <span class="k">return</span> <span class="nb">dict</span><span class="p">(</span><span class="n">total_interaction_count</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">interaction_count</span><span class="p">,</span> <span class="n">total_episode_count</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">episode_count</span><span class="p">)</span>
+<a id="__codelineno-0-386" name="__codelineno-0-386" href="#__codelineno-0-386"></a>
+<a id="__codelineno-0-387" name="__codelineno-0-387" href="#__codelineno-0-387"></a>    <span class="nd">@property</span>
+<a id="__codelineno-0-388" name="__codelineno-0-388" href="#__codelineno-0-388"></a>    <span class="k">def</span> <span class="nf">observation_normalization</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<a id="__codelineno-0-389" name="__codelineno-0-389" href="#__codelineno-0-389"></a>        <span class="sd">&quot;&quot;&quot;</span>
+<a id="__codelineno-0-390" name="__codelineno-0-390" href="#__codelineno-0-390"></a><span class="sd">        Get whether or not observation normalization is enabled.</span>
+<a id="__codelineno-0-391" name="__codelineno-0-391" href="#__codelineno-0-391"></a><span class="sd">        &quot;&quot;&quot;</span>
+<a id="__codelineno-0-392" name="__codelineno-0-392" href="#__codelineno-0-392"></a>        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_observation_normalization</span>
+<a id="__codelineno-0-393" name="__codelineno-0-393" href="#__codelineno-0-393"></a>
+<a id="__codelineno-0-394" name="__codelineno-0-394" href="#__codelineno-0-394"></a>    <span class="k">def</span> <span class="nf">set_episode_count</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n</span><span class="p">:</span> <span class="nb">int</span><span class="p">):</span>
+<a id="__codelineno-0-395" name="__codelineno-0-395" href="#__codelineno-0-395"></a>        <span class="sd">&quot;&quot;&quot;</span>
+<a id="__codelineno-0-396" name="__codelineno-0-396" href="#__codelineno-0-396"></a><span class="sd">        Set the episode count manually.</span>
+<a id="__codelineno-0-397" name="__codelineno-0-397" href="#__codelineno-0-397"></a><span class="sd">        &quot;&quot;&quot;</span>
+<a id="__codelineno-0-398" name="__codelineno-0-398" href="#__codelineno-0-398"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_episode_count</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
+<a id="__codelineno-0-399" name="__codelineno-0-399" href="#__codelineno-0-399"></a>
+<a id="__codelineno-0-400" name="__codelineno-0-400" href="#__codelineno-0-400"></a>    <span class="k">def</span> <span class="nf">set_interaction_count</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n</span><span class="p">:</span> <span class="nb">int</span><span class="p">):</span>
+<a id="__codelineno-0-401" name="__codelineno-0-401" href="#__codelineno-0-401"></a>        <span class="sd">&quot;&quot;&quot;</span>
+<a id="__codelineno-0-402" name="__codelineno-0-402" href="#__codelineno-0-402"></a><span class="sd">        Set the interaction count manually.</span>
+<a id="__codelineno-0-403" name="__codelineno-0-403" href="#__codelineno-0-403"></a><span class="sd">        &quot;&quot;&quot;</span>
+<a id="__codelineno-0-404" name="__codelineno-0-404" href="#__codelineno-0-404"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_interaction_count</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
+<a id="__codelineno-0-405" name="__codelineno-0-405" href="#__codelineno-0-405"></a>
+<a id="__codelineno-0-406" name="__codelineno-0-406" href="#__codelineno-0-406"></a>    <span class="nd">@property</span>
+<a id="__codelineno-0-407" name="__codelineno-0-407" href="#__codelineno-0-407"></a>    <span class="k">def</span> <span class="nf">interaction_count</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<a id="__codelineno-0-408" name="__codelineno-0-408" href="#__codelineno-0-408"></a>        <span class="sd">&quot;&quot;&quot;</span>
+<a id="__codelineno-0-409" name="__codelineno-0-409" href="#__codelineno-0-409"></a><span class="sd">        Get the total number of simulator interactions made.</span>
+<a id="__codelineno-0-410" name="__codelineno-0-410" href="#__codelineno-0-410"></a><span class="sd">        &quot;&quot;&quot;</span>
+<a id="__codelineno-0-411" name="__codelineno-0-411" href="#__codelineno-0-411"></a>        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_interaction_count</span>
+<a id="__codelineno-0-412" name="__codelineno-0-412" href="#__codelineno-0-412"></a>
+<a id="__codelineno-0-413" name="__codelineno-0-413" href="#__codelineno-0-413"></a>    <span class="nd">@property</span>
+<a id="__codelineno-0-414" name="__codelineno-0-414" href="#__codelineno-0-414"></a>    <span class="k">def</span> <span class="nf">episode_count</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<a id="__codelineno-0-415" name="__codelineno-0-415" href="#__codelineno-0-415"></a>        <span class="sd">&quot;&quot;&quot;</span>
+<a id="__codelineno-0-416" name="__codelineno-0-416" href="#__codelineno-0-416"></a><span class="sd">        Get the total number of episodes completed.</span>
+<a id="__codelineno-0-417" name="__codelineno-0-417" href="#__codelineno-0-417"></a><span class="sd">        &quot;&quot;&quot;</span>
+<a id="__codelineno-0-418" name="__codelineno-0-418" href="#__codelineno-0-418"></a>        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_episode_count</span>
+<a id="__codelineno-0-419" name="__codelineno-0-419" href="#__codelineno-0-419"></a>
+<a id="__codelineno-0-420" name="__codelineno-0-420" href="#__codelineno-0-420"></a>    <span class="k">def</span> <span class="nf">_get_local_episode_count</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<a id="__codelineno-0-421" name="__codelineno-0-421" href="#__codelineno-0-421"></a>        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">episode_count</span>
+<a id="__codelineno-0-422" name="__codelineno-0-422" href="#__codelineno-0-422"></a>
+<a id="__codelineno-0-423" name="__codelineno-0-423" href="#__codelineno-0-423"></a>    <span class="k">def</span> <span class="nf">_get_local_interaction_count</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<a id="__codelineno-0-424" name="__codelineno-0-424" href="#__codelineno-0-424"></a>        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">interaction_count</span>
+<a id="__codelineno-0-425" name="__codelineno-0-425" href="#__codelineno-0-425"></a>
+<a id="__codelineno-0-426" name="__codelineno-0-426" href="#__codelineno-0-426"></a>    <span class="k">def</span> <span class="nf">_evaluate_network</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">policy</span><span class="p">:</span> <span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]:</span>
+<a id="__codelineno-0-427" name="__codelineno-0-427" href="#__codelineno-0-427"></a>        <span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">run</span><span class="p">(</span>
+<a id="__codelineno-0-428" name="__codelineno-0-428" href="#__codelineno-0-428"></a>            <span class="n">policy</span><span class="p">,</span>
+<a id="__codelineno-0-429" name="__codelineno-0-429" href="#__codelineno-0-429"></a>            <span class="n">update_stats</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+<a id="__codelineno-0-430" name="__codelineno-0-430" href="#__codelineno-0-430"></a>            <span class="n">visualize</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+<a id="__codelineno-0-431" name="__codelineno-0-431" href="#__codelineno-0-431"></a>            <span class="n">num_episodes</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_num_episodes</span><span class="p">,</span>
+<a id="__codelineno-0-432" name="__codelineno-0-432" href="#__codelineno-0-432"></a>            <span class="n">decrease_rewards_by</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_decrease_rewards_by</span><span class="p">,</span>
+<a id="__codelineno-0-433" name="__codelineno-0-433" href="#__codelineno-0-433"></a>        <span class="p">)</span>
+<a id="__codelineno-0-434" name="__codelineno-0-434" href="#__codelineno-0-434"></a>        <span class="k">return</span> <span class="n">result</span><span class="p">[</span><span class="s2">&quot;cumulative_reward&quot;</span><span class="p">]</span>
+<a id="__codelineno-0-435" name="__codelineno-0-435" href="#__codelineno-0-435"></a>
+<a id="__codelineno-0-436" name="__codelineno-0-436" href="#__codelineno-0-436"></a>    <span class="k">def</span> <span class="nf">to_policy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">trainable_stats</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">clip_actions</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">:</span>
+<a id="__codelineno-0-437" name="__codelineno-0-437" href="#__codelineno-0-437"></a>        <span class="sd">&quot;&quot;&quot;</span>
+<a id="__codelineno-0-438" name="__codelineno-0-438" href="#__codelineno-0-438"></a><span class="sd">        Convert the given parameter vector to a policy as a PyTorch module.</span>
+<a id="__codelineno-0-439" name="__codelineno-0-439" href="#__codelineno-0-439"></a>
+<a id="__codelineno-0-440" name="__codelineno-0-440" href="#__codelineno-0-440"></a><span class="sd">        If the problem is configured to have observation normalization,</span>
+<a id="__codelineno-0-441" name="__codelineno-0-441" href="#__codelineno-0-441"></a><span class="sd">        the PyTorch module also contains an additional normalization layer.</span>
+<a id="__codelineno-0-442" name="__codelineno-0-442" href="#__codelineno-0-442"></a>
+<a id="__codelineno-0-443" name="__codelineno-0-443" href="#__codelineno-0-443"></a><span class="sd">        Args:</span>
+<a id="__codelineno-0-444" name="__codelineno-0-444" href="#__codelineno-0-444"></a><span class="sd">            x: An sequence of real numbers, containing the parameters</span>
+<a id="__codelineno-0-445" name="__codelineno-0-445" href="#__codelineno-0-445"></a><span class="sd">                of a policy. Can be a PyTorch tensor, a numpy array,</span>
+<a id="__codelineno-0-446" name="__codelineno-0-446" href="#__codelineno-0-446"></a><span class="sd">                or a SolutionVector.</span>
+<a id="__codelineno-0-447" name="__codelineno-0-447" href="#__codelineno-0-447"></a><span class="sd">            trainable_stats: Whether or not the observation stats within</span>
+<a id="__codelineno-0-448" name="__codelineno-0-448" href="#__codelineno-0-448"></a><span class="sd">                the observation normalization layer are to be stored as</span>
+<a id="__codelineno-0-449" name="__codelineno-0-449" href="#__codelineno-0-449"></a><span class="sd">                trainable parameters.</span>
+<a id="__codelineno-0-450" name="__codelineno-0-450" href="#__codelineno-0-450"></a><span class="sd">            clip_actions: Whether or not to add an action clipping layer so</span>
+<a id="__codelineno-0-451" name="__codelineno-0-451" href="#__codelineno-0-451"></a><span class="sd">                that the generated actions will always be within an</span>
+<a id="__codelineno-0-452" name="__codelineno-0-452" href="#__codelineno-0-452"></a><span class="sd">                acceptable range for the environment.</span>
+<a id="__codelineno-0-453" name="__codelineno-0-453" href="#__codelineno-0-453"></a><span class="sd">        Returns:</span>
+<a id="__codelineno-0-454" name="__codelineno-0-454" href="#__codelineno-0-454"></a><span class="sd">            The policy expressed by the parameters.</span>
+<a id="__codelineno-0-455" name="__codelineno-0-455" href="#__codelineno-0-455"></a><span class="sd">        &quot;&quot;&quot;</span>
 <a id="__codelineno-0-456" name="__codelineno-0-456" href="#__codelineno-0-456"></a>
-<a id="__codelineno-0-457" name="__codelineno-0-457" href="#__codelineno-0-457"></a>        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">policy</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
-<a id="__codelineno-0-458" name="__codelineno-0-458" href="#__codelineno-0-458"></a>            <span class="k">return</span> <span class="n">policy</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-<a id="__codelineno-0-459" name="__codelineno-0-459" href="#__codelineno-0-459"></a>        <span class="k">else</span><span class="p">:</span>
-<a id="__codelineno-0-460" name="__codelineno-0-460" href="#__codelineno-0-460"></a>            <span class="k">return</span> <span class="n">nn</span><span class="o">.</span><span class="n">Sequential</span><span class="p">(</span><span class="o">*</span><span class="n">policy</span><span class="p">)</span>
+<a id="__codelineno-0-457" name="__codelineno-0-457" href="#__codelineno-0-457"></a>        <span class="n">policy</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">make_net</span><span class="p">(</span><span class="n">x</span><span class="p">)]</span>
+<a id="__codelineno-0-458" name="__codelineno-0-458" href="#__codelineno-0-458"></a>
+<a id="__codelineno-0-459" name="__codelineno-0-459" href="#__codelineno-0-459"></a>        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">observation_normalization</span><span class="p">:</span>
+<a id="__codelineno-0-460" name="__codelineno-0-460" href="#__codelineno-0-460"></a>            <span class="n">policy</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">ObsNormLayer</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_obs_stats</span><span class="p">,</span> <span class="n">trainable_stats</span><span class="o">=</span><span class="n">trainable_stats</span><span class="p">))</span>
 <a id="__codelineno-0-461" name="__codelineno-0-461" href="#__codelineno-0-461"></a>
-<a id="__codelineno-0-462" name="__codelineno-0-462" href="#__codelineno-0-462"></a>    <span class="k">def</span> <span class="nf">get_env</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">gym</span><span class="o">.</span><span class="n">Env</span><span class="p">:</span>
-<a id="__codelineno-0-463" name="__codelineno-0-463" href="#__codelineno-0-463"></a>        <span class="sd">&quot;&quot;&quot;</span>
-<a id="__codelineno-0-464" name="__codelineno-0-464" href="#__codelineno-0-464"></a><span class="sd">        Get the gym environment stored by this GymNE instance</span>
-<a id="__codelineno-0-465" name="__codelineno-0-465" href="#__codelineno-0-465"></a><span class="sd">        &quot;&quot;&quot;</span>
-<a id="__codelineno-0-466" name="__codelineno-0-466" href="#__codelineno-0-466"></a>        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_env</span><span class="p">()</span>
+<a id="__codelineno-0-462" name="__codelineno-0-462" href="#__codelineno-0-462"></a>        <span class="k">if</span> <span class="n">clip_actions</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_get_env</span><span class="p">()</span><span class="o">.</span><span class="n">action_space</span><span class="p">,</span> <span class="n">gym</span><span class="o">.</span><span class="n">spaces</span><span class="o">.</span><span class="n">Box</span><span class="p">):</span>
+<a id="__codelineno-0-463" name="__codelineno-0-463" href="#__codelineno-0-463"></a>            <span class="n">policy</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ActClipLayer</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_get_env</span><span class="p">()</span><span class="o">.</span><span class="n">action_space</span><span class="p">))</span>
+<a id="__codelineno-0-464" name="__codelineno-0-464" href="#__codelineno-0-464"></a>
+<a id="__codelineno-0-465" name="__codelineno-0-465" href="#__codelineno-0-465"></a>        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">policy</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+<a id="__codelineno-0-466" name="__codelineno-0-466" href="#__codelineno-0-466"></a>            <span class="k">return</span> <span class="n">policy</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+<a id="__codelineno-0-467" name="__codelineno-0-467" href="#__codelineno-0-467"></a>        <span class="k">else</span><span class="p">:</span>
+<a id="__codelineno-0-468" name="__codelineno-0-468" href="#__codelineno-0-468"></a>            <span class="k">return</span> <span class="n">nn</span><span class="o">.</span><span class="n">Sequential</span><span class="p">(</span><span class="o">*</span><span class="n">policy</span><span class="p">)</span>
+<a id="__codelineno-0-469" name="__codelineno-0-469" href="#__codelineno-0-469"></a>
+<a id="__codelineno-0-470" name="__codelineno-0-470" href="#__codelineno-0-470"></a>    <span class="k">def</span> <span class="nf">get_env</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">gym</span><span class="o">.</span><span class="n">Env</span><span class="p">:</span>
+<a id="__codelineno-0-471" name="__codelineno-0-471" href="#__codelineno-0-471"></a>        <span class="sd">&quot;&quot;&quot;</span>
+<a id="__codelineno-0-472" name="__codelineno-0-472" href="#__codelineno-0-472"></a><span class="sd">        Get the gym environment stored by this GymNE instance</span>
+<a id="__codelineno-0-473" name="__codelineno-0-473" href="#__codelineno-0-473"></a><span class="sd">        &quot;&quot;&quot;</span>
+<a id="__codelineno-0-474" name="__codelineno-0-474" href="#__codelineno-0-474"></a>        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_env</span><span class="p">()</span>
 </code></pre></div>
         </details>
 
@@ -2496,6 +2518,31 @@ the total reward obtained in a <code>gym</code> environment.</p>
     <div class="doc doc-contents ">
 
       <p>Get the total number of simulator interactions made.</p>
+    </div>
+
+  </div>
+
+
+
+  <div class="doc doc-object doc-attribute">
+
+
+
+<h3 id="evotorch.neuroevolution.gymne.GymNE.network_device" class="doc doc-heading">
+<code class="highlight language-python"><span class="n">network_device</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">]</span></code>
+
+  <span class="doc doc-properties">
+      <small class="doc doc-property doc-property-property"><code>property</code></small>
+      <small class="doc doc-property doc-property-readonly"><code>readonly</code></small>
+  </span>
+
+<a href="#evotorch.neuroevolution.gymne.GymNE.network_device" class="headerlink" title="Permanent link">&para;</a></h3>
+
+    <div class="doc doc-contents ">
+
+      <p>The device on which the problem should place data e.g. the network
+In the case of GymNE, supported Gym environments return numpy arrays on CPU which are converted to Tensors
+Therefore, it is almost always optimal to place the network on CPU</p>
     </div>
 
   </div>

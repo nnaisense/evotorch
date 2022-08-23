@@ -11,7 +11,7 @@
       
       
       <link rel="icon" href="../../assets/favicon.ico">
-      <meta name="generator" content="mkdocs-1.3.1, mkdocs-material-8.4.0">
+      <meta name="generator" content="mkdocs-1.3.1, mkdocs-material-8.4.1">
     
     
       
@@ -1791,23 +1791,18 @@
 <p>where <code>episodic_reward</code> is a value learn to maximize.</p>
 <p>EvoTorch provides direct support for Neuroevolution of agents for <code>gym</code> environments through the <a class="autorefs autorefs-internal" href="../../reference/evotorch/neuroevolution/gymne/#evotorch.neuroevolution.gymne.GymNE">GymNE</a> class. This class exploits the <code>gym.make</code> function, meaning that you can create a reinforcement learning problem simply by passing the name of the environment. For example,</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="kn">from</span> <span class="nn">evotorch.neuroevolution</span> <span class="kn">import</span> <span class="n">GymNE</span>
-<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>
-<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="n">problem</span> <span class="o">=</span> <span class="n">GymNE</span><span class="p">(</span>
-<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>    <span class="c1"># Name of the environment</span>
-<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>    <span class="n">env_name</span><span class="o">=</span><span class="s2">&quot;LunarLanderContinuous-v2&quot;</span><span class="p">,</span>
-<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>    <span class="c1"># Linear policy mapping observations to actions</span>
-<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a>    <span class="n">network</span><span class="o">=</span><span class="s2">&quot;Linear(obs_length, act_length)&quot;</span><span class="p">,</span>
-<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a>    <span class="c1"># Use 4 available CPUs. Note that you can modify this value,</span>
-<a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a>    <span class="c1"># or use &#39;max&#39; to exploit all available GPUs</span>
-<a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a>    <span class="n">num_actors</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span>
-<a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a><span class="p">)</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="n">problem</span> <span class="o">=</span> <span class="n">GymNE</span><span class="p">(</span>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>    <span class="n">env_name</span><span class="o">=</span><span class="s2">&quot;LunarLanderContinuous-v2&quot;</span><span class="p">,</span>  <span class="c1"># Name of the environment</span>
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>    <span class="n">network</span><span class="o">=</span> <span class="s2">&quot;Linear(obs_length, act_length)&quot;</span><span class="p">,</span>  <span class="c1"># Linear policy mapping observations to actions</span>
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>    <span class="n">num_actors</span><span class="o">=</span> <span class="mi">4</span><span class="p">,</span>  <span class="c1"># Use 4 available CPUs. Note that you can modify this value, or use &#39;max&#39; to exploit all available GPUs</span>
+<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="p">)</span>
 </code></pre></div>
 <p>Will create a <a class="autorefs autorefs-internal" href="../../reference/evotorch/neuroevolution/gymne/#evotorch.neuroevolution.gymne.GymNE">GymNE</a> instance for the <a href="https://www.gymlibrary.ml/environments/box2d/lunar_lander/"><code>"LunarLanderContinuous-v2"</code> environment</a> with a <code>Linear</code> policy which takes <code>obs_length</code> inputs (the number of observations) and returns <code>act_length</code> actions (the number of actions). In general, <a class="autorefs autorefs-internal" href="../../reference/evotorch/neuroevolution/gymne/#evotorch.neuroevolution.gymne.GymNE">GymNE</a> automatically provides both <code>obs_length</code>, <code>act_length</code> and <code>obs_space</code> (<a href="https://www.gymlibrary.ml/content/api/#gym.Env.observation_space">the observation spaces of the policy</a>) to the instantiation of the policy, meaning that you can also define classes with respect to the dimensions of the environment:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="kn">from</span> <span class="nn">gym.spaces</span> <span class="kn">import</span> <span class="n">Space</span>
 <a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="kn">import</span> <span class="nn">torch</span>
 <a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>
-<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>
-<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="k">class</span> <span class="nc">CustomPolicy</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="k">class</span> <span class="nc">CustomPolicy</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>
 <a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">obs_length</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">act_length</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">obs_space</span><span class="p">:</span> <span class="n">Space</span><span class="p">):</span>
 <a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
 <a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">lin1</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="n">obs_length</span><span class="p">,</span> <span class="mi">32</span><span class="p">)</span>
@@ -1817,20 +1812,19 @@
 <a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a>    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
 <a id="__codelineno-2-13" name="__codelineno-2-13" href="#__codelineno-2-13"></a>        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">lin2</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">act</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">lin1</span><span class="p">(</span><span class="n">data</span><span class="p">)))</span>
 <a id="__codelineno-2-14" name="__codelineno-2-14" href="#__codelineno-2-14"></a>
-<a id="__codelineno-2-15" name="__codelineno-2-15" href="#__codelineno-2-15"></a>
-<a id="__codelineno-2-16" name="__codelineno-2-16" href="#__codelineno-2-16"></a><span class="n">problem</span> <span class="o">=</span> <span class="n">GymNE</span><span class="p">(</span>
-<a id="__codelineno-2-17" name="__codelineno-2-17" href="#__codelineno-2-17"></a>    <span class="n">env_name</span><span class="o">=</span><span class="s2">&quot;LunarLanderContinuous-v2&quot;</span><span class="p">,</span>
-<a id="__codelineno-2-18" name="__codelineno-2-18" href="#__codelineno-2-18"></a>    <span class="n">network</span><span class="o">=</span><span class="n">CustomPolicy</span><span class="p">,</span>
-<a id="__codelineno-2-19" name="__codelineno-2-19" href="#__codelineno-2-19"></a>    <span class="n">num_actors</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span>
-<a id="__codelineno-2-20" name="__codelineno-2-20" href="#__codelineno-2-20"></a><span class="p">)</span>
+<a id="__codelineno-2-15" name="__codelineno-2-15" href="#__codelineno-2-15"></a><span class="n">problem</span> <span class="o">=</span> <span class="n">GymNE</span><span class="p">(</span>
+<a id="__codelineno-2-16" name="__codelineno-2-16" href="#__codelineno-2-16"></a>    <span class="n">env_name</span><span class="o">=</span><span class="s2">&quot;LunarLanderContinuous-v2&quot;</span><span class="p">,</span>
+<a id="__codelineno-2-17" name="__codelineno-2-17" href="#__codelineno-2-17"></a>    <span class="n">network</span><span class="o">=</span> <span class="n">CustomPolicy</span><span class="p">,</span>
+<a id="__codelineno-2-18" name="__codelineno-2-18" href="#__codelineno-2-18"></a>    <span class="n">num_actors</span><span class="o">=</span> <span class="mi">4</span><span class="p">,</span>
+<a id="__codelineno-2-19" name="__codelineno-2-19" href="#__codelineno-2-19"></a><span class="p">)</span>
 </code></pre></div>
 <p>You can specify additional arguments to pass to the instantiation of the environment, as you would pass <a href="https://www.gymlibrary.ml/environments/box2d/lunar_lander/#arguments">key-word arguments to <code>gym.make</code></a>, using the <code>env_config</code> dictionary. For example:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="n">problem</span> <span class="o">=</span> <span class="n">GymNE</span><span class="p">(</span>
 <a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>    <span class="n">env_name</span><span class="o">=</span><span class="s2">&quot;LunarLanderContinuous-v2&quot;</span><span class="p">,</span>
-<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>    <span class="n">env_config</span><span class="o">=</span><span class="p">{</span>
-<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>        <span class="s2">&quot;gravity&quot;</span><span class="p">:</span> <span class="o">-</span><span class="mf">1e-5</span><span class="p">,</span>
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>    <span class="n">env_config</span> <span class="o">=</span> <span class="p">{</span>
+<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>        <span class="s1">&#39;gravity&#39;</span><span class="p">:</span> <span class="o">-</span><span class="mf">1e-5</span><span class="p">,</span>
 <a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>    <span class="p">},</span>
-<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a>    <span class="n">network</span><span class="o">=</span><span class="n">CustomPolicy</span><span class="p">,</span>
+<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a>    <span class="n">network</span><span class="o">=</span> <span class="n">CustomPolicy</span><span class="p">,</span>
 <a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a><span class="p">)</span>
 </code></pre></div>
 <p>will effectively disable <code>gravity</code> in the <code>"LunarLanderContinuous-v2"</code> environment.</p>
@@ -1840,9 +1834,9 @@
 <p>Firstly, there is the <code>num_episodes</code> argument, which allows you to evaluate individual networks repeatedly and have their episodic rewards averaged. This is particularly useful when studying noisy environments, and when using population-based evolutionary algorithms whose selection procedures and elitism mechanisms may be more sensitive to noise. For example, instantiating the problem</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="n">problem</span> <span class="o">=</span> <span class="n">GymNE</span><span class="p">(</span>
 <a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>    <span class="n">env_name</span><span class="o">=</span><span class="s2">&quot;LunarLanderContinuous-v2&quot;</span><span class="p">,</span>
-<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>    <span class="n">network</span><span class="o">=</span><span class="n">CustomPolicy</span><span class="p">,</span>
-<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>    <span class="n">num_actors</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span>
-<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a>    <span class="n">num_episodes</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span>
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>    <span class="n">network</span><span class="o">=</span> <span class="n">CustomPolicy</span><span class="p">,</span>
+<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>    <span class="n">num_actors</span><span class="o">=</span> <span class="mi">4</span><span class="p">,</span>
+<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a>    <span class="n">num_episodes</span> <span class="o">=</span> <span class="mi">5</span><span class="p">,</span>
 <a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a><span class="p">)</span>
 </code></pre></div>
 <p>will specify that each solution should be evaluated <span class="arithmatex">\(5\)</span> times with their episodic rewards averaged, rather than just the default behaviour of evaluating the reward on a single episode.</p>
@@ -1852,9 +1846,9 @@
 <p>While in practice this means that the problem is non-stationary, as the expection and variance of each variable is updated as new observations are drawn, the normalizing effect on the observations generally makes successful configuration of neuroevolution substantially easier. You can enable observation normalization using the boolean flag <code>observation_normalization</code> e.g.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="n">problem</span> <span class="o">=</span> <span class="n">GymNE</span><span class="p">(</span>
 <a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>    <span class="n">env_name</span><span class="o">=</span><span class="s2">&quot;LunarLanderContinuous-v2&quot;</span><span class="p">,</span>
-<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>    <span class="n">network</span><span class="o">=</span><span class="n">CustomPolicy</span><span class="p">,</span>
-<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>    <span class="n">num_actors</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span>
-<a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a>    <span class="n">observation_normalization</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>    <span class="n">network</span><span class="o">=</span> <span class="n">CustomPolicy</span><span class="p">,</span>
+<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>    <span class="n">num_actors</span><span class="o">=</span> <span class="mi">4</span><span class="p">,</span>
+<a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a>    <span class="n">observation_normalization</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
 <a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a><span class="p">)</span>
 </code></pre></div>
 <p>And if you then evaluate a batch (to ensure the observation normalization statistics are initialized) and print the <code>problem</code>'s policy:</p>
@@ -1863,15 +1857,15 @@
 </code></pre></div>
 <details class="abstract" open="open">
 <summary>Output</summary>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>Sequential(
-<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>    (0): ObsNormLayer()
-<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>    (1): CustomPolicy(
-<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a>        (lin1): Linear(in_features=8, out_features=32, bias=True)
-<a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a>        (act): Tanh()
-<a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a>        (lin2): Linear(in_features=32, out_features=2, bias=True)
-<a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a>    )
-<a id="__codelineno-7-8" name="__codelineno-7-8" href="#__codelineno-7-8"></a>    (2): ActClipLayer()
-<a id="__codelineno-7-9" name="__codelineno-7-9" href="#__codelineno-7-9"></a>)
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="n">Sequential</span><span class="p">(</span>
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>    <span class="p">(</span><span class="mi">0</span><span class="p">):</span> <span class="n">ObsNormLayer</span><span class="p">()</span>
+<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>    <span class="p">(</span><span class="mi">1</span><span class="p">):</span> <span class="n">CustomPolicy</span><span class="p">(</span>
+<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a>        <span class="p">(</span><span class="n">lin1</span><span class="p">):</span> <span class="n">Linear</span><span class="p">(</span><span class="n">in_features</span><span class="o">=</span><span class="mi">8</span><span class="p">,</span> <span class="n">out_features</span><span class="o">=</span><span class="mi">32</span><span class="p">,</span> <span class="n">bias</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a>        <span class="p">(</span><span class="n">act</span><span class="p">):</span> <span class="n">Tanh</span><span class="p">()</span>
+<a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a>        <span class="p">(</span><span class="n">lin2</span><span class="p">):</span> <span class="n">Linear</span><span class="p">(</span><span class="n">in_features</span><span class="o">=</span><span class="mi">32</span><span class="p">,</span> <span class="n">out_features</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">bias</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a>    <span class="p">)</span>
+<a id="__codelineno-7-8" name="__codelineno-7-8" href="#__codelineno-7-8"></a>    <span class="p">(</span><span class="mi">2</span><span class="p">):</span> <span class="n">ActClipLayer</span><span class="p">()</span>
+<a id="__codelineno-7-9" name="__codelineno-7-9" href="#__codelineno-7-9"></a><span class="p">)</span>
 </code></pre></div>
 </details>
 <p>you will observe that the policy contains an <a class="autorefs autorefs-internal" href="../../reference/evotorch/neuroevolution/net/rl/#evotorch.neuroevolution.net.rl.ObsNormLayer">ObsNormLayer</a> which automatically applies observation normalization to the input to the policy, and an <a class="autorefs autorefs-internal" href="../../reference/evotorch/neuroevolution/net/rl/#evotorch.neuroevolution.net.rl.ActClipLayer">ActClipLayer</a> which automatically clips the actions to the space of the environment.</p>
@@ -1880,8 +1874,8 @@
 <p>For example, the <code>"Humanoid-v4"</code> environment <a href="https://www.gymlibrary.ml/environments/mujoco/humanoid/#rewards">has an <code>alive_bonus</code> value of 5</a>. You can easily offset this using the <code>decrease_rewards_by</code> keyword argument:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="n">problem</span> <span class="o">=</span> <span class="n">GymNE</span><span class="p">(</span>
 <a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>    <span class="n">env_name</span><span class="o">=</span><span class="s2">&quot;Humanoid-v4&quot;</span><span class="p">,</span>
-<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a>    <span class="n">network</span><span class="o">=</span><span class="n">CustomPolicy</span><span class="p">,</span>
-<a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a>    <span class="n">decrease_rewards_by</span><span class="o">=</span><span class="mf">5.0</span><span class="p">,</span>
+<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a>    <span class="n">network</span><span class="o">=</span> <span class="n">CustomPolicy</span><span class="p">,</span>
+<a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a>    <span class="n">decrease_rewards_by</span> <span class="o">=</span> <span class="mf">5.0</span><span class="p">,</span>
 <a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a><span class="p">)</span>
 </code></pre></div>
 <p>which will cause each step to return <code>5.0</code> less reward.</p>

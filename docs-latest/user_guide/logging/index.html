@@ -11,7 +11,7 @@
       
       
       <link rel="icon" href="../../assets/favicon.ico">
-      <meta name="generator" content="mkdocs-1.3.1, mkdocs-material-8.4.0">
+      <meta name="generator" content="mkdocs-1.3.1, mkdocs-material-8.4.1">
     
     
       
@@ -1783,22 +1783,24 @@
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="kn">from</span> <span class="nn">evotorch.algorithms</span> <span class="kn">import</span> <span class="n">SNES</span>
 <a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="kn">import</span> <span class="nn">torch</span>
 <a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>
-<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>
-<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="k">def</span> <span class="nf">sphere</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
-<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>    <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">pow</span><span class="p">(</span><span class="mf">2.0</span><span class="p">))</span>
-<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>
-<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>
-<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span class="n">problem</span> <span class="o">=</span> <span class="n">Problem</span><span class="p">(</span><span class="s2">&quot;min&quot;</span><span class="p">,</span> <span class="n">sphere</span><span class="p">,</span> <span class="n">solution_length</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">initial_bounds</span><span class="o">=</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
-<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a><span class="n">searcher</span> <span class="o">=</span> <span class="n">SNES</span><span class="p">(</span><span class="n">problem</span><span class="p">,</span> <span class="n">stdev_init</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>
-<a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a>
-<a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a><span class="c1"># Create the logger, attaching it to the searcher</span>
-<a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a><span class="kn">from</span> <span class="nn">evotorch.logging</span> <span class="kn">import</span> <span class="n">StdOutLogger</span>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="k">def</span> <span class="nf">sphere</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>    <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">pow</span><span class="p">(</span><span class="mf">2.</span><span class="p">))</span>
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="n">problem</span> <span class="o">=</span> <span class="n">Problem</span><span class="p">(</span>
+<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>    <span class="s1">&#39;min&#39;</span><span class="p">,</span>
+<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>    <span class="n">sphere</span><span class="p">,</span>
+<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>    <span class="n">solution_length</span> <span class="o">=</span> <span class="mi">10</span><span class="p">,</span>
+<a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a>    <span class="n">initial_bounds</span> <span class="o">=</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
+<a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a><span class="p">)</span>
+<a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a><span class="n">searcher</span> <span class="o">=</span> <span class="n">SNES</span><span class="p">(</span><span class="n">problem</span><span class="p">,</span> <span class="n">stdev_init</span> <span class="o">=</span> <span class="mi">5</span><span class="p">)</span>
 <a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a>
-<a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a><span class="n">logger</span> <span class="o">=</span> <span class="n">StdOutLogger</span><span class="p">(</span><span class="n">searcher</span><span class="p">)</span>
+<a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a><span class="c1"># Create the logger, attaching it to the searcher</span>
+<a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a><span class="kn">from</span> <span class="nn">evotorch.logging</span> <span class="kn">import</span> <span class="n">StdOutLogger</span>
+<a id="__codelineno-0-18" name="__codelineno-0-18" href="#__codelineno-0-18"></a><span class="n">logger</span> <span class="o">=</span> <span class="n">StdOutLogger</span><span class="p">(</span><span class="n">searcher</span><span class="p">)</span>
 </code></pre></div>
 <p>Once a <a class="autorefs autorefs-internal" href="../../reference/evotorch/logging/#evotorch.logging.Logger">Logger</a> instance has been created and attached to a <a class="autorefs autorefs-internal" href="../../reference/evotorch/algorithms/searchalgorithm/#evotorch.algorithms.searchalgorithm.SearchAlgorithm">SearchAlgorithm</a> instance <code>searcher</code>, it will log <code>searcher.status</code> every time <code>searcher.step()</code> is called.</p>
 <p>Most loggers also support the argument <code>interval</code>. This allows you to control how often the <a class="autorefs autorefs-internal" href="../../reference/evotorch/logging/#evotorch.logging.Logger">Logger</a> instance is updated. For example, if we instead do</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="n">logger</span> <span class="o">=</span> <span class="n">StdOutLogger</span><span class="p">(</span><span class="n">searcher</span><span class="p">,</span> <span class="n">interval</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="n">logger</span> <span class="o">=</span> <span class="n">StdOutLogger</span><span class="p">(</span><span class="n">searcher</span><span class="p">,</span> <span class="n">interval</span> <span class="o">=</span> <span class="mi">10</span><span class="p">)</span>
 </code></pre></div>
 <p>then <code>logger</code> will only log to the stdout every <span class="arithmatex">\(10\)</span> iterations.</p>
 <h2 id="direct-logging-with-stdoutlogger">Direct Logging with StdOutLogger<a class="headerlink" href="#direct-logging-with-stdoutlogger" title="Permanent link">&para;</a></h2>
@@ -1808,26 +1810,26 @@
 </code></pre></div>
 <details class="abstract" open="open">
 <summary>Output</summary>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>            iter : 1
-<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>        mean_eval : 166.8264923095703
-<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>    median_eval : 134.81417846679688
-<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>    pop_best_eval : 74.62313079833984
-<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>        best_eval : 74.62313079833984
-<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a>    worst_eval : 274.99029541015625
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>            <span class="nb">iter</span> <span class="p">:</span> <span class="mi">1</span>
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>        <span class="n">mean_eval</span> <span class="p">:</span> <span class="mf">166.8264923095703</span>
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>    <span class="n">median_eval</span> <span class="p">:</span> <span class="mf">134.81417846679688</span>
+<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>    <span class="n">pop_best_eval</span> <span class="p">:</span> <span class="mf">74.62313079833984</span>
+<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>        <span class="n">best_eval</span> <span class="p">:</span> <span class="mf">74.62313079833984</span>
+<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a>    <span class="n">worst_eval</span> <span class="p">:</span> <span class="mf">274.99029541015625</span>
 <a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a>
-<a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a>            iter : 2
-<a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a>        mean_eval : 241.93557739257812
-<a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a>    median_eval : 201.2202911376953
-<a id="__codelineno-3-11" name="__codelineno-3-11" href="#__codelineno-3-11"></a>    pop_best_eval : 125.85945892333984
-<a id="__codelineno-3-12" name="__codelineno-3-12" href="#__codelineno-3-12"></a>        best_eval : 74.62313079833984
-<a id="__codelineno-3-13" name="__codelineno-3-13" href="#__codelineno-3-13"></a>    worst_eval : 413.692626953125
+<a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a>            <span class="nb">iter</span> <span class="p">:</span> <span class="mi">2</span>
+<a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a>        <span class="n">mean_eval</span> <span class="p">:</span> <span class="mf">241.93557739257812</span>
+<a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a>    <span class="n">median_eval</span> <span class="p">:</span> <span class="mf">201.2202911376953</span>
+<a id="__codelineno-3-11" name="__codelineno-3-11" href="#__codelineno-3-11"></a>    <span class="n">pop_best_eval</span> <span class="p">:</span> <span class="mf">125.85945892333984</span>
+<a id="__codelineno-3-12" name="__codelineno-3-12" href="#__codelineno-3-12"></a>        <span class="n">best_eval</span> <span class="p">:</span> <span class="mf">74.62313079833984</span>
+<a id="__codelineno-3-13" name="__codelineno-3-13" href="#__codelineno-3-13"></a>    <span class="n">worst_eval</span> <span class="p">:</span> <span class="mf">413.692626953125</span>
 <a id="__codelineno-3-14" name="__codelineno-3-14" href="#__codelineno-3-14"></a>
-<a id="__codelineno-3-15" name="__codelineno-3-15" href="#__codelineno-3-15"></a>            iter : 3
-<a id="__codelineno-3-16" name="__codelineno-3-16" href="#__codelineno-3-16"></a>        mean_eval : 199.49822998046875
-<a id="__codelineno-3-17" name="__codelineno-3-17" href="#__codelineno-3-17"></a>    median_eval : 199.6777801513672
-<a id="__codelineno-3-18" name="__codelineno-3-18" href="#__codelineno-3-18"></a>    pop_best_eval : 93.25483703613281
-<a id="__codelineno-3-19" name="__codelineno-3-19" href="#__codelineno-3-19"></a>        best_eval : 74.62313079833984
-<a id="__codelineno-3-20" name="__codelineno-3-20" href="#__codelineno-3-20"></a>    worst_eval : 413.692626953125
+<a id="__codelineno-3-15" name="__codelineno-3-15" href="#__codelineno-3-15"></a>            <span class="nb">iter</span> <span class="p">:</span> <span class="mi">3</span>
+<a id="__codelineno-3-16" name="__codelineno-3-16" href="#__codelineno-3-16"></a>        <span class="n">mean_eval</span> <span class="p">:</span> <span class="mf">199.49822998046875</span>
+<a id="__codelineno-3-17" name="__codelineno-3-17" href="#__codelineno-3-17"></a>    <span class="n">median_eval</span> <span class="p">:</span> <span class="mf">199.6777801513672</span>
+<a id="__codelineno-3-18" name="__codelineno-3-18" href="#__codelineno-3-18"></a>    <span class="n">pop_best_eval</span> <span class="p">:</span> <span class="mf">93.25483703613281</span>
+<a id="__codelineno-3-19" name="__codelineno-3-19" href="#__codelineno-3-19"></a>        <span class="n">best_eval</span> <span class="p">:</span> <span class="mf">74.62313079833984</span>
+<a id="__codelineno-3-20" name="__codelineno-3-20" href="#__codelineno-3-20"></a>    <span class="n">worst_eval</span> <span class="p">:</span> <span class="mf">413.692626953125</span>
 </code></pre></div>
 </details>
 <h2 id="locally-collecting-the-logs-via-pandas">Locally Collecting the Logs via Pandas<a class="headerlink" href="#locally-collecting-the-logs-via-pandas" title="Permanent link">&para;</a></h2>
@@ -1874,13 +1876,12 @@ With the help of <code>mlflow</code>, the logs can be stored into the local disk
 <a id="__codelineno-7-17" name="__codelineno-7-17" href="#__codelineno-7-17"></a><span class="c1"># In addition, instantiate an MlflowLogger so that the logs are stored</span>
 <a id="__codelineno-7-18" name="__codelineno-7-18" href="#__codelineno-7-18"></a><span class="c1"># via mlflow.</span>
 <a id="__codelineno-7-19" name="__codelineno-7-19" href="#__codelineno-7-19"></a><span class="kn">import</span> <span class="nn">mlflow</span>
-<a id="__codelineno-7-20" name="__codelineno-7-20" href="#__codelineno-7-20"></a>
-<a id="__codelineno-7-21" name="__codelineno-7-21" href="#__codelineno-7-21"></a><span class="n">client</span> <span class="o">=</span> <span class="n">mlflow</span><span class="o">.</span><span class="n">tracking</span><span class="o">.</span><span class="n">MlflowClient</span><span class="p">()</span>  <span class="c1"># Create the Mlflow client</span>
-<a id="__codelineno-7-22" name="__codelineno-7-22" href="#__codelineno-7-22"></a><span class="n">run</span> <span class="o">=</span> <span class="n">mlflow</span><span class="o">.</span><span class="n">start_run</span><span class="p">()</span>  <span class="c1"># Start an mlflow run to log to</span>
-<a id="__codelineno-7-23" name="__codelineno-7-23" href="#__codelineno-7-23"></a><span class="n">_</span> <span class="o">=</span> <span class="n">MlflowLogger</span><span class="p">(</span><span class="n">searcher</span><span class="p">,</span> <span class="n">client</span><span class="o">=</span><span class="n">client</span><span class="p">,</span> <span class="n">run</span><span class="o">=</span><span class="n">run</span><span class="p">)</span>
-<a id="__codelineno-7-24" name="__codelineno-7-24" href="#__codelineno-7-24"></a>
-<a id="__codelineno-7-25" name="__codelineno-7-25" href="#__codelineno-7-25"></a><span class="c1"># Run the search algorithm</span>
-<a id="__codelineno-7-26" name="__codelineno-7-26" href="#__codelineno-7-26"></a><span class="n">searcher</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="mi">100</span><span class="p">)</span>
+<a id="__codelineno-7-20" name="__codelineno-7-20" href="#__codelineno-7-20"></a><span class="n">client</span> <span class="o">=</span> <span class="n">mlflow</span><span class="o">.</span><span class="n">tracking</span><span class="o">.</span><span class="n">MlflowClient</span><span class="p">()</span>  <span class="c1"># Create the Mlflow client</span>
+<a id="__codelineno-7-21" name="__codelineno-7-21" href="#__codelineno-7-21"></a><span class="n">run</span> <span class="o">=</span> <span class="n">mlflow</span><span class="o">.</span><span class="n">start_run</span><span class="p">()</span>  <span class="c1"># Start an mlflow run to log to</span>
+<a id="__codelineno-7-22" name="__codelineno-7-22" href="#__codelineno-7-22"></a><span class="n">_</span> <span class="o">=</span> <span class="n">MlflowLogger</span><span class="p">(</span><span class="n">searcher</span><span class="p">,</span> <span class="n">client</span> <span class="o">=</span> <span class="n">client</span><span class="p">,</span> <span class="n">run</span> <span class="o">=</span> <span class="n">run</span><span class="p">)</span>
+<a id="__codelineno-7-23" name="__codelineno-7-23" href="#__codelineno-7-23"></a>
+<a id="__codelineno-7-24" name="__codelineno-7-24" href="#__codelineno-7-24"></a><span class="c1"># Run the search algorithm</span>
+<a id="__codelineno-7-25" name="__codelineno-7-25" href="#__codelineno-7-25"></a><span class="n">searcher</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="mi">100</span><span class="p">)</span>
 </code></pre></div>
 <h2 id="remote-logging-with-sacred">Remote Logging with <code>sacred</code><a class="headerlink" href="#remote-logging-with-sacred" title="Permanent link">&para;</a></h2>
 <p>As an alternative to <code>mlflow</code>, one might want to log the metrics with the help of the <code>sacred</code> library.
