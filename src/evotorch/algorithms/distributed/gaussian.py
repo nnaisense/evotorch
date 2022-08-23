@@ -582,8 +582,7 @@ class PGPE(GaussianSearchAlgorithm):
                 of the optimizer (e.g. 'adam', 'clipup');
                 or as an instance of evotorch.optimizers.TorchOptimizer
                 or evotorch.optimizers.ClipUp.
-                As in the study of Salimans et al. (2017),
-                the default is 'clipup'.
+                The default is 'clipup'.
                 Note that, for ClipUp, the default maximum speed is set
                 as twice the given `center_learning_rate`.
                 This maximum speed can be configured by passing
@@ -825,8 +824,7 @@ class SNES(GaussianSearchAlgorithm):
                 of the optimizer (e.g. 'adam', 'clipup');
                 or as an instance of evotorch.optimizers.TorchOptimizer
                 or evotorch.optimizers.ClipUp.
-                As in the study of Salimans et al. (2017),
-                the default is 'clipup'.
+                The default is None.
                 Note that, for ClipUp, the default maximum speed is set
                 as twice the given `center_learning_rate`.
                 This maximum speed can be configured by passing
@@ -838,8 +836,7 @@ class SNES(GaussianSearchAlgorithm):
             ranking_method: Which ranking method will be used for
                 fitness shaping. See the documentation of
                 `evotorch.ranking.rank(...)` for details.
-                As in the study of Salimans et al. (2017),
-                the default is 'centered'.
+                The default is 'nes'.
                 Can be given as None if no such ranking is required.
             center_init: The initial center solution.
                 Can be left as None.
@@ -1257,8 +1254,7 @@ class XNES(GaussianSearchAlgorithm):
                 of the optimizer (e.g. 'adam', 'clipup');
                 or as an instance of evotorch.optimizers.TorchOptimizer
                 or evotorch.optimizers.ClipUp.
-                As in the study of Salimans et al. (2017),
-                the default is 'clipup'.
+                The default is None.
                 Note that, for ClipUp, the default maximum speed is set
                 as twice the given `center_learning_rate`.
                 This maximum speed can be configured by passing
@@ -1270,8 +1266,7 @@ class XNES(GaussianSearchAlgorithm):
             ranking_method: Which ranking method will be used for
                 fitness shaping. See the documentation of
                 `evotorch.ranking.rank(...)` for details.
-                As in the study of Salimans et al. (2017),
-                the default is 'centered'.
+                The default is 'nes'.
                 Can be given as None if no such ranking is required.
             center_init: The initial center solution.
                 Can be left as None.
