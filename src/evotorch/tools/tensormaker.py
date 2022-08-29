@@ -664,6 +664,92 @@ class TensorMakerMixin:
         )
         return misc.make_gaussian(*args, center=center, stdev=stdev, symmetric=symmetric, **kwargs)
 
+    def make_cauchy(
+        self,
+        *size: Size,
+        num_solutions: Optional[int] = None,
+        center: Optional[RealOrVector] = None,
+        stdev: Optional[RealOrVector] = None,
+        symmetric: bool = False,
+        out: Optional[torch.Tensor] = None,
+        dtype: Optional[DType] = None,
+        device: Optional[Device] = None,
+        use_eval_dtype: bool = False,
+        generator: Any = None,
+    ) -> torch.Tensor:
+        """
+        Make a new or existing tensor filled by Cauchy distributed values.
+        This function can work only with float dtypes.
+
+        Args:
+            size: Size of the new tensor to be filled with Cauchy distributed
+                values. This can be given as multiple positional arguments, each
+                such positional argument being an integer, or as a single
+                positional argument of a tuple, the tuple containing multiple
+                integers. Note that, if the user wishes to fill an existing
+                tensor instead, then no positional argument is expected.
+            num_solutions: This can be used instead of the `size` arguments
+                for specifying the shape of the target tensor.
+                Expected as an integer, when `num_solutions` is specified
+                as `n`, the shape of the resulting tensor will be
+                `(n, m)` where `m` is the solution length reported by this
+                method's parent object's `solution_length` attribute.
+            center: Center point (i.e. mean) of the Cauchy distribution.
+                Can be a scalar, or a tensor.
+                If not specified, the center point will be taken as 0.
+                Note that, if one specifies `center`, then `stdev` is also
+                expected to be explicitly specified.
+            stdev: Standard deviation for the Cauchy distributed values.
+                Can be a scalar, or a tensor.
+                If not specified, the standard deviation will be taken as 1.
+                Note that, if one specifies `stdev`, then `center` is also
+                expected to be explicitly specified.
+            symmetric: Whether or not the values should be sampled in a
+                symmetric (i.e. antithetic) manner.
+                The default is False.
+            out: Optionally, the tensor to be filled by Cauchy distributed
+                values. If an `out` tensor is given, then no `size` argument is
+                expected.
+            dtype: Optionally a string (e.g. "float32") or a PyTorch dtype
+                (e.g. torch.float32).
+                If `dtype` is not specified (and also `out` is None),
+                it will be assumed that the user wishes to create a tensor
+                using the dtype of this method's parent object.
+                If an `out` tensor is specified, then `dtype` is expected
+                as None.
+            device: The device in which the new empty tensor will be stored.
+                If not specified (and also `out` is None), it will be
+                assumed that the user wishes to create a tensor on the
+                same device with this method's parent object.
+                If an `out` tensor is specified, then `device` is expected
+                as None.
+            use_eval_dtype: If this is given as True and a `dtype` is not
+                specified, then the `dtype` of the result will be taken
+                from the `eval_dtype` attribute of this method's parent
+                object.
+            generator: Pseudo-random generator to be used when sampling
+                the values. Can be a `torch.Generator` or any object with
+                a `generator` attribute (e.g. a Problem object).
+                If not given, then this method's parent object will be
+                analyzed whether or not it has its own generator.
+                If it does, that generator will be used.
+                If not, the global generator of PyTorch will be used.
+        Returns:
+            The created or modified tensor after placing the Cauchy
+            distributed values.
+        """
+
+        args, kwargs = self.__get_all_args_for_random_maker(
+            *size,
+            num_solutions=num_solutions,
+            out=out,
+            dtype=dtype,
+            device=device,
+            use_eval_dtype=use_eval_dtype,
+            generator=generator,
+        )
+        return misc.make_cauchy(*args, center=center, stdev=stdev, symmetric=symmetric, **kwargs)
+
     def make_randint(
         self,
         *size: Size,

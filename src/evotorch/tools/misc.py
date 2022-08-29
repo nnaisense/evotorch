@@ -1458,6 +1458,101 @@ def make_gaussian(
     return out
 
 
+def make_cauchy(
+    *size: Size,
+    center: Optional[RealOrVector] = None,
+    stdev: Optional[RealOrVector] = None,
+    symmetric: bool = False,
+    out: Optional[torch.Tensor] = None,
+    dtype: Optional[DType] = None,
+    device: Optional[Device] = None,
+    generator: Any = None,
+) -> torch.Tensor:
+    """
+    Make a new or existing tensor filled by Cauchy distributed values.
+    This function can work only with float dtypes.
+
+    Args:
+        size: Size of the new tensor to be filled with Cauchy distributed
+            values. This can be given as multiple positional arguments, each
+            such positional argument being an integer, or as a single
+            positional argument of a tuple, the tuple containing multiple
+            integers. Note that, if the user wishes to fill an existing
+            tensor instead, then no positional argument is expected.
+        center: Center point (i.e. mean) of the Cauchy distribution.
+            Can be a scalar, or a tensor.
+            If not specified, the center point will be taken as 0.
+            Note that, if one specifies `center`, then `stdev` is also
+            expected to be explicitly specified.
+        stdev: Standard deviation for the Cauchy distributed values.
+            Can be a scalar, or a tensor.
+            If not specified, the standard deviation will be taken as 1.
+            Note that, if one specifies `stdev`, then `center` is also
+            expected to be explicitly specified.
+        symmetric: Whether or not the values should be sampled in a
+            symmetric (i.e. antithetic) manner.
+            The default is False.
+        out: Optionally, the tensor to be filled by Cauchy distributed
+            values. If an `out` tensor is given, then no `size` argument is
+            expected.
+        dtype: Optionally a string (e.g. "float32") or a PyTorch dtype
+            (e.g. torch.float32).
+            If `dtype` is not specified, the default choice of
+            `torch.empty(...)` is used, that is, `torch.float32`.
+            If an `out` tensor is specified, then `dtype` is expected
+            as None.
+        device: The device in which the new tensor will be stored.
+            If not specified, "cpu" will be used.
+            If an `out` tensor is specified, then `device` is expected
+            as None.
+        generator: Pseudo-random number generator to be used when sampling
+            the values. Can be a `torch.Generator`, or an object with
+            a `generator` attribute (such as `Problem`).
+            If left as None, the global generator of PyTorch will be used.
+    Returns:
+        The created or modified tensor after placing the Cauchy
+        distributed values.
+    """
+    scalar_requested = _scalar_requested(*size)
+    if scalar_requested:
+        size = (1,)
+
+    out = _out_tensor(*size, out=out, dtype=dtype, device=device)
+    gen_kwargs = _generator_kwargs(generator)
+
+    if symmetric:
+        leftmost_dim = out.shape[0]
+        if (leftmost_dim % 2) != 0:
+            raise ValueError(
+                f"Symmetric sampling cannot be done if the leftmost dimension of the target tensor is odd."
+                f" The shape of the target tensor is: {repr(out.shape)}."
+            )
+        out[0::2, ...].cauchy_(**gen_kwargs)
+        out[1::2, ...] = out[0::2, ...]
+        out[1::2, ...] *= -1
+    else:
+        out.cauchy_(**gen_kwargs)
+
+    if (center is None) and (stdev is None):
+        pass  # do nothing
+    elif (center is not None) and (stdev is not None):
+        stdev = torch.as_tensor(stdev, dtype=out.dtype, device=out.device)
+        out *= stdev
+        center = torch.as_tensor(center, dtype=out.dtype, device=out.device)
+        out += center
+    else:
+        raise ValueError(
+            f"Please either specify none of `stdev` and `center`, or both of them."
+            f" Currently, `center` is {center}"
+            f" and `stdev` is {stdev}."
+        )
+
+    if scalar_requested:
+        out = out[0]
+
+    return out
+
+
 def make_randint(
     *size: Size,
     n: Union[int, float, torch.Tensor],
