@@ -20,10 +20,15 @@ EvoTorch provides direct support for Neuroevolution of agents for `gym` environm
 
 ```python
 from evotorch.neuroevolution import GymNE
+
 problem = GymNE(
-    env_name="LunarLanderContinuous-v2",  # Name of the environment
-    network= "Linear(obs_length, act_length)",  # Linear policy mapping observations to actions
-    num_actors= 4,  # Use 4 available CPUs. Note that you can modify this value, or use 'max' to exploit all available GPUs
+    # Name of the environment
+    env_name="LunarLanderContinuous-v2",
+    # Linear policy mapping observations to actions
+    network="Linear(obs_length, act_length)",
+    # Use 4 available CPUs. Note that you can modify this value,
+    # or use 'max' to exploit all available GPUs
+    num_actors=4,
 )
 ```
 
@@ -33,8 +38,8 @@ Will create a [GymNE][evotorch.neuroevolution.gymne.GymNE] instance for the [`"L
 from gym.spaces import Space
 import torch
 
-class CustomPolicy(torch.nn.Module):
 
+class CustomPolicy(torch.nn.Module):
     def __init__(self, obs_length: int, act_length: int, obs_space: Space):
         super().__init__()
         self.lin1 = torch.nn.Linear(obs_length, 32)
@@ -44,10 +49,11 @@ class CustomPolicy(torch.nn.Module):
     def forward(self, data):
         return self.lin2(self.act(self.lin1(data)))
 
+
 problem = GymNE(
     env_name="LunarLanderContinuous-v2",
-    network= CustomPolicy,
-    num_actors= 4,
+    network=CustomPolicy,
+    num_actors=4,
 )
 ```
 
@@ -56,10 +62,10 @@ You can specify additional arguments to pass to the instantiation of the environ
 ```python
 problem = GymNE(
     env_name="LunarLanderContinuous-v2",
-    env_config = {
-        'gravity': -1e-5,
+    env_config={
+        "gravity": -1e-5,
     },
-    network= CustomPolicy,
+    network=CustomPolicy,
 )
 ```
 
@@ -76,9 +82,9 @@ Firstly, there is the `num_episodes` argument, which allows you to evaluate indi
 ```python
 problem = GymNE(
     env_name="LunarLanderContinuous-v2",
-    network= CustomPolicy,
-    num_actors= 4,
-    num_episodes = 5,
+    network=CustomPolicy,
+    num_actors=4,
+    num_episodes=5,
 )
 ```
 
@@ -95,9 +101,9 @@ While in practice this means that the problem is non-stationary, as the expectio
 ```python
 problem = GymNE(
     env_name="LunarLanderContinuous-v2",
-    network= CustomPolicy,
-    num_actors= 4,
-    observation_normalization = True,
+    network=CustomPolicy,
+    num_actors=4,
+    observation_normalization=True,
 )
 ```
 
@@ -109,7 +115,7 @@ print(problem.to_policy(problem.make_zeros(problem.solution_length)))
 ```
 
 ???+ abstract "Output"
-    ```python
+    ```
     Sequential(
         (0): ObsNormLayer()
         (1): CustomPolicy(
@@ -132,8 +138,8 @@ For example, the `"Humanoid-v4"` environment [has an `alive_bonus` value of 5](h
 ```python
 problem = GymNE(
     env_name="Humanoid-v4",
-    network= CustomPolicy,
-    decrease_rewards_by = 5.0,
+    network=CustomPolicy,
+    decrease_rewards_by=5.0,
 )
 ```
 

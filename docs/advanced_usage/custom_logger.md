@@ -7,8 +7,8 @@ A [Logger][evotorch.logging.Logger] object has quite a simple structure: it requ
 ```python
 from evotorch.logging import Logger
 
-class MyLogger(Logger):
 
+class MyLogger(Logger):
     def __init__(self, searcher):
         super().__init__(searcher)
 
@@ -36,7 +36,8 @@ Let's suppose that we wish to use `matplotlib` functionality to create a simple 
 ```python
 import matplotlib
 import matplotlib.pyplot as plt
-matplotlib.use('TkAgg')
+
+matplotlib.use("TkAgg")
 plt.ion()
 ```
 
@@ -44,7 +45,6 @@ When we initialise our custom logger, `LivePlotter`, we will pass it a `searcher
 
 ```python
 class LivePlotter(Logger):
-
     def __init__(self, searcher, target_status: str):
 
         # Call the super constructor
@@ -59,26 +59,33 @@ class LivePlotter(Logger):
 Additionally, we will set up a `matplotlib` `Figure` instance that we can interact with as we receive data from the `searcher`.
 
 ```python
+class LivePlotter(Logger):
+    def __init__(self, searcher, target_status: str):
+        ...
         # Create a figure and axis
         self._fig = plt.figure(figsize=(10, 4), dpi=80)
         self._ax = self._fig.add_subplot(111)
 
-        # Set the labels of the x and y axis
-        self._ax.set_xlabel('iter')
+        # Set the labels of the x and y axes
+        self._ax.set_xlabel("iter")
         self._ax.set_ylabel(target_status)
 
         # Create a line with (initially) no data in it
-        self._line, = self._ax.plot([],[])
+        (self._line,) = self._ax.plot([], [])
 
         # Update the TkAgg window name to something more interesting
-        self._fig.canvas.manager.window.title(f'LivePlotter: {target_status}')
+        self._fig.canvas.manager.window.title(f"LivePlotter: {target_status}")
 
-        ...
+
+...
 ```
 
 We will also want to keep track of all iterations and status values seen so far by the `logger`.
 
 ```python
+class LivePlotter(Logger):
+    def __init__(self, searcher, target_status: str):
+        ...
         self._iter_hist = []
         self._status_hist = []
 ```
@@ -86,32 +93,34 @@ We will also want to keep track of all iterations and status values seen so far 
 When `_log` gets called from the searcher, we are passed the `status` dictionary. We can use this to update the histories of iterations and status values.
 
 ```python
+class LivePlotter(Logger):
     def _log(self, status: dict):
 
         # Update the histories of the status
-        self._iter_hist.append(status['iter'])
+        self._iter_hist.append(status["iter"])
         self._status_hist.append(status[self._target_status])
 
-        ...
+    ...
 ```
 
 Then we simply need to update the data in the figure `self._fig`
 
 ```python
+class LivePlotter(Logger):
+    def _log(self, status: dict):
+        ...
+
         # Update the x and y data
         self._line.set_xdata(self._iter_hist)
         self._line.set_ydata(self._status_hist)
 
         # Rescale the limits of the x and y axis
-        self._ax.set_xlim(0.99, status['iter'])
+        self._ax.set_xlim(0.99, status["iter"])
         self._ax.set_ylim(min(self._status_hist) * 0.99, max(self._status_hist) * 1.01)
 
         # Draw the figure and flush its events
         self._fig.canvas.draw()
         self._fig.canvas.flush_events()
-
-        # Sleeping here will make the updates easier to watch
-        time.sleep(0.05)
 ```
 
 Putting all of this together we have
@@ -120,11 +129,13 @@ Putting all of this together we have
 from evotorch.logging import Logger
 import matplotlib
 import matplotlib.pyplot as plt
-matplotlib.use('TkAgg')
+import time
+
+matplotlib.use("TkAgg")
 plt.ion()
 
-class LivePlotter(Logger):
 
+class LivePlotter(Logger):
     def __init__(self, searcher, target_status: str):
 
         # Call the super constructor
@@ -138,14 +149,14 @@ class LivePlotter(Logger):
         self._ax = self._fig.add_subplot(111)
 
         # Set the labels of the x and y axis
-        self._ax.set_xlabel('iter')
+        self._ax.set_xlabel("iter")
         self._ax.set_ylabel(target_status)
 
         # Create a line with (initially) no data in it
-        self._line, = self._ax.plot([],[])
+        (self._line,) = self._ax.plot([], [])
 
         # Update the TkAgg window name to something more interesting
-        self._fig.canvas.manager.window.title(f'LivePlotter: {target_status}')
+        self._fig.canvas.manager.window.title(f"LivePlotter: {target_status}")
 
         self._iter_hist = []
         self._status_hist = []
@@ -153,7 +164,7 @@ class LivePlotter(Logger):
     def _log(self, status: dict):
 
         # Update the histories of the status
-        self._iter_hist.append(status['iter'])
+        self._iter_hist.append(status["iter"])
         self._status_hist.append(status[self._target_status])
 
         # Update the x and y data
@@ -161,7 +172,7 @@ class LivePlotter(Logger):
         self._line.set_ydata(self._status_hist)
 
         # Rescale the limits of the x and y axis
-        self._ax.set_xlim(0.99, status['iter'])
+        self._ax.set_xlim(0.99, status["iter"])
         self._ax.set_ylim(min(self._status_hist) * 0.99, max(self._status_hist) * 1.01)
 
         # Draw the figure and flush its events
@@ -179,22 +190,24 @@ from evotorch import Problem
 from evotorch.algorithms import SNES
 import torch
 
+
 def sphere(x: torch.Tensor) -> torch.Tensor:
-    return torch.sum(x.pow(2.))
+    return torch.sum(x.pow(2.0))
+
 
 problem = Problem(
-    'min',
+    "min",
     sphere,
-    solution_length = 10,
-    initial_bounds = (-1, 1),
+    solution_length=10,
+    initial_bounds=(-1, 1),
 )
-searcher = SNES(problem, stdev_init = 5)
+searcher = SNES(problem, stdev_init=5)
 ```
 
 attaching an instance of our custom logger to plot the `'mean_eval'` status and running the searcher,
 
 ```python
-mean_eval_logger = LivePlotter(searcher, 'mean_eval')
+mean_eval_logger = LivePlotter(searcher, "mean_eval")
 searcher.run(200)
 ```
 

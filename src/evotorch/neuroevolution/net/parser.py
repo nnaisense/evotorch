@@ -224,10 +224,7 @@ def str_to_net(s: str, **constants) -> nn.Module:
     from torch import nn
 
     net = nn.Sequential(
-        nn.Linear(8, 16),
-        nn.Tanh(),
-        nn.Linear(16, 4, bias=False),
-        nn.ReLU()
+        nn.Linear(8, 16), nn.Tanh(), nn.Linear(16, 4, bias=False), nn.ReLU()
     )
     ```
 
@@ -237,9 +234,7 @@ def str_to_net(s: str, **constants) -> nn.Module:
     ```python
     from evotorch.neuroevolution.net import str_to_net
 
-    net = str_to_net(
-        'Linear(8, 16) >> Tanh() >> Linear(16, 4, bias=False) >> ReLU()'
-    )
+    net = str_to_net("Linear(8, 16) >> Tanh() >> Linear(16, 4, bias=False) >> ReLU()")
     ```
 
     The string can also be multi-line:
@@ -267,7 +262,7 @@ def str_to_net(s: str, **constants) -> nn.Module:
         ''',
         input_size=8,
         hidden_size=16,
-        output_size=4
+        output_size=4,
     )
     ```
 
@@ -298,8 +293,8 @@ def str_to_net(s: str, **constants) -> nn.Module:
     Therefore, while using with `GymNE`, one can define a
     single-hidden-layered policy via this string:
 
-    ```python
-    'Linear(obs_length, 16) >> Tanh() >> Linear(16, act_length) >> Tanh()'
+    ```
+    "Linear(obs_length, 16) >> Tanh() >> Linear(16, act_length) >> Tanh()"
     ```
 
     (where one might choose to omit the last `Tanh()` as `GymNE`

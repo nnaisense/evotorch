@@ -6,15 +6,12 @@ For many advanced use-cases in EvoTorch, it's essential to directly work with po
 from evotorch import Problem, Solution, SolutionBatch
 import torch
 
-def sphere(x: torch.Tensor) -> torch.Tensor:
-    return torch.sum(x.pow(2.))
 
-problem = Problem(
-    'min',
-    sphere,
-    solution_length = 2,
-    initial_bounds = (-1, 1),
-)
+def sphere(x: torch.Tensor) -> torch.Tensor:
+    return torch.sum(x.pow(2.0))
+
+
+problem = Problem("min", sphere, solution_length=2, initial_bounds=(-1, 1))
 ```
 
 ## Creating and using SolutionBatch instances
@@ -32,7 +29,7 @@ print(batch.values)
 ```
 
 ???+ abstract "Output"
-    ```python
+    ```
     ReadOnlyTensor(
         tensor([[-0.3779, -0.0910],
                 [-0.7356,  0.8931],
@@ -49,7 +46,7 @@ print(batch.evals)
 ```
 
 ???+ abstract "Output"
-    ```python
+    ```
     ReadOnlyTensor(
         tensor([[nan],
                 [nan],
@@ -67,7 +64,7 @@ print(batch.evals)
 ```
 
 ???+ abstract "Output"
-    ```python
+    ```
     ReadOnlyTensor(
         tensor([[0.1511],
                 [1.3387],
@@ -89,7 +86,7 @@ will update the values
 print(batch.values)
 ```
 ???+ abstract "Output"
-    ```python
+    ```
     ReadOnlyTensor(
         tensor([[ 0.1206, -2.0179],
                 [-0.0508, -0.5009],
@@ -105,7 +102,7 @@ and clear the fitness values
 print(batch.evals)
 ```
 ???+ abstract "Output"
-    ```python
+    ```
     ReadOnlyTensor(
         tensor([[nan],
                 [nan],
@@ -123,7 +120,7 @@ print(batch.evals)
 ```
 
 ???+ abstract "Output"
-    ```python
+    ```
     ReadOnlyTensor(
         tensor([[0.5828],
                 [0.5208],
@@ -141,7 +138,7 @@ print(batch.evals)
 ```
 
 ???+ abstract "Output"
-    ```python
+    ```
     ReadOnlyTensor(
         tensor([[nan],
                 [nan],
@@ -155,11 +152,11 @@ However, this behaviour can be disabled with the `keep_evals` flag, e.g.
 
 ```python
 batch.set_evals(problem.make_uniform(5))
-values = batch.access_values(keep_evals = True)
+values = batch.access_values(keep_evals=True)
 print(batch.evals)
 ```
 ???+ abstract "Output"
-    ```python
+    ```
     ReadOnlyTensor(
         tensor([[0.3775],
                 [0.2806],
@@ -191,7 +188,7 @@ will return a [SolutionBatch][evotorch.core.SolutionBatch] instance `last_3` whi
 print(last_3.values)
 ```
 ???+ abstract "Output"
-    ```python
+    ```
     ReadOnlyTensor(
         tensor([[-1.3668, -0.4877],
                 [ 1.0296, -1.1230],
@@ -205,7 +202,7 @@ and the evaluations are exactly the evaluations of the last 3 solutions of `batc
 print(last_3.evals)
 ```
 ???+ abstract "Output"
-    ```python
+    ```
     ReadOnlyTensor(
         tensor([[0.1781],
                 [0.3854],
@@ -221,7 +218,7 @@ print(last_3.values)
 ```
 
 ???+ abstract "Output"
-    ```python
+    ```
     ReadOnlyTensor(
         tensor([[ 0.2202,  1.5362],
                 [ 0.5641, -0.0477],
@@ -236,7 +233,7 @@ print(batch.values)
 ```
 
 ???+ abstract "Output"
-    ```python
+    ```
     ReadOnlyTensor(
         tensor([[ 0.1206, -2.0179],
                 [-0.0508, -0.5009],
@@ -254,7 +251,7 @@ print(second_batch.values)
 ```
 
 ???+ abstract "Output"
-    ```python
+    ```
     ReadOnlyTensor(
         tensor([[ 0.0433, -0.6526],
                 [ 0.9731,  0.2553],
@@ -270,7 +267,7 @@ print(new_batch.values)
 ```
 
 ???+ abstract "Output"
-    ```python
+    ```
     ReadOnlyTensor(
         tensor([[ 0.2202,  1.5362],
                 [ 0.5641, -0.0477],
@@ -293,7 +290,7 @@ print(solution1)
 ```
 
 ???+ abstract "Output"
-    ```python
+    ```
     <Solution values=tensor([-0.0508, -0.5009]), evals=tensor([0.2806])>
     ```
 
@@ -317,7 +314,7 @@ print(solution1)
 ```
 
 ???+ abstract "Output"
-    ```python
+    ```
     <Solution values=tensor([1., 2.]), evals=tensor([0.5000])>
     ```
 
@@ -328,7 +325,7 @@ print(batch.values)
 ```
 
 ???+ abstract "Output"
-    ```python
+    ```
     ReadOnlyTensor(
         tensor([[ 0.1206, -2.0179],
                 [ 1.0000,  2.0000],

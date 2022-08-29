@@ -13,8 +13,9 @@ which is implemented in PyTorch as,
 ```python
 import torch
 
+
 def sphere(x: torch.Tensor) -> torch.Tensor:
-    return torch.sum(x.pow(2.))
+    return torch.sum(x.pow(2.0))
 ```
 
 With only this function definition, we can create an EvoTorch [Problem][evotorch.core.Problem] instance and start learning,
@@ -24,12 +25,7 @@ from evotorch import Problem
 from evotorch.algorithms import SNES
 from evotorch.logging import StdOutLogger
 
-problem = Problem(
-    "min",
-    sphere,
-    solution_length=10,
-    initial_bounds=(-1, 1)
-)
+problem = Problem("min", sphere, solution_length=10, initial_bounds=(-1, 1))
 
 searcher = SNES(problem, stdev_init=5)
 logger = StdOutLogger(searcher)
@@ -39,12 +35,7 @@ searcher.run(10)
 If we instead want to maximize the function, we can instead instantiate the [Problem][evotorch.core.Problem] instance,
 
 ```python
-problem = Problem(
-    "max",
-    sphere,
-    solution_length=10,
-    initial_bounds=(-1, 1)
-)
+problem = Problem("max", sphere, solution_length=10, initial_bounds=(-1, 1))
 ```
 
 and if we want to make the instantiation explicit, we can use the keyword arguments `objective_sense` and `objective_func`,
@@ -54,7 +45,7 @@ problem = Problem(
     objective_sense="min",
     objective_func=sphere,
     solution_length=10,
-    initial_bounds=(-1, 1)
+    initial_bounds=(-1, 1),
 )
 ```
 
@@ -70,7 +61,7 @@ In EvoTorch, the population is stored as a `torch` tensor of shape $N \times d$ 
 
 ```python
 def vectorised_sphere(xs: torch.Tensor) -> torch.Tensor:
-    return torch.sum(xs.pow(2.), dim=-1)
+    return torch.sum(xs.pow(2.0), dim=-1)
 ```
 
 By specifying that we want to sum across the last dimension, we return an $N$ dimensional vector of fitnesses, rather than a single fitness value. Using this new vectorised function is as simple as using the `vectorized` flag in the instantiation of the [Problem][evotorch.core.Problem].
@@ -81,11 +72,11 @@ problem = Problem(
     objective_func=vectorised_sphere,
     vectorized=True,
     solution_length=10,
-    initial_bounds=(-1, 1)
+    initial_bounds=(-1, 1),
 )
 ```
 
-# Creating Custom Problem Classes
+## Creating Custom Problem Classes
 
 While many fitness functions can be expressed as a callable function $f: \mathbb{R}^d \rightarrow \mathbb{R}$ which can be passed to a [Problem][evotorch.core.Problem] instance at instantiation using the `objective_func` keyword-argument, there are also many cases were we wish to create custom [Problem][evotorch.core.Problem] classes which can be stateful and parameterisable. In this case, we can create a new class that inherits from the [Problem][evotorch.core.Problem] class.
 
@@ -109,23 +100,27 @@ from evotorch import Problem, Solution
 import torch
 import math
 
-class OffsetRastrigin(Problem):
 
+class OffsetRastrigin(Problem):
     def __init__(self, d: int = 25, A: int = 10):
 
         super().__init__(
-            objective_sense='min',
+            objective_sense="min",
             solution_length=d,
             initial_bounds=(-1, 1),
         )
 
-        self._A = A  # Store the A parameter for evaluation
-        self._x_prime = self.make_gaussian(d, center=0., stdev=1.)  # Generate a random Gaussian center with center 0 and standard deviation 1
+        # Store the A parameter for evaluation
+        self._A = A
+        # Generate a random offset with center 0 and standard deviation 1
+        self._x_prime = self.make_gaussian(d, center=0.0, stdev=1.0)
 
     def _evaluate(self, solution: Solution):
         x = solution.values
         z = x - self._x_prime
-        f = (self._A * self.solution_length) + torch.sum(z.pow(2.) - self._A * torch.cos(2 * math.pi * z))
+        f = (self._A * self.solution_length) + torch.sum(
+            z.pow(2.0) - self._A * torch.cos(2 * math.pi * z)
+        )
         solution.set_evals(f)
 ```
 
@@ -134,6 +129,7 @@ This [Problem][evotorch.core.Problem] class can be used just like any other, rep
 ```python
 from evotorch.algorithms import SNES
 from evotorch.logging import StdOutLogger
+
 prob = OffsetRastrigin(d=14, A=5)
 searcher = SNES(prob, stdev_init=5)
 logger = StdOutLogger(searcher)
@@ -155,23 +151,28 @@ Much like the base [Problem][evotorch.core.Problem] class, it is straight-forwar
 
 ```python
 from evotorch import SolutionBatch
-class VecOffsetRastrigin(Problem):
 
+
+class VecOffsetRastrigin(Problem):
     def __init__(self, d: int = 25, A: int = 10):
 
         super().__init__(
-            objective_sense = 'min',
-            solution_length = d,
-            initial_bounds = (-1, 1),
+            objective_sense="min",
+            solution_length=d,
+            initial_bounds=(-1, 1),
         )
 
-        self._A = A  # Store the A parameter for evaluation
-        self._x_prime = self.make_gaussian((1, d), center = 0., stdev = 1.)  # Generate a random guassian center with center 0 and standard deviation 1
+        # Store the A parameter for evaluation
+        self._A = A
+        # Generate a random offset with center 0 and standard deviation 1
+        self._x_prime = self.make_gaussian((1, d), center=0.0, stdev=1.0)
 
     def _evaluate_batch(self, solutions: SolutionBatch):
         xs = solutions.values
         zs = xs - self._x_prime
-        fs = (self._A * self.solution_length) + torch.sum(zs.pow(2.) - self._A * torch.cos(2 * math.pi * zs), dim=-1)
+        fs = (self._A * self.solution_length) + torch.sum(
+            zs.pow(2.0) - self._A * torch.cos(2 * math.pi * zs), dim=-1
+        )
         solutions.set_evals(fs)
 ```
 
@@ -201,15 +202,14 @@ Similarly, we can use different data types and devices within custom [Problem][e
 
 ```python
 class OffsetRastrigin16(Problem):
-
     def __init__(self, d: int = 25, A: int = 10):
 
         super().__init__(
-            objective_sense='min',
+            objective_sense="min",
             solution_length=d,
             initial_bounds=(-1, 1),
             dtype=torch.float16,
-            device='cuda:0',
+            device="cuda:0",
         )
 
         ...

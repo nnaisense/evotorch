@@ -7,19 +7,17 @@ from evotorch import Problem
 from evotorch.algorithms import SNES
 import torch
 
-def sphere(x: torch.Tensor) -> torch.Tensor:
-    return torch.sum(x.pow(2.))
 
-problem = Problem(
-    'min',
-    sphere,
-    solution_length = 10,
-    initial_bounds = (-1, 1),
-)
-searcher = SNES(problem, stdev_init = 5)
+def sphere(x: torch.Tensor) -> torch.Tensor:
+    return torch.sum(x.pow(2.0))
+
+
+problem = Problem("min", sphere, solution_length=10, initial_bounds=(-1, 1))
+searcher = SNES(problem, stdev_init=5)
 
 # Create the logger, attaching it to the searcher
 from evotorch.logging import StdOutLogger
+
 logger = StdOutLogger(searcher)
 ```
 
@@ -28,7 +26,7 @@ Once a [Logger][evotorch.logging.Logger] instance has been created and attached 
 Most loggers also support the argument `interval`. This allows you to control how often the [Logger][evotorch.logging.Logger] instance is updated. For example, if we instead do
 
 ```python
-logger = StdOutLogger(searcher, interval = 10)
+logger = StdOutLogger(searcher, interval=10)
 ```
 
 then `logger` will only log to the stdout every $10$ iterations.
@@ -42,7 +40,7 @@ logger = StdOutLogger(searcher)
 searcher.run(3)
 ```
 ???+ abstract "Output"
-    ```python
+    ```
                 iter : 1
             mean_eval : 166.8264923095703
         median_eval : 134.81417846679688
@@ -124,9 +122,10 @@ _ = StdOutLogger(searcher)
 # In addition, instantiate an MlflowLogger so that the logs are stored
 # via mlflow.
 import mlflow
+
 client = mlflow.tracking.MlflowClient()  # Create the Mlflow client
 run = mlflow.start_run()  # Start an mlflow run to log to
-_ = MlflowLogger(searcher, client = client, run = run)
+_ = MlflowLogger(searcher, client=client, run=run)
 
 # Run the search algorithm
 searcher.run(100)

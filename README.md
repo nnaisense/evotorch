@@ -29,17 +29,17 @@
 
 Welcome to the EvoTorch project!
 EvoTorch is an open source evolutionary computation library developed at [NNAISENSE](https://nnaisense.com), built on top of [PyTorch](https://pytorch.org/).
+See the [documentation](https://docs.evotorch.ai) for in-depth guidance about using EvoTorch, and [join us on Slack](https://join.slack.com/t/slack-cll4186/shared_invite/zt-1cpigvsqa-Jw8MeOizlW1bJKOms9WnBQ) for discussions.
 
 Get started by installing EvoTorch:
 ```
 pip install evotorch
 ```
 
-With EvoTorch, one can solve various optimization problems, without having to worry about whether or not these problems at hand are differentiable. Among the problem types that are solvable with EvoTorch are:
+With EvoTorch, one can solve various optimization problems, regardless of whether they are differentiable (i.e. allow gradient descent). Among the problem types that are solvable with EvoTorch are:
 - Black-box optimization problems (continuous or discrete)
 - Reinforcement learning tasks
 - Supervised learning tasks
-- etc.
 
 Various evolutionary computation algorithms are available in EvoTorch:
 - **Distribution-based search algorithms:**
@@ -48,23 +48,24 @@ Various evolutionary computation algorithms are available in EvoTorch:
     - **SNES:** Separable Natural Evolution Strategies.
     - **CEM:** Cross Entropy Method.
 - **Population-based search algorithms:**
-    - **SteadyStateGA:** A fully elitist genetic algorithm implementation. Also supports multiple objectives, in which case behaves like **NSGA-II**.
+    - **SteadyStateGA:** A fully elitist genetic algorithm implementation. Also supports multiple objectives, in which case it behaves like **NSGA-II**.
     - **CoSyNE:** Cooperative Synapse Neuroevolution.
 
-All these algorithms mentioned above are implemented in PyTorch, and therefore, can benefit from vectorization and GPU capabilities of PyTorch. In addition, with the help of the Ray library, EvoTorch can further scale up these algorithms by splitting the workload across:
+Since all of these algorithms are implemented in PyTorch, they benefit from use of vectorization and parallelization on GPUs, drastically speeding up optimization when GPUs are available.
+Using [Ray](https://github.com/ray-project/ray), EvoTorch scales these algorithms even further by splitting the workload across:
 - multiple CPUs
 - multiple GPUs
-- multiple computers over a Ray cluster
+- multiple computers in a Ray cluster
 
 # Examples
 
-Below are some code examples which demonstrates the API of EvoTorch.
+Below are some code examples that demonstrate the API of EvoTorch.
 
 ## A black-box optimization example
 
 Any objective function defined to work with PyTorch can be used directly with EvoTorch.
 A non-vectorized objective function simply receives a solution as a 1-dimensional torch tensor, and returns a fitness as a scalar.
-A vectorized objective function receives a batch of solutions as a 2-dimensional torch tensor, and returns a 1-dimensional tensor storing the fitnesses.
+A vectorized objective function receives a batch of solutions as a 2-dimensional torch tensor, and returns a 1-dimensional tensor of fitnesses.
 The following example demonstrates how to define and solve the classical Rastrigin problem.
 
 ```python
@@ -79,7 +80,8 @@ import torch
 def rastrigin(x: torch.Tensor) -> torch.Tensor:
     A = 10
     (_, n) = x.shape
-    return A * n + torch.sum((x ** 2) - A * torch.cos(2 * math.pi * x), 1)
+    return A * n + torch.sum((x**2) - A * torch.cos(2 * math.pi * x), 1)
+
 
 # Declare the problem
 problem = Problem(
@@ -130,25 +132,19 @@ problem = GymNE(
 # Instantiate a PGPE algorithm to solve the problem
 searcher = PGPE(
     problem,
-
     # Base population size
     popsize=200,
-
     # For each generation, sample more solutions until the
     # number of simulator interactions reaches this threshold
     num_interactions=int(200 * 1000 * 0.75),
-
     # Stop re-sampling solutions if the current population size
     # reaches or exceeds this number.
     popsize_max=3200,
-
     # Learning rates
     center_learning_rate=0.0075,
     stdev_learning_rate=0.1,
-
     # Radius of the initial search distribution
     radius_init=0.27,
-
     # Use the ClipUp optimizer with the specified maximum speed
     optimizer="clipup",
     optimizer_config={"max_speed": 0.15},

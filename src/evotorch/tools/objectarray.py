@@ -112,7 +112,7 @@ class ObjectArray(Sequence):
     # `x` shares its memory with the mutable array `y`.
 
     # Possible but NOT recommended:
-    y *= 2    # This affects both x and objs!
+    y *= 2  # This affects both x and objs!
     ```
 
     When a numpy array of dtype object is placed into an ObjectArray,

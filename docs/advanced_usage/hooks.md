@@ -11,24 +11,24 @@ You can inject code before the evaluation of a [SolutionBatch][evotorch.core.Sol
 ```python
 from evotorch import SolutionBatch
 import torch
+
+
 def abort_if_inf(batch: SolutionBatch):
     if torch.any(torch.isinf(batch.values)):
-        raise ValueError('SearchAlgorithm created inf values!')
+        raise ValueError("SearchAlgorithm created inf values!")
 ```
 
 Adding this hook to a problem class is straightforward. Consider the sphere problem:
 
 ```python
 from evotorch import Problem
-def sphere(x: torch.Tensor) -> torch.Tensor:
-    return torch.sum(x.pow(2.))
 
-problem = Problem(
-    "min",
-    sphere,
-    solution_length=10,
-    initial_bounds=(-1, 1)
-)
+
+def sphere(x: torch.Tensor) -> torch.Tensor:
+    return torch.sum(x.pow(2.0))
+
+
+problem = Problem("min", sphere, solution_length=10, initial_bounds=(-1, 1))
 ```
 
 You can add the `abort_if_inf` function as a hook to execute before a [SolutionBatch][evotorch.core.SolutionBatch] is evaluated using:
@@ -41,12 +41,12 @@ Checking that the hook is now in use is as simple as attempting to pass a [Solut
 
 ```python
 dodgy_batch = problem.generate_batch(10)  # Generate a SolutionBatch of size 10
-dodgy_batch.access_values()[1, 1] = float('inf')  # Inject a rogue inf value
+dodgy_batch.access_values()[1, 1] = float("inf")  # Inject a rogue inf value
 problem.evaluate(dodgy_batch)  # Pass the SolutionBatch to the problem to evaluate
 ```
 
 ???+ abstract "Output"
-    ```python
+    ```bash
     ValueError: SearchAlgorithm created inf values!
     ```
 
@@ -56,6 +56,8 @@ Similarly, you can inject code to execute immediately *after* a [SolutionBatch][
 
 ```python
 import psutil
+
+
 def report_memory_usage(batch: SolutionBatch):
     return {"mem usage": psutil.virtual_memory().percent}
 ```
@@ -72,16 +74,13 @@ If we now create a [SearchAlgorithm][evotorch.algorithms.searchalgorithm.SearchA
 from evotorch.algorithms import SNES
 from evotorch.logging import StdOutLogger
 
-searcher = SNES(
-    problem,
-    stdev_init = 1.,
-)
+searcher = SNES(problem, stdev_init=1.0)
 logger = StdOutLogger(searcher)
 searcher.run(3)
 ```
 
 ???+ abstract "Output"
-    ```python
+    ```
             iter : 1
         mean_eval : 12.302145004272461
       median_eval : 12.144983291625977
@@ -116,28 +115,27 @@ Much like [Problem][evotorch.core.Problem] allows you to inject hooks before and
 ```python
 mu = None
 sigma = None
+
+
 def update_global_distribution_vars():
     global mu, sigma, searcher
-    mu = searcher.status['center'].clone()
-    sigma = searcher.status['stdev'].clone()
+    mu = searcher.status["center"].clone()
+    sigma = searcher.status["stdev"].clone()
 ```
 
 If we now add this hook to our `searcher` and run it for some iterations we can observe the global `mu` and `sigma` variables changing every time we step the searcher:
 
 ```python
-searcher = SNES(
-    problem,
-    stdev_init = 1.,
-)
+searcher = SNES(problem, stdev_init=1.0)
 searcher.before_step_hook.append(update_global_distribution_vars)
 for _ in range(3):
     searcher.step()
-    print(f'Last mu: {mu}')
-    print(f'Last sigma: {sigma}')
+    print(f"Last mu: {mu}")
+    print(f"Last sigma: {sigma}")
 ```
 
 ???+ abstract "Output"
-    ```python
+    ```
     Last mu: tensor([ 0.5075, -0.0859, -0.4649,  0.6813,  0.1237, -0.5578, -0.8896,  0.2800,
             -0.4438,  0.1856])
     Last sigma: tensor([1., 1., 1., 1., 1., 1., 1., 1., 1., 1.])
@@ -161,7 +159,7 @@ You can also inject code after the call to `_step` using `after_step_hook`. This
 ```python
 def euclidean_movement():
     global searcher, mu
-    return {'mu_movement': torch.norm(searcher.status['center'] - mu).item()}
+    return {"mu_movement": torch.norm(searcher.status["center"] - mu).item()}
 ```
 
 If we now add this to `after_step_hook`, add a [StdOutLogger][evotorch.logging.StdOutLogger] instance and run for some iterations we will see that the `status` dictionary now tracks the euclidean movement in $\mu$:
@@ -173,7 +171,7 @@ searcher.run(3)
 ```
 
 ???+ abstract "Output"
-    ```python
+    ```
             iter : 4
         mean_eval : 12.15910816192627
     pop_best_eval : 5.9899001121521

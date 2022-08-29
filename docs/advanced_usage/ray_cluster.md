@@ -20,6 +20,7 @@ Once these steps have been performed, when you launch your python script, do
 
 ```python
 import ray
+
 ray.init(address=ADDRESS_OF_THE_HEAD_NODE)
 ```
 
@@ -27,8 +28,8 @@ This will ensure that your calls to [Problem][evotorch.core.Problem] instances u
 
 ```python
 problem = Problem(
-    ...
-    num_actors = 'max',
+    ...,
+    num_actors="max",
 )
 ```
 
