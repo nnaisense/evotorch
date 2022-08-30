@@ -28,8 +28,8 @@ __all__ = (
 )
 
 
-from . import cmaes, distributed, ga, searchalgorithm
+from . import cmaes, distribution_based, ga, searchalgorithm
 from .cmaes import CMAES
-from .distributed import CEM, PGPE, SNES, XNES
+from .distribution_based import CEM, PGPE, SNES, XNES
 from .ga import Cosyne, SteadyStateGA
 from .searchalgorithm import SearchAlgorithm

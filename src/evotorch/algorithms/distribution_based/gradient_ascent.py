@@ -32,9 +32,9 @@ from ...tools import RealOrVector, modify_tensor, to_stdev_init
 from ..searchalgorithm import SearchAlgorithm, SinglePopulationAlgorithmMixin
 
 
-class GaussianSearchAlgorithm(SearchAlgorithm, SinglePopulationAlgorithmMixin):
+class GradientAscent(SearchAlgorithm, SinglePopulationAlgorithmMixin):
     """
-    Base class for search algorithms based on Gaussian distribution.
+    Base class for search algorithms based on gradient descent with gradients approximated by an underlying distribution.
     """
 
     DISTRIBUTION_TYPE = NotImplemented
@@ -462,7 +462,7 @@ class GaussianSearchAlgorithm(SearchAlgorithm, SinglePopulationAlgorithmMixin):
         return self._obj_index
 
 
-class PGPE(GaussianSearchAlgorithm):
+class PGPE(GradientAscent):
     """
     PGPE: Policy gradient with parameter-based exploration.
 
@@ -707,7 +707,7 @@ class PGPE(GaussianSearchAlgorithm):
         )
 
 
-class SNES(GaussianSearchAlgorithm):
+class SNES(GradientAscent):
     """
     SNES: Separable Natural Evolution Strategies
 
@@ -947,7 +947,7 @@ class SNES(GaussianSearchAlgorithm):
         )
 
 
-class CEM(GaussianSearchAlgorithm):
+class CEM(GradientAscent):
     """
     The cross-entropy method (CEM) (Rubinstein, 1999).
 
@@ -1144,7 +1144,7 @@ class CEM(GaussianSearchAlgorithm):
         )
 
 
-class XNES(GaussianSearchAlgorithm):
+class XNES(GradientAscent):
     """
     XNES: Exponential Natural Evolution Strategies
 

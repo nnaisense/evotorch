@@ -17,8 +17,8 @@ __all__ = (
     "PGPE",
     "SNES",
     "XNES",
-    "GaussianSearchAlgorithm",
+    "GradientAscent",
 )
 
 
-from .gaussian import CEM, PGPE, SNES, XNES, GaussianSearchAlgorithm
+from .gradient_ascent import CEM, PGPE, SNES, XNES, GradientAscent
