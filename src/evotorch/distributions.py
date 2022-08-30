@@ -662,8 +662,31 @@ class ExpSeparableGaussian(SeparableGaussian):
         return self.modified_copy(mu=new_mu, sigma=new_sigma)
 
 
-class ExpGaussian(Distribution):
-    """exponential Multivariate Gaussian, as used by XNES"""
+class ExpSeparableCauchy(ExpSeparableGaussian):
+    """exponentialseparable Multivariate Gaussian, as used by (1+1)-SNES-Cauchy"""
+
+    def _fill(self, out: torch.Tensor, *, generator: Optional[torch.Generator] = None):
+        self.make_cauchy(out=out, center=self.mu, stdev=self.sigma, generator=generator)
+
+    def _compute_gradients(self, samples: torch.Tensor, weights: torch.Tensor, ranking_used: Optional[str]) -> dict:
+        if ranking_used != "nes":
+            weights = weights / torch.sum(torch.abs(weights))
+
+        scaled_noises = samples - self.mu
+        raw_noises = scaled_noises / self.sigma
+
+        # 1 / (z^2 + 1)
+        sample_weight = 1 / (raw_noises**2.0 + 1)
+        # Fim is scaled by 1/2 on d so rescale by 2
+        mu_grad = 2 * total(dot(weights, 2 * sample_weight * scaled_noises))
+        # Fim is scaled by 1/8 on M so rescale by 8
+        sigma_grad = 8 * total(dot(weights, sample_weight * (raw_noises**2) - 1 / 2))
+
+        return {"mu": mu_grad, "sigma": sigma_grad}
+
+
+class ExpDistribution(Distribution):
+    """Base class for exponentially parameterized distributions with full covariance matrices, e.g. ExpGaussian and ExpCauchy"""
 
     # Corresponding to mu and A in symbols used in xNES paper
     MANDATORY_PARAMETERS = {"mu", "sigma"}
@@ -800,6 +823,37 @@ class ExpGaussian(Distribution):
         # Therefore, we can recover z according to z = A_inv (x - mu)
         return (self.A_inv @ (global_coordinates - self.mu.unsqueeze(0)).T).T
 
+    def update_parameters(
+        self,
+        gradients: dict,
+        *,
+        learning_rates: Optional[dict] = None,
+        optimizers: Optional[dict] = None,
+    ) -> "ExpDistribution":
+        d_grad = gradients["d"]
+        M_grad = gradients["M"]
+
+        if "d" not in learning_rates:
+            learning_rates["d"] = learning_rates["mu"]
+        if "M" not in learning_rates:
+            learning_rates["M"] = learning_rates["sigma"]
+
+        # Follow gradients for d, and M
+        update_d = self._follow_gradient("d", d_grad, learning_rates=learning_rates, optimizers=optimizers)
+        update_M = self._follow_gradient("M", M_grad, learning_rates=learning_rates, optimizers=optimizers)
+
+        # Fold into parameters mu, A and A inv
+        new_mu = self.mu + torch.mv(self.A, update_d)
+        new_A = self.A @ torch.matrix_exp(0.5 * update_M)
+        new_A_inv = torch.matrix_exp(-0.5 * update_M) @ self.A_inv
+
+        # Return modified distribution
+        return self.modified_copy(mu=new_mu, sigma=new_A, sigma_inv=new_A_inv)
+
+
+class ExpGaussian(ExpDistribution):
+    """exponential Multivariate Gaussian, as used by XNES"""
+
     def _fill(self, out: torch.Tensor, *, generator: Optional[torch.Generator] = None):
         """Fill a tensor with samples from N(mu, A^T A)
         Args:
@@ -839,29 +893,54 @@ class ExpGaussian(Distribution):
             "M": M_grad,
         }
 
-    def update_parameters(
-        self,
-        gradients: dict,
-        *,
-        learning_rates: Optional[dict] = None,
-        optimizers: Optional[dict] = None,
-    ) -> "ExpGaussian":
-        d_grad = gradients["d"]
-        M_grad = gradients["M"]
 
-        if "d" not in learning_rates:
-            learning_rates["d"] = learning_rates["mu"]
-        if "M" not in learning_rates:
-            learning_rates["M"] = learning_rates["sigma"]
+class ExpCauchy(ExpDistribution):
+    """exponential Multivariate Cauchy, as used by (1+1)-NES-Cauchy"""
 
-        # Follow gradients for d, and M
-        update_d = self._follow_gradient("d", d_grad, learning_rates=learning_rates, optimizers=optimizers)
-        update_M = self._follow_gradient("M", M_grad, learning_rates=learning_rates, optimizers=optimizers)
+    def _fill(self, out: torch.Tensor, *, generator: Optional[torch.Generator] = None):
+        """Fill a tensor with samples from C(mu, A^T A)
+        Args:
+            out (torch.Tensor): The tensor to fill
+            generator (Optional[torch.Generator]): A generator to use to generate random values
+        """
+        # Fill with local coordinates from C(0, I_d)
+        self.make_cauchy(out=out, generator=generator)
+        # Map local coordinates to global coordinate system
+        out[:] = self.to_global_coordinates(out)
 
-        # Fold into parameters mu, A and A inv
-        new_mu = self.mu + torch.mv(self.A, update_d)
-        new_A = self.A @ torch.matrix_exp(0.5 * update_M)
-        new_A_inv = torch.matrix_exp(-0.5 * update_M) @ self.A_inv
+    def _compute_gradients(self, samples: torch.Tensor, weights: torch.Tensor, ranking_used: Optional[str]) -> dict:
+        """Compute the gradients with respect to a given set of samples and weights
+        Args:
+            samples (torch.Tensor): Samples drawn from C(mu, A^T A), ideally using self._fill
+            weights (torch.Tensor): Weights e.g. fitnesses or utilities assigned to samples
+            ranking_used (optional[str]): The ranking method used to compute weights
+        Returns:
+            grads (dict): A dictionary containing the approximated natural gradient on d and M
+        """
+        # Compute the local coordinates
+        local_coordinates = self.to_local_coordinates(samples)
 
-        # Return modified distribution
-        return self.modified_copy(mu=new_mu, sigma=new_A, sigma_inv=new_A_inv)
+        # Make sure that the weights (utilities) are 0-centered
+        # (Otherwise the formulations would have to consider a bias term)
+        if ranking_used not in ("centered", "normalized"):
+            weights = weights - torch.mean(weights)
+
+        sample_weight: torch.Tensor = (self.solution_length + 1) / (
+            2 * (torch.norm(local_coordinates, dim=-1, keepdim=True).pow(2.0) + 1)
+        )
+        # Fim has a factor of 1/2 on d
+        d_grad = 2 * total(dot(weights, 2 * sample_weight * local_coordinates))
+        local_coordinates_outer = local_coordinates.unsqueeze(1) * local_coordinates.unsqueeze(2)
+        # (d + 1) / (|s|^2 + 1)
+        # Fim has a factor of 1/8 on M
+        M_grad = 4 * torch.sum(
+            8
+            * weights.unsqueeze(-1).unsqueeze(-1)
+            * (sample_weight.unsqueeze(-1) * local_coordinates_outer - self.eye.unsqueeze(0)),
+            dim=0,
+        )
+
+        return {
+            "d": d_grad,
+            "M": M_grad,
+        }
