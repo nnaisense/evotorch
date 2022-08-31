@@ -11,7 +11,7 @@
       
       
       <link rel="icon" href="../../assets/favicon.ico">
-      <meta name="generator" content="mkdocs-1.3.1, mkdocs-material-8.4.1">
+      <meta name="generator" content="mkdocs-1.3.1, mkdocs-material-8.4.2">
     
     
       
@@ -1768,15 +1768,12 @@
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">from</span> <span class="nn">evotorch</span> <span class="kn">import</span> <span class="n">Problem</span><span class="p">,</span> <span class="n">Solution</span><span class="p">,</span> <span class="n">SolutionBatch</span>
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="kn">import</span> <span class="nn">torch</span>
 <a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>
-<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="k">def</span> <span class="nf">sphere</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
-<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>    <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">pow</span><span class="p">(</span><span class="mf">2.</span><span class="p">))</span>
-<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>
-<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="n">problem</span> <span class="o">=</span> <span class="n">Problem</span><span class="p">(</span>
-<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>    <span class="s1">&#39;min&#39;</span><span class="p">,</span>
-<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>    <span class="n">sphere</span><span class="p">,</span>
-<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>    <span class="n">solution_length</span> <span class="o">=</span> <span class="mi">2</span><span class="p">,</span>
-<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>    <span class="n">initial_bounds</span> <span class="o">=</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
-<a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a><span class="p">)</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="k">def</span> <span class="nf">sphere</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>    <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">pow</span><span class="p">(</span><span class="mf">2.0</span><span class="p">))</span>
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>
+<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="n">problem</span> <span class="o">=</span> <span class="n">Problem</span><span class="p">(</span><span class="s2">&quot;min&quot;</span><span class="p">,</span> <span class="n">sphere</span><span class="p">,</span> <span class="n">solution_length</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">initial_bounds</span><span class="o">=</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
 </code></pre></div>
 <h2 id="creating-and-using-solutionbatch-instances">Creating and using SolutionBatch instances<a class="headerlink" href="#creating-and-using-solutionbatch-instances" title="Permanent link">&para;</a></h2>
 <p>A <a class="autorefs autorefs-internal" href="../../reference/evotorch/core/#evotorch.core.SolutionBatch">SolutionBatch</a> instance can be generated directly from the problem itself, with decision values sampled uniformly according to the <code>initial_bounds</code> parameter. Calling</p>
@@ -1787,13 +1784,13 @@
 </code></pre></div>
 <details class="abstract" open="open">
 <summary>Output</summary>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="n">ReadOnlyTensor</span><span class="p">(</span>
-<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>    <span class="n">tensor</span><span class="p">([[</span><span class="o">-</span><span class="mf">0.3779</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.0910</span><span class="p">],</span>
-<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>            <span class="p">[</span><span class="o">-</span><span class="mf">0.7356</span><span class="p">,</span>  <span class="mf">0.8931</span><span class="p">],</span>
-<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>            <span class="p">[</span> <span class="mf">0.0012</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.1703</span><span class="p">],</span>
-<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>            <span class="p">[</span> <span class="mf">0.4683</span><span class="p">,</span>  <span class="mf">0.8081</span><span class="p">],</span>
-<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a>            <span class="p">[</span><span class="o">-</span><span class="mf">0.1409</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.6965</span><span class="p">]])</span>
-<a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a><span class="p">)</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>ReadOnlyTensor(
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>    tensor([[-0.3779, -0.0910],
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>            [-0.7356,  0.8931],
+<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>            [ 0.0012, -0.1703],
+<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>            [ 0.4683,  0.8081],
+<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a>            [-0.1409, -0.6965]])
+<a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a>)
 </code></pre></div>
 </details>
 <p>Note that the decision values are in the initial range <code>(-1, 1)</code> that was specified when the problem was created. The fitness values of the batch can be accessed with the <code>evals</code> attribute, and will initially be filled with <code>nan</code> values as the population has not yet been evaluated</p>
@@ -1801,13 +1798,13 @@
 </code></pre></div>
 <details class="abstract" open="open">
 <summary>Output</summary>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="n">ReadOnlyTensor</span><span class="p">(</span>
-<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>    <span class="n">tensor</span><span class="p">([[</span><span class="n">nan</span><span class="p">],</span>
-<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>            <span class="p">[</span><span class="n">nan</span><span class="p">],</span>
-<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>            <span class="p">[</span><span class="n">nan</span><span class="p">],</span>
-<a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a>            <span class="p">[</span><span class="n">nan</span><span class="p">],</span>
-<a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a>            <span class="p">[</span><span class="n">nan</span><span class="p">]])</span>
-<a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a><span class="p">)</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>ReadOnlyTensor(
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>    tensor([[nan],
+<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>            [nan],
+<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>            [nan],
+<a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a>            [nan],
+<a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a>            [nan]])
+<a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a>)
 </code></pre></div>
 </details>
 <p>Calling <code>problem.evaluate(batch)</code> will fill the fitness values with solutions' computed fitnesses:</p>
@@ -1816,13 +1813,13 @@
 </code></pre></div>
 <details class="abstract" open="open">
 <summary>Output</summary>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="n">ReadOnlyTensor</span><span class="p">(</span>
-<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>    <span class="n">tensor</span><span class="p">([[</span><span class="mf">0.1511</span><span class="p">],</span>
-<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>            <span class="p">[</span><span class="mf">1.3387</span><span class="p">],</span>
-<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a>            <span class="p">[</span><span class="mf">0.0290</span><span class="p">],</span>
-<a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a>            <span class="p">[</span><span class="mf">0.8723</span><span class="p">],</span>
-<a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a>            <span class="p">[</span><span class="mf">0.5049</span><span class="p">]])</span>
-<a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a><span class="p">)</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>ReadOnlyTensor(
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>    tensor([[0.1511],
+<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>            [1.3387],
+<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a>            [0.0290],
+<a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a>            [0.8723],
+<a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a>            [0.5049]])
+<a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a>)
 </code></pre></div>
 </details>
 <p>The decision values can be overidden using the <code>set_values</code> function. Setting them with random gaussian values,</p>
@@ -1833,13 +1830,13 @@
 </code></pre></div>
 <details class="abstract" open="open">
 <summary>Output</summary>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="n">ReadOnlyTensor</span><span class="p">(</span>
-<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a>    <span class="n">tensor</span><span class="p">([[</span> <span class="mf">0.1206</span><span class="p">,</span> <span class="o">-</span><span class="mf">2.0179</span><span class="p">],</span>
-<a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a>            <span class="p">[</span><span class="o">-</span><span class="mf">0.0508</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.5009</span><span class="p">],</span>
-<a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a>            <span class="p">[</span><span class="o">-</span><span class="mf">1.3668</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.4877</span><span class="p">],</span>
-<a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a>            <span class="p">[</span> <span class="mf">1.0296</span><span class="p">,</span> <span class="o">-</span><span class="mf">1.1230</span><span class="p">],</span>
-<a id="__codelineno-10-6" name="__codelineno-10-6" href="#__codelineno-10-6"></a>            <span class="p">[</span><span class="o">-</span><span class="mf">0.0574</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.4883</span><span class="p">]])</span>
-<a id="__codelineno-10-7" name="__codelineno-10-7" href="#__codelineno-10-7"></a><span class="p">)</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>ReadOnlyTensor(
+<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a>    tensor([[ 0.1206, -2.0179],
+<a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a>            [-0.0508, -0.5009],
+<a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a>            [-1.3668, -0.4877],
+<a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a>            [ 1.0296, -1.1230],
+<a id="__codelineno-10-6" name="__codelineno-10-6" href="#__codelineno-10-6"></a>            [-0.0574, -0.4883]])
+<a id="__codelineno-10-7" name="__codelineno-10-7" href="#__codelineno-10-7"></a>)
 </code></pre></div>
 </details>
 <p>and clear the fitness values</p>
@@ -1847,13 +1844,13 @@
 </code></pre></div>
 <details class="abstract" open="open">
 <summary>Output</summary>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="n">ReadOnlyTensor</span><span class="p">(</span>
-<a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a>    <span class="n">tensor</span><span class="p">([[</span><span class="n">nan</span><span class="p">],</span>
-<a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a>            <span class="p">[</span><span class="n">nan</span><span class="p">],</span>
-<a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a>            <span class="p">[</span><span class="n">nan</span><span class="p">],</span>
-<a id="__codelineno-12-5" name="__codelineno-12-5" href="#__codelineno-12-5"></a>            <span class="p">[</span><span class="n">nan</span><span class="p">],</span>
-<a id="__codelineno-12-6" name="__codelineno-12-6" href="#__codelineno-12-6"></a>            <span class="p">[</span><span class="n">nan</span><span class="p">]])</span>
-<a id="__codelineno-12-7" name="__codelineno-12-7" href="#__codelineno-12-7"></a><span class="p">)</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>ReadOnlyTensor(
+<a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a>    tensor([[nan],
+<a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a>            [nan],
+<a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a>            [nan],
+<a id="__codelineno-12-5" name="__codelineno-12-5" href="#__codelineno-12-5"></a>            [nan],
+<a id="__codelineno-12-6" name="__codelineno-12-6" href="#__codelineno-12-6"></a>            [nan]])
+<a id="__codelineno-12-7" name="__codelineno-12-7" href="#__codelineno-12-7"></a>)
 </code></pre></div>
 </details>
 <p>The fitness values can also be set with the <code>set_evals</code> method to give updated fitnesses,</p>
@@ -1862,13 +1859,13 @@
 </code></pre></div>
 <details class="abstract" open="open">
 <summary>Output</summary>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a><span class="n">ReadOnlyTensor</span><span class="p">(</span>
-<a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a>    <span class="n">tensor</span><span class="p">([[</span><span class="mf">0.5828</span><span class="p">],</span>
-<a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a>            <span class="p">[</span><span class="mf">0.5208</span><span class="p">],</span>
-<a id="__codelineno-14-4" name="__codelineno-14-4" href="#__codelineno-14-4"></a>            <span class="p">[</span><span class="mf">0.7184</span><span class="p">],</span>
-<a id="__codelineno-14-5" name="__codelineno-14-5" href="#__codelineno-14-5"></a>            <span class="p">[</span><span class="mf">0.5949</span><span class="p">],</span>
-<a id="__codelineno-14-6" name="__codelineno-14-6" href="#__codelineno-14-6"></a>            <span class="p">[</span><span class="mf">0.7678</span><span class="p">]])</span>
-<a id="__codelineno-14-7" name="__codelineno-14-7" href="#__codelineno-14-7"></a><span class="p">)</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>ReadOnlyTensor(
+<a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a>    tensor([[0.5828],
+<a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a>            [0.5208],
+<a id="__codelineno-14-4" name="__codelineno-14-4" href="#__codelineno-14-4"></a>            [0.7184],
+<a id="__codelineno-14-5" name="__codelineno-14-5" href="#__codelineno-14-5"></a>            [0.5949],
+<a id="__codelineno-14-6" name="__codelineno-14-6" href="#__codelineno-14-6"></a>            [0.7678]])
+<a id="__codelineno-14-7" name="__codelineno-14-7" href="#__codelineno-14-7"></a>)
 </code></pre></div>
 </details>
 <p>The <code>values</code> and <code>evals</code> properties yield read-only tensors that cannot be modified. In some advanced use-cases, you can directly access the underlying tensors using the <code>access_values</code> and <code>access_evals</code> methods. However, care should be taken when using these methods. By default, <a class="autorefs autorefs-internal" href="../../reference/evotorch/core/#evotorch.core.SolutionBatch">SolutionBatch</a> assumes that a call to <code>access_values</code> means that the underlying tensor will be modified, and the fitnesses are therefore cleared and reset to <code>nan</code>,</p>
@@ -1877,29 +1874,29 @@
 </code></pre></div>
 <details class="abstract" open="open">
 <summary>Output</summary>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a><span class="n">ReadOnlyTensor</span><span class="p">(</span>
-<a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a>    <span class="n">tensor</span><span class="p">([[</span><span class="n">nan</span><span class="p">],</span>
-<a id="__codelineno-16-3" name="__codelineno-16-3" href="#__codelineno-16-3"></a>            <span class="p">[</span><span class="n">nan</span><span class="p">],</span>
-<a id="__codelineno-16-4" name="__codelineno-16-4" href="#__codelineno-16-4"></a>            <span class="p">[</span><span class="n">nan</span><span class="p">],</span>
-<a id="__codelineno-16-5" name="__codelineno-16-5" href="#__codelineno-16-5"></a>            <span class="p">[</span><span class="n">nan</span><span class="p">],</span>
-<a id="__codelineno-16-6" name="__codelineno-16-6" href="#__codelineno-16-6"></a>            <span class="p">[</span><span class="n">nan</span><span class="p">]])</span>
-<a id="__codelineno-16-7" name="__codelineno-16-7" href="#__codelineno-16-7"></a><span class="p">)</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a>ReadOnlyTensor(
+<a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a>    tensor([[nan],
+<a id="__codelineno-16-3" name="__codelineno-16-3" href="#__codelineno-16-3"></a>            [nan],
+<a id="__codelineno-16-4" name="__codelineno-16-4" href="#__codelineno-16-4"></a>            [nan],
+<a id="__codelineno-16-5" name="__codelineno-16-5" href="#__codelineno-16-5"></a>            [nan],
+<a id="__codelineno-16-6" name="__codelineno-16-6" href="#__codelineno-16-6"></a>            [nan]])
+<a id="__codelineno-16-7" name="__codelineno-16-7" href="#__codelineno-16-7"></a>)
 </code></pre></div>
 </details>
 <p>However, this behaviour can be disabled with the <code>keep_evals</code> flag, e.g.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a><span class="n">batch</span><span class="o">.</span><span class="n">set_evals</span><span class="p">(</span><span class="n">problem</span><span class="o">.</span><span class="n">make_uniform</span><span class="p">(</span><span class="mi">5</span><span class="p">))</span>
-<a id="__codelineno-17-2" name="__codelineno-17-2" href="#__codelineno-17-2"></a><span class="n">values</span> <span class="o">=</span> <span class="n">batch</span><span class="o">.</span><span class="n">access_values</span><span class="p">(</span><span class="n">keep_evals</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span>
+<a id="__codelineno-17-2" name="__codelineno-17-2" href="#__codelineno-17-2"></a><span class="n">values</span> <span class="o">=</span> <span class="n">batch</span><span class="o">.</span><span class="n">access_values</span><span class="p">(</span><span class="n">keep_evals</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <a id="__codelineno-17-3" name="__codelineno-17-3" href="#__codelineno-17-3"></a><span class="nb">print</span><span class="p">(</span><span class="n">batch</span><span class="o">.</span><span class="n">evals</span><span class="p">)</span>
 </code></pre></div>
 <details class="abstract" open="open">
 <summary>Output</summary>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a><span class="n">ReadOnlyTensor</span><span class="p">(</span>
-<a id="__codelineno-18-2" name="__codelineno-18-2" href="#__codelineno-18-2"></a>    <span class="n">tensor</span><span class="p">([[</span><span class="mf">0.3775</span><span class="p">],</span>
-<a id="__codelineno-18-3" name="__codelineno-18-3" href="#__codelineno-18-3"></a>            <span class="p">[</span><span class="mf">0.2806</span><span class="p">],</span>
-<a id="__codelineno-18-4" name="__codelineno-18-4" href="#__codelineno-18-4"></a>            <span class="p">[</span><span class="mf">0.1781</span><span class="p">],</span>
-<a id="__codelineno-18-5" name="__codelineno-18-5" href="#__codelineno-18-5"></a>            <span class="p">[</span><span class="mf">0.3854</span><span class="p">],</span>
-<a id="__codelineno-18-6" name="__codelineno-18-6" href="#__codelineno-18-6"></a>            <span class="p">[</span><span class="mf">0.4929</span><span class="p">]])</span>
-<a id="__codelineno-18-7" name="__codelineno-18-7" href="#__codelineno-18-7"></a><span class="p">)</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a>ReadOnlyTensor(
+<a id="__codelineno-18-2" name="__codelineno-18-2" href="#__codelineno-18-2"></a>    tensor([[0.3775],
+<a id="__codelineno-18-3" name="__codelineno-18-3" href="#__codelineno-18-3"></a>            [0.2806],
+<a id="__codelineno-18-4" name="__codelineno-18-4" href="#__codelineno-18-4"></a>            [0.1781],
+<a id="__codelineno-18-5" name="__codelineno-18-5" href="#__codelineno-18-5"></a>            [0.3854],
+<a id="__codelineno-18-6" name="__codelineno-18-6" href="#__codelineno-18-6"></a>            [0.4929]])
+<a id="__codelineno-18-7" name="__codelineno-18-7" href="#__codelineno-18-7"></a>)
 </code></pre></div>
 </details>
 <p>If you wish to make an exact copy of a <a class="autorefs autorefs-internal" href="../../reference/evotorch/core/#evotorch.core.SolutionBatch">SolutionBatch</a> instance, you can do so with</p>
@@ -1915,11 +1912,11 @@
 </code></pre></div>
 <details class="abstract" open="open">
 <summary>Output</summary>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-22-1" name="__codelineno-22-1" href="#__codelineno-22-1"></a><span class="n">ReadOnlyTensor</span><span class="p">(</span>
-<a id="__codelineno-22-2" name="__codelineno-22-2" href="#__codelineno-22-2"></a>    <span class="n">tensor</span><span class="p">([[</span><span class="o">-</span><span class="mf">1.3668</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.4877</span><span class="p">],</span>
-<a id="__codelineno-22-3" name="__codelineno-22-3" href="#__codelineno-22-3"></a>            <span class="p">[</span> <span class="mf">1.0296</span><span class="p">,</span> <span class="o">-</span><span class="mf">1.1230</span><span class="p">],</span>
-<a id="__codelineno-22-4" name="__codelineno-22-4" href="#__codelineno-22-4"></a>            <span class="p">[</span><span class="o">-</span><span class="mf">0.0574</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.4883</span><span class="p">]])</span>
-<a id="__codelineno-22-5" name="__codelineno-22-5" href="#__codelineno-22-5"></a><span class="p">)</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-22-1" name="__codelineno-22-1" href="#__codelineno-22-1"></a>ReadOnlyTensor(
+<a id="__codelineno-22-2" name="__codelineno-22-2" href="#__codelineno-22-2"></a>    tensor([[-1.3668, -0.4877],
+<a id="__codelineno-22-3" name="__codelineno-22-3" href="#__codelineno-22-3"></a>            [ 1.0296, -1.1230],
+<a id="__codelineno-22-4" name="__codelineno-22-4" href="#__codelineno-22-4"></a>            [-0.0574, -0.4883]])
+<a id="__codelineno-22-5" name="__codelineno-22-5" href="#__codelineno-22-5"></a>)
 </code></pre></div>
 </details>
 <p>and the evaluations are exactly the evaluations of the last 3 solutions of <code>batch</code></p>
@@ -1927,11 +1924,11 @@
 </code></pre></div>
 <details class="abstract" open="open">
 <summary>Output</summary>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-24-1" name="__codelineno-24-1" href="#__codelineno-24-1"></a><span class="n">ReadOnlyTensor</span><span class="p">(</span>
-<a id="__codelineno-24-2" name="__codelineno-24-2" href="#__codelineno-24-2"></a>    <span class="n">tensor</span><span class="p">([[</span><span class="mf">0.1781</span><span class="p">],</span>
-<a id="__codelineno-24-3" name="__codelineno-24-3" href="#__codelineno-24-3"></a>            <span class="p">[</span><span class="mf">0.3854</span><span class="p">],</span>
-<a id="__codelineno-24-4" name="__codelineno-24-4" href="#__codelineno-24-4"></a>            <span class="p">[</span><span class="mf">0.4929</span><span class="p">]])</span>
-<a id="__codelineno-24-5" name="__codelineno-24-5" href="#__codelineno-24-5"></a><span class="p">)</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-24-1" name="__codelineno-24-1" href="#__codelineno-24-1"></a>ReadOnlyTensor(
+<a id="__codelineno-24-2" name="__codelineno-24-2" href="#__codelineno-24-2"></a>    tensor([[0.1781],
+<a id="__codelineno-24-3" name="__codelineno-24-3" href="#__codelineno-24-3"></a>            [0.3854],
+<a id="__codelineno-24-4" name="__codelineno-24-4" href="#__codelineno-24-4"></a>            [0.4929]])
+<a id="__codelineno-24-5" name="__codelineno-24-5" href="#__codelineno-24-5"></a>)
 </code></pre></div>
 </details>
 <p>A similar behaviour can be achieved with a list of indexes e.g. <code>subbatch = batch[[0, 1, 3]]</code> will give a solution batch that is a view of the solutions at indices 0, 1 and 3. When a sub-batch is updated, as can be achieved using <code>set_values</code> and <code>set_evals</code> or <code>access_values</code> and <code>access_evals</code> followed by modification,</p>
@@ -1940,11 +1937,11 @@
 </code></pre></div>
 <details class="abstract" open="open">
 <summary>Output</summary>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-26-1" name="__codelineno-26-1" href="#__codelineno-26-1"></a><span class="n">ReadOnlyTensor</span><span class="p">(</span>
-<a id="__codelineno-26-2" name="__codelineno-26-2" href="#__codelineno-26-2"></a>    <span class="n">tensor</span><span class="p">([[</span> <span class="mf">0.2202</span><span class="p">,</span>  <span class="mf">1.5362</span><span class="p">],</span>
-<a id="__codelineno-26-3" name="__codelineno-26-3" href="#__codelineno-26-3"></a>            <span class="p">[</span> <span class="mf">0.5641</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.0477</span><span class="p">],</span>
-<a id="__codelineno-26-4" name="__codelineno-26-4" href="#__codelineno-26-4"></a>            <span class="p">[</span> <span class="mf">0.8012</span><span class="p">,</span> <span class="o">-</span><span class="mf">1.3022</span><span class="p">]])</span>
-<a id="__codelineno-26-5" name="__codelineno-26-5" href="#__codelineno-26-5"></a><span class="p">)</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-26-1" name="__codelineno-26-1" href="#__codelineno-26-1"></a>ReadOnlyTensor(
+<a id="__codelineno-26-2" name="__codelineno-26-2" href="#__codelineno-26-2"></a>    tensor([[ 0.2202,  1.5362],
+<a id="__codelineno-26-3" name="__codelineno-26-3" href="#__codelineno-26-3"></a>            [ 0.5641, -0.0477],
+<a id="__codelineno-26-4" name="__codelineno-26-4" href="#__codelineno-26-4"></a>            [ 0.8012, -1.3022]])
+<a id="__codelineno-26-5" name="__codelineno-26-5" href="#__codelineno-26-5"></a>)
 </code></pre></div>
 </details>
 <p>the parent solution batch <code>batch</code> is also modified.</p>
@@ -1952,13 +1949,13 @@
 </code></pre></div>
 <details class="abstract" open="open">
 <summary>Output</summary>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-28-1" name="__codelineno-28-1" href="#__codelineno-28-1"></a><span class="n">ReadOnlyTensor</span><span class="p">(</span>
-<a id="__codelineno-28-2" name="__codelineno-28-2" href="#__codelineno-28-2"></a>    <span class="n">tensor</span><span class="p">([[</span> <span class="mf">0.1206</span><span class="p">,</span> <span class="o">-</span><span class="mf">2.0179</span><span class="p">],</span>
-<a id="__codelineno-28-3" name="__codelineno-28-3" href="#__codelineno-28-3"></a>            <span class="p">[</span><span class="o">-</span><span class="mf">0.0508</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.5009</span><span class="p">],</span>
-<a id="__codelineno-28-4" name="__codelineno-28-4" href="#__codelineno-28-4"></a>            <span class="p">[</span> <span class="mf">0.2202</span><span class="p">,</span>  <span class="mf">1.5362</span><span class="p">],</span>
-<a id="__codelineno-28-5" name="__codelineno-28-5" href="#__codelineno-28-5"></a>            <span class="p">[</span> <span class="mf">0.5641</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.0477</span><span class="p">],</span>
-<a id="__codelineno-28-6" name="__codelineno-28-6" href="#__codelineno-28-6"></a>            <span class="p">[</span> <span class="mf">0.8012</span><span class="p">,</span> <span class="o">-</span><span class="mf">1.3022</span><span class="p">]])</span>
-<a id="__codelineno-28-7" name="__codelineno-28-7" href="#__codelineno-28-7"></a><span class="p">)</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-28-1" name="__codelineno-28-1" href="#__codelineno-28-1"></a>ReadOnlyTensor(
+<a id="__codelineno-28-2" name="__codelineno-28-2" href="#__codelineno-28-2"></a>    tensor([[ 0.1206, -2.0179],
+<a id="__codelineno-28-3" name="__codelineno-28-3" href="#__codelineno-28-3"></a>            [-0.0508, -0.5009],
+<a id="__codelineno-28-4" name="__codelineno-28-4" href="#__codelineno-28-4"></a>            [ 0.2202,  1.5362],
+<a id="__codelineno-28-5" name="__codelineno-28-5" href="#__codelineno-28-5"></a>            [ 0.5641, -0.0477],
+<a id="__codelineno-28-6" name="__codelineno-28-6" href="#__codelineno-28-6"></a>            [ 0.8012, -1.3022]])
+<a id="__codelineno-28-7" name="__codelineno-28-7" href="#__codelineno-28-7"></a>)
 </code></pre></div>
 </details>
 <p><a class="autorefs autorefs-internal" href="../../reference/evotorch/core/#evotorch.core.SolutionBatch">SolutionBatch</a> instances of the same <a class="autorefs autorefs-internal" href="../../reference/evotorch/core/#evotorch.core.Problem">Problem</a> class can also be arbitrarily concatenated. For example, if we now create a second <a class="autorefs autorefs-internal" href="../../reference/evotorch/core/#evotorch.core.SolutionBatch">SolutionBatch</a> with 3 instances,</p>
@@ -1967,11 +1964,11 @@
 </code></pre></div>
 <details class="abstract" open="open">
 <summary>Output</summary>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-30-1" name="__codelineno-30-1" href="#__codelineno-30-1"></a><span class="n">ReadOnlyTensor</span><span class="p">(</span>
-<a id="__codelineno-30-2" name="__codelineno-30-2" href="#__codelineno-30-2"></a>    <span class="n">tensor</span><span class="p">([[</span> <span class="mf">0.0433</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.6526</span><span class="p">],</span>
-<a id="__codelineno-30-3" name="__codelineno-30-3" href="#__codelineno-30-3"></a>            <span class="p">[</span> <span class="mf">0.9731</span><span class="p">,</span>  <span class="mf">0.2553</span><span class="p">],</span>
-<a id="__codelineno-30-4" name="__codelineno-30-4" href="#__codelineno-30-4"></a>            <span class="p">[</span> <span class="mf">0.7482</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.6220</span><span class="p">]])</span>
-<a id="__codelineno-30-5" name="__codelineno-30-5" href="#__codelineno-30-5"></a><span class="p">)</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-30-1" name="__codelineno-30-1" href="#__codelineno-30-1"></a>ReadOnlyTensor(
+<a id="__codelineno-30-2" name="__codelineno-30-2" href="#__codelineno-30-2"></a>    tensor([[ 0.0433, -0.6526],
+<a id="__codelineno-30-3" name="__codelineno-30-3" href="#__codelineno-30-3"></a>            [ 0.9731,  0.2553],
+<a id="__codelineno-30-4" name="__codelineno-30-4" href="#__codelineno-30-4"></a>            [ 0.7482, -0.6220]])
+<a id="__codelineno-30-5" name="__codelineno-30-5" href="#__codelineno-30-5"></a>)
 </code></pre></div>
 </details>
 <p>and then concatenate <code>last_3</code> with <code>second_batch</code>, using either the <code>SolutionBatch.cat</code> or <code>batch.concat</code> methods,</p>
@@ -1980,14 +1977,14 @@
 </code></pre></div>
 <details class="abstract" open="open">
 <summary>Output</summary>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-32-1" name="__codelineno-32-1" href="#__codelineno-32-1"></a><span class="n">ReadOnlyTensor</span><span class="p">(</span>
-<a id="__codelineno-32-2" name="__codelineno-32-2" href="#__codelineno-32-2"></a>    <span class="n">tensor</span><span class="p">([[</span> <span class="mf">0.2202</span><span class="p">,</span>  <span class="mf">1.5362</span><span class="p">],</span>
-<a id="__codelineno-32-3" name="__codelineno-32-3" href="#__codelineno-32-3"></a>            <span class="p">[</span> <span class="mf">0.5641</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.0477</span><span class="p">],</span>
-<a id="__codelineno-32-4" name="__codelineno-32-4" href="#__codelineno-32-4"></a>            <span class="p">[</span> <span class="mf">0.8012</span><span class="p">,</span> <span class="o">-</span><span class="mf">1.3022</span><span class="p">],</span>
-<a id="__codelineno-32-5" name="__codelineno-32-5" href="#__codelineno-32-5"></a>            <span class="p">[</span> <span class="mf">0.0433</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.6526</span><span class="p">],</span>
-<a id="__codelineno-32-6" name="__codelineno-32-6" href="#__codelineno-32-6"></a>            <span class="p">[</span> <span class="mf">0.9731</span><span class="p">,</span>  <span class="mf">0.2553</span><span class="p">],</span>
-<a id="__codelineno-32-7" name="__codelineno-32-7" href="#__codelineno-32-7"></a>            <span class="p">[</span> <span class="mf">0.7482</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.6220</span><span class="p">]])</span>
-<a id="__codelineno-32-8" name="__codelineno-32-8" href="#__codelineno-32-8"></a><span class="p">)</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-32-1" name="__codelineno-32-1" href="#__codelineno-32-1"></a>ReadOnlyTensor(
+<a id="__codelineno-32-2" name="__codelineno-32-2" href="#__codelineno-32-2"></a>    tensor([[ 0.2202,  1.5362],
+<a id="__codelineno-32-3" name="__codelineno-32-3" href="#__codelineno-32-3"></a>            [ 0.5641, -0.0477],
+<a id="__codelineno-32-4" name="__codelineno-32-4" href="#__codelineno-32-4"></a>            [ 0.8012, -1.3022],
+<a id="__codelineno-32-5" name="__codelineno-32-5" href="#__codelineno-32-5"></a>            [ 0.0433, -0.6526],
+<a id="__codelineno-32-6" name="__codelineno-32-6" href="#__codelineno-32-6"></a>            [ 0.9731,  0.2553],
+<a id="__codelineno-32-7" name="__codelineno-32-7" href="#__codelineno-32-7"></a>            [ 0.7482, -0.6220]])
+<a id="__codelineno-32-8" name="__codelineno-32-8" href="#__codelineno-32-8"></a>)
 </code></pre></div>
 </details>
 <p>Creating a new instance of <a class="autorefs autorefs-internal" href="../../reference/evotorch/core/#evotorch.core.SolutionBatch">SolutionBatch</a>, <code>new_batch</code>, in this way is copying, so further modification of <code>new_batch</code> will not modify the parent batches <code>batch</code> and <code>second_batch</code>.</p>
@@ -1998,7 +1995,7 @@
 </code></pre></div>
 <details class="abstract" open="open">
 <summary>Output</summary>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-34-1" name="__codelineno-34-1" href="#__codelineno-34-1"></a><span class="o">&lt;</span><span class="n">Solution</span> <span class="n">values</span><span class="o">=</span><span class="n">tensor</span><span class="p">([</span><span class="o">-</span><span class="mf">0.0508</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.5009</span><span class="p">]),</span> <span class="n">evals</span><span class="o">=</span><span class="n">tensor</span><span class="p">([</span><span class="mf">0.2806</span><span class="p">])</span><span class="o">&gt;</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-34-1" name="__codelineno-34-1" href="#__codelineno-34-1"></a>&lt;Solution values=tensor([-0.0508, -0.5009]), evals=tensor([0.2806])&gt;
 </code></pre></div>
 </details>
 <p>A <a class="autorefs autorefs-internal" href="../../reference/evotorch/core/#evotorch.core.Solution">Solution</a> instance has the same properties <code>values</code> and <code>evals</code> and methods <code>set_values</code>, <code>set_evals</code>, <code>access_values</code> and <code>access_evals</code> as <a class="autorefs autorefs-internal" href="../../reference/evotorch/core/#evotorch.core.SolutionBatch">SolutionBatch</a>, except that they now work in one dimension, rather than two. For example, accessing the values yields a 1-dimensional read-only tensor of decision values</p>
@@ -2016,7 +2013,7 @@
 </code></pre></div>
 <details class="abstract" open="open">
 <summary>Output</summary>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-38-1" name="__codelineno-38-1" href="#__codelineno-38-1"></a><span class="o">&lt;</span><span class="n">Solution</span> <span class="n">values</span><span class="o">=</span><span class="n">tensor</span><span class="p">([</span><span class="mf">1.</span><span class="p">,</span> <span class="mf">2.</span><span class="p">]),</span> <span class="n">evals</span><span class="o">=</span><span class="n">tensor</span><span class="p">([</span><span class="mf">0.5000</span><span class="p">])</span><span class="o">&gt;</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-38-1" name="__codelineno-38-1" href="#__codelineno-38-1"></a>&lt;Solution values=tensor([1., 2.]), evals=tensor([0.5000])&gt;
 </code></pre></div>
 </details>
 <p>but will also modify <code>batch</code>,</p>
@@ -2024,13 +2021,13 @@
 </code></pre></div>
 <details class="abstract" open="open">
 <summary>Output</summary>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-40-1" name="__codelineno-40-1" href="#__codelineno-40-1"></a><span class="n">ReadOnlyTensor</span><span class="p">(</span>
-<a id="__codelineno-40-2" name="__codelineno-40-2" href="#__codelineno-40-2"></a>    <span class="n">tensor</span><span class="p">([[</span> <span class="mf">0.1206</span><span class="p">,</span> <span class="o">-</span><span class="mf">2.0179</span><span class="p">],</span>
-<a id="__codelineno-40-3" name="__codelineno-40-3" href="#__codelineno-40-3"></a>            <span class="p">[</span> <span class="mf">1.0000</span><span class="p">,</span>  <span class="mf">2.0000</span><span class="p">],</span>
-<a id="__codelineno-40-4" name="__codelineno-40-4" href="#__codelineno-40-4"></a>            <span class="p">[</span> <span class="mf">0.2202</span><span class="p">,</span>  <span class="mf">1.5362</span><span class="p">],</span>
-<a id="__codelineno-40-5" name="__codelineno-40-5" href="#__codelineno-40-5"></a>            <span class="p">[</span> <span class="mf">0.5641</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.0477</span><span class="p">],</span>
-<a id="__codelineno-40-6" name="__codelineno-40-6" href="#__codelineno-40-6"></a>            <span class="p">[</span> <span class="mf">0.8012</span><span class="p">,</span> <span class="o">-</span><span class="mf">1.3022</span><span class="p">]])</span>
-<a id="__codelineno-40-7" name="__codelineno-40-7" href="#__codelineno-40-7"></a><span class="p">)</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-40-1" name="__codelineno-40-1" href="#__codelineno-40-1"></a>ReadOnlyTensor(
+<a id="__codelineno-40-2" name="__codelineno-40-2" href="#__codelineno-40-2"></a>    tensor([[ 0.1206, -2.0179],
+<a id="__codelineno-40-3" name="__codelineno-40-3" href="#__codelineno-40-3"></a>            [ 1.0000,  2.0000],
+<a id="__codelineno-40-4" name="__codelineno-40-4" href="#__codelineno-40-4"></a>            [ 0.2202,  1.5362],
+<a id="__codelineno-40-5" name="__codelineno-40-5" href="#__codelineno-40-5"></a>            [ 0.5641, -0.0477],
+<a id="__codelineno-40-6" name="__codelineno-40-6" href="#__codelineno-40-6"></a>            [ 0.8012, -1.3022]])
+<a id="__codelineno-40-7" name="__codelineno-40-7" href="#__codelineno-40-7"></a>)
 </code></pre></div>
 </details>
 <p>A <a class="autorefs autorefs-internal" href="../../reference/evotorch/core/#evotorch.core.Solution">Solution</a> instance can also be cloned with the <code>clone()</code> method e.g.</p>
