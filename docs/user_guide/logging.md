@@ -181,7 +181,7 @@ def main():
 
 ## Remote Logging with `neptune`
 
-EvoTorch also supports remote logging with [Neptune](neptune.ai). To use this functionality, you must have the `neptune-client` package installed. Then usage of [NeptuneLogger][evotorch.logging.NeptuneLogger] is as simple as creating a `neptune.new.run.Run` instance and passing it to the logger class at instantiation. 
+EvoTorch also supports remote logging with [Neptune](https://neptune.ai/home). To use this functionality, you must have the `neptune-client` package installed. Then usage of [NeptuneLogger][evotorch.logging.NeptuneLogger] is as simple as creating a `neptune.new.run.Run` instance and passing it to the logger class at instantiation.
 
 ```python
 from evotorch import Problem
@@ -199,8 +199,8 @@ searcher = SNES(problem, ...)
 import neptune.new as neptune
 
 run = neptune.init(
-    project = 'workspace-name/project-name',
-) # Start an neptune run to log to
+    project='workspace-name/project-name',
+)  # Start an neptune run to log to
 _ = NeptuneLogger(searcher, run=run)
 
 # Run the search algorithm
