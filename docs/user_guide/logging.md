@@ -97,7 +97,7 @@ plt.show()
 
 ## Remote Logging with `mlflow`
 
-There is also a logger class named `MlflowLogger` which logs the metrics via the `mlflow` library.
+There is also a logger class named [MlFlowLogger][evotorch.logging.MlFlowLogger] which logs the metrics via the `mlflow` library.
 With the help of `mlflow`, the logs can be stored into the local disk or into a remote server.
 
 In the simplest case, a script which stores its logs with the help of `mlflow` looks like this:
@@ -105,7 +105,7 @@ In the simplest case, a script which stores its logs with the help of `mlflow` l
 ```python
 from evotorch import Problem
 from evotorch.algorithms import SNES
-from evotorch.logging import StdOutLogger, MlFlowLoger
+from evotorch.logging import StdOutLogger, MlFlowLogger
 
 # Somehow instantiate the problem
 problem = Problem(...)
@@ -133,7 +133,7 @@ searcher.run(100)
 
 ## Remote Logging with `sacred`
 
-As an alternative to `mlflow`, one might want to log the metrics with the help of the `sacred` library.
+As an alternative to `mlflow`, one might want to log the metrics with the help of the `sacred` library using the [SacredLogger][evotorch.logging.SacredLogger] class.
 The basic structure of a script using `sacred` is as follows:
 
 ```python
@@ -181,7 +181,7 @@ def main():
 
 ## Remote Logging with `neptune`
 
-EvoTorch also supports remote logging with [Neptune](neptune.ai). To use this functionality, you must have the `neptune-client` package installed. Then usage of `NeptuneLogger` is as simple as creating a `neptune.new.run.Run` instance and passing it to `NeptuneLogger` at instantiation. 
+EvoTorch also supports remote logging with [Neptune](neptune.ai). To use this functionality, you must have the `neptune-client` package installed. Then usage of [NeptuneLogger][evotorch.logging.NeptuneLogger] is as simple as creating a `neptune.new.run.Run` instance and passing it to the logger class at instantiation. 
 
 ```python
 from evotorch import Problem
