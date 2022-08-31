@@ -105,7 +105,7 @@ In the simplest case, a script which stores its logs with the help of `mlflow` l
 ```python
 from evotorch import Problem
 from evotorch.algorithms import SNES
-from evotorch.logging import StdOutLogger, MlFlowLogger
+from evotorch.logging import StdOutLogger, MlflowLogger
 
 # Somehow instantiate the problem
 problem = Problem(...)
