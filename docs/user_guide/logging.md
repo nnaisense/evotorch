@@ -97,7 +97,7 @@ plt.show()
 
 ## Remote Logging with `mlflow`
 
-There is also a logger class named [MlFlowLogger][evotorch.logging.MlFlowLogger] which logs the metrics via the `mlflow` library.
+There is also a logger class named [MlflowLogger][evotorch.logging.MlflowLogger] which logs the metrics via the `mlflow` library.
 With the help of `mlflow`, the logs can be stored into the local disk or into a remote server.
 
 In the simplest case, a script which stores its logs with the help of `mlflow` looks like this:
