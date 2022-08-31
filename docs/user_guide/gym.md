@@ -144,3 +144,57 @@ problem = GymNE(
 ```
 
 which will cause each step to return `5.0` less reward.
+
+## Working with stateful policies
+
+When working with reinforcement-learning settings it is common to use a stateful policy network, such as RNNs and LSTMs. EvoTorch expects this to be handled within the definition of your policy network. For example, a simple RNN which maintains its internal hidden state is implemented as:
+
+```py
+from torch import nn
+class SimpleRNN(nn.Module):
+
+    def __init__(self, obs_length: int, act_length: int, obs_space: Space, hidden_dim: int = 32):
+        super().__init__()
+        # First linear layer takes both observations and previous hidden state as input
+        self.lin1 = torch.nn.Linear(obs_length + hidden_dim, hidden_dim)
+        # Activation is Tanh
+        self.act = torch.nn.Tanh()
+        # Second linear layer maps hidden state to actions
+        self.lin2 = torch.nn.Linear(hidden_dim, act_length)
+
+        # Initially the hidden state is stored as None
+        self._hidden_state = None
+        self._hidden_dim = hidden_dim
+
+    def forward(self, observations):
+        # If the hidden state is not initialized, initialize it and maintain device and dtype consistency
+        if self._hidden_state is None:
+            self._hidden_state = torch.zeros(self._hidden_dim, device = observations.device, dtype = observations.dtype)
+        # Concatenate observations with hidden state as input to self.lin1
+        policy_input = torch.cat(observations, self._hidden_state, dim = -1)
+        # Update the internal hidden state
+        self._hidden_state = self.act(self.lin1(policy_input))
+        # Compute the actions from the internal hidden state
+        act = self.lin2(self._hidden_state)
+        return act
+
+    def reset(self):
+        # Whenever the environment is reset, this method will be called to
+        # Resetting self._hidden_state to None means that the hidden state from previous episodes will be cleared
+        self._hidden_state = None
+```
+
+The critical point to note is the addition of the `reset()` method. Whenever an episode ends and the `gym` environment is reset, `GymProblem` will crawl your policy module and call the `reset()` method of any module within it (including itself). You can use this functionality to clear memory from the previous episode so that solutions are evaluated independently from previous evaluations. In the above example `SimpleRNN`, the policy maintains a `_hidden_state` variable which is reset via the `reset()` method whenever the environment is also reset, so that no hidden state is kept between independent episodes. 
+
+To make usage of stateful policies, we provide wrapped versions of `torch.nn.RNN`  and `torch.nn.LSTM`, which are [evotorch.neuroevolution.net.RecurrentNet][evotorch.neuroevolution.net.RecurrentNet] and [evotorch.neuroevolution.net.LSTMNet][evotorch.neuroevolution.net.RecurrentNet], respectively. These wrapped versions work exactly the same as their underlying `torch` equivalents, except that they internally handle the hidden state of the recurrent network and therefore only require a single input e.g. the observations from the environment or some earlier layer in the policy. These wrapped classes also handle the implementation of the `reset()` method. You can use these special layers in the string representation too:
+
+```py
+from evotorch.neuroevolution import GymNE
+
+problem = GymNE(
+    env_name="LunarLanderContinuous-v2",
+    # Recurrent layer with hidden dimension 64, followed by linear mapping to actions
+    network="RecurrentNet(obs_length, 64) >> Linear(64, act_length)",
+    num_actors=4,
+)
+```
