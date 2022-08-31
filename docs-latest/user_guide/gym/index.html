@@ -595,13 +595,6 @@
   
 </li>
       
-        <li class="md-nav__item">
-  <a href="#working-with-stateful-policies" class="md-nav__link">
-    Working with stateful policies
-  </a>
-  
-</li>
-      
     </ul>
   
 </nav>
@@ -1766,13 +1759,6 @@
   
 </li>
       
-        <li class="md-nav__item">
-  <a href="#working-with-stateful-policies" class="md-nav__link">
-    Working with stateful policies
-  </a>
-  
-</li>
-      
     </ul>
   
 </nav>
@@ -1899,52 +1885,6 @@
 <a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a><span class="p">)</span>
 </code></pre></div>
 <p>which will cause each step to return <code>5.0</code> less reward.</p>
-<h2 id="working-with-stateful-policies">Working with stateful policies<a class="headerlink" href="#working-with-stateful-policies" title="Permanent link">&para;</a></h2>
-<p>When working with reinforcement-learning settings it is common to use a stateful policy network, such as RNNs and LSTMs. EvoTorch expects this to be handled within the definition of your policy network. For example, a simple RNN which maintains its internal hidden state is implemented as:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="kn">from</span> <span class="nn">torch</span> <span class="kn">import</span> <span class="n">nn</span>
-<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a><span class="k">class</span> <span class="nc">SimpleRNN</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
-<a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a>
-<a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">obs_length</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">act_length</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">obs_space</span><span class="p">:</span> <span class="n">Space</span><span class="p">,</span> <span class="n">hidden_dim</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">32</span><span class="p">):</span>
-<a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a>        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
-<a id="__codelineno-9-6" name="__codelineno-9-6" href="#__codelineno-9-6"></a>        <span class="c1"># First linear layer takes both observations and previous hidden state as input</span>
-<a id="__codelineno-9-7" name="__codelineno-9-7" href="#__codelineno-9-7"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">lin1</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="n">obs_length</span> <span class="o">+</span> <span class="n">hidden_dim</span><span class="p">,</span> <span class="n">hidden_dim</span><span class="p">)</span>
-<a id="__codelineno-9-8" name="__codelineno-9-8" href="#__codelineno-9-8"></a>        <span class="c1"># Activation is Tanh</span>
-<a id="__codelineno-9-9" name="__codelineno-9-9" href="#__codelineno-9-9"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">act</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Tanh</span><span class="p">()</span>
-<a id="__codelineno-9-10" name="__codelineno-9-10" href="#__codelineno-9-10"></a>        <span class="c1"># Second linear layer maps hidden state to actions</span>
-<a id="__codelineno-9-11" name="__codelineno-9-11" href="#__codelineno-9-11"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">lin2</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="n">hidden_dim</span><span class="p">,</span> <span class="n">act_length</span><span class="p">)</span>
-<a id="__codelineno-9-12" name="__codelineno-9-12" href="#__codelineno-9-12"></a>
-<a id="__codelineno-9-13" name="__codelineno-9-13" href="#__codelineno-9-13"></a>        <span class="c1"># Initially the hidden state is stored as None</span>
-<a id="__codelineno-9-14" name="__codelineno-9-14" href="#__codelineno-9-14"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_hidden_state</span> <span class="o">=</span> <span class="kc">None</span>
-<a id="__codelineno-9-15" name="__codelineno-9-15" href="#__codelineno-9-15"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_hidden_dim</span> <span class="o">=</span> <span class="n">hidden_dim</span>
-<a id="__codelineno-9-16" name="__codelineno-9-16" href="#__codelineno-9-16"></a>
-<a id="__codelineno-9-17" name="__codelineno-9-17" href="#__codelineno-9-17"></a>    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">observations</span><span class="p">):</span>
-<a id="__codelineno-9-18" name="__codelineno-9-18" href="#__codelineno-9-18"></a>        <span class="c1"># If the hidden state is not initialized, initialize it and maintain device and dtype consistency</span>
-<a id="__codelineno-9-19" name="__codelineno-9-19" href="#__codelineno-9-19"></a>        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_hidden_state</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-<a id="__codelineno-9-20" name="__codelineno-9-20" href="#__codelineno-9-20"></a>            <span class="bp">self</span><span class="o">.</span><span class="n">_hidden_state</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_hidden_dim</span><span class="p">,</span> <span class="n">device</span> <span class="o">=</span> <span class="n">observations</span><span class="o">.</span><span class="n">device</span><span class="p">,</span> <span class="n">dtype</span> <span class="o">=</span> <span class="n">observations</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
-<a id="__codelineno-9-21" name="__codelineno-9-21" href="#__codelineno-9-21"></a>        <span class="c1"># Concatenate observations with hidden state as input to self.lin1</span>
-<a id="__codelineno-9-22" name="__codelineno-9-22" href="#__codelineno-9-22"></a>        <span class="n">policy_input</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">(</span><span class="n">observations</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_hidden_state</span><span class="p">,</span> <span class="n">dim</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
-<a id="__codelineno-9-23" name="__codelineno-9-23" href="#__codelineno-9-23"></a>        <span class="c1"># Update the internal hidden state</span>
-<a id="__codelineno-9-24" name="__codelineno-9-24" href="#__codelineno-9-24"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_hidden_state</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">act</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">lin1</span><span class="p">(</span><span class="n">policy_input</span><span class="p">))</span>
-<a id="__codelineno-9-25" name="__codelineno-9-25" href="#__codelineno-9-25"></a>        <span class="c1"># Compute the actions from the internal hidden state</span>
-<a id="__codelineno-9-26" name="__codelineno-9-26" href="#__codelineno-9-26"></a>        <span class="n">act</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">lin2</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_hidden_state</span><span class="p">)</span>
-<a id="__codelineno-9-27" name="__codelineno-9-27" href="#__codelineno-9-27"></a>        <span class="k">return</span> <span class="n">act</span>
-<a id="__codelineno-9-28" name="__codelineno-9-28" href="#__codelineno-9-28"></a>
-<a id="__codelineno-9-29" name="__codelineno-9-29" href="#__codelineno-9-29"></a>    <span class="k">def</span> <span class="nf">reset</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<a id="__codelineno-9-30" name="__codelineno-9-30" href="#__codelineno-9-30"></a>        <span class="c1"># Whenever the environment is reset, this method will be called to</span>
-<a id="__codelineno-9-31" name="__codelineno-9-31" href="#__codelineno-9-31"></a>        <span class="c1"># Resetting self._hidden_state to None means that the hidden state from previous episodes will be cleared</span>
-<a id="__codelineno-9-32" name="__codelineno-9-32" href="#__codelineno-9-32"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_hidden_state</span> <span class="o">=</span> <span class="kc">None</span>
-</code></pre></div>
-<p>The critical point to note is the addition of the <code>reset()</code> method. Whenever an episode ends and the <code>gym</code> environment is reset, <code>GymProblem</code> will crawl your policy module and call the <code>reset()</code> method of any module within it (including itself). You can use this functionality to clear memory from the previous episode so that solutions are evaluated independently from previous evaluations. In the above example <code>SimpleRNN</code>, the policy maintains a <code>_hidden_state</code> variable which is reset via the <code>reset()</code> method whenever the environment is also reset, so that no hidden state is kept between independent episodes.</p>
-<p>To make usage of stateful policies, we provide wrapped versions of <code>torch.nn.RNN</code>  and <code>torch.nn.LSTM</code>, which are <a class="autorefs autorefs-internal" href="../../reference/evotorch/neuroevolution/net/layers/#evotorch.neuroevolution.net.layers.RecurrentNet">evotorch.neuroevolution.net.layers.RecurrentNet</a> and <a class="autorefs autorefs-internal" href="../../reference/evotorch/neuroevolution/net/layers/#evotorch.neuroevolution.net.layers.LSTMNet">evotorch.neuroevolution.net.layers.LSTMNet</a>, respectively. These wrapped versions work exactly the same as their underlying <code>torch</code> equivalents, except that they internally handle the hidden state of the recurrent network and therefore only require a single input e.g. the observations from the environment or some earlier layer in the policy. These wrapped classes also handle the implementation of the <code>reset()</code> method. You can use these special layers in the string representation too:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="kn">from</span> <span class="nn">evotorch.neuroevolution</span> <span class="kn">import</span> <span class="n">GymNE</span>
-<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a>
-<a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a><span class="n">problem</span> <span class="o">=</span> <span class="n">GymNE</span><span class="p">(</span>
-<a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a>    <span class="n">env_name</span><span class="o">=</span><span class="s2">&quot;LunarLanderContinuous-v2&quot;</span><span class="p">,</span>
-<a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a>    <span class="c1"># Recurrent layer with hidden dimension 64, followed by linear mapping to actions</span>
-<a id="__codelineno-10-6" name="__codelineno-10-6" href="#__codelineno-10-6"></a>    <span class="n">network</span><span class="o">=</span><span class="s2">&quot;RecurrentNet(obs_length, 64) &gt;&gt; Linear(64, act_length)&quot;</span><span class="p">,</span>
-<a id="__codelineno-10-7" name="__codelineno-10-7" href="#__codelineno-10-7"></a>    <span class="n">num_actors</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span>
-<a id="__codelineno-10-8" name="__codelineno-10-8" href="#__codelineno-10-8"></a><span class="p">)</span>
-</code></pre></div>
 
 
 
