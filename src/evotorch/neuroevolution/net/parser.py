@@ -86,7 +86,7 @@ class NetParsingError(Exception):
 
 def submodules(a: nn.Module) -> list:
     if isinstance(a, nn.Sequential):
-        return [module for i, module in enumerate(a.modules()) if i >= 1]
+        return [module for module in a]
     else:
         return [a]
 
