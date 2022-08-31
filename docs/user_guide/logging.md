@@ -105,7 +105,7 @@ In the simplest case, a script which stores its logs with the help of `mlflow` l
 ```python
 from evotorch import Problem
 from evotorch.algorithms import SNES
-from evotorch.logginer import StdOutLogger, MlFlowLoger
+from evotorch.logging import StdOutLogger, MlFlowLoger
 
 # Somehow instantiate the problem
 problem = Problem(...)
@@ -139,7 +139,7 @@ The basic structure of a script using `sacred` is as follows:
 ```python
 from evotorch import Problem
 from evotorch.algorithms import SNES
-from evotorch.logginer import StdOutLogger, SacredLogger
+from evotorch.logging import StdOutLogger, SacredLogger
 
 from sacred import Experiment
 from evotorch.tools import SuppressSacredExperiment
@@ -177,4 +177,35 @@ def main():
 
     # Run the search algorithm
     searcher.run(100)
+```
+
+## Remote Logging with `neptune`
+
+EvoTorch also supports remote logging with [Neptune](neptune.ai). To use this functionality, you must have the `neptune-client` package installed. Then usage of `NeptuneLogger` is as simple as creating a `neptune.new.run.Run` instance and passing it to `NeptuneLogger` at instantiation. 
+
+```python
+from evotorch import Problem
+from evotorch.algorithms import SNES
+from evotorch.logging import NeptuneLogger
+
+# Somehow instantiate the problem
+problem = Problem(...)
+
+# Somehow instantiate the search algorithm
+searcher = SNES(problem, ...)
+
+# In addition, instantiate an NeptuneLogger so that the logs are stored
+# via neptune.
+import neptune.new as neptune
+
+run = neptune.init(
+    project = 'workspace-name/project-name',
+) # Start an neptune run to log to
+_ = NeptuneLogger(searcher, run=run)
+
+# Run the search algorithm
+searcher.run(100)
+
+# Stop the neptune run
+run.stop()
 ```
