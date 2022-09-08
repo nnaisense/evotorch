@@ -1,33 +1,49 @@
 # Example scripts
 
-This directory contains Python scripts which, while serving as code examples, can also be used as command line utilities for training and visualizing policies for [gym](https://www.gymlibrary.ml/) environments.
+The scripts provided here demonstrate key features of EvoTorch for new users and serve as starting points for solving custom problems.
 
-## Requirements
+---
+## Black-box optimization
 
-The policy training script, `rl.py`, requires [sacred](https://github.com/IDSIA/sacred) which can be installed via:
+- [bbo_vectorized.py](./bbo_vectorized.py): demonstrates single objective black-box optimization using a distribution-based algorithm, accelerated using vectorization on a single GPU/CPU.
+- [bbo_vecparallel.py](./bbo_vecparallel.py): modifies example above to use vectorization together with parallelization over multiple GPUs, and use a simple GA instead of distribution-based search.
+- [moo_parallel.py](./moo_parallel.py): demonstrates multi-objective optimization using parallelization on all CPU cores without vectorization.
+
+---
+## Reinforcement Learning
+
+- [rl_gym.py](./rl_gym.py): demonstrates how to solve a simple [Gym](https://www.gymlibrary.ml/) problem using the PGPE algorithm and ClipUp optimizer.
+
+---
+## Paper re-implementation (RL)
+
+The script [rl_clipup.py](./rl_clipup.py) reproduces experiments from the following [paper](https://arxiv.org/abs/2008.02387):
+```
+Nihat Engin Toklu, Paweł Liskowski, and Rupesh Kumar Srivastava.
+"ClipUp: a simple and powerful optimizer for distribution-based policy evolution."
+International Conference on Parallel Problem Solving from Nature. Springer, Cham, 2020.
+https://arxiv.org/abs/2008.02387
+```
+It allows you to train policies for the Lunar Lander, Walker-2D and Humanoid environments from [Gym](https://www.gymlibrary.ml/) as well as the [PyBullet](https://pybullet.org/) Humanoid.
+
+
+### Requirements
 
 ```bash
+# Necessary: Used for configs and logging results to files or databases
 pip install sacred
-```
-
-For training a LunarLanderContinuous-v2 policy, `box2d` extensions of gym are required. Similarly, for training policies for MuJoCo environments, `mujoco` extensions of gym are required. One can ensure that gym is installed with these extensions via:
-
-```bash
+# Optional: box2d for Lunar Lander, mujoco for Walker-2D and Humanoid
 pip install 'gym[box2d,mujoco]'
-```
-
-In addition, training policies for [pybullet](https://pybullet.org/) environments requires one to install pybullet:
-
-```bash
+# Optional: For PyBullet Humanoid
 pip install pybullet
 ```
 
-## Script for training policies: `rl.py`
+### Running experiments
 
-The script `rl.py` is a command line utility for training and saving policies for classical gym environments. Its basic usage is as follows:
+The script `rl_clipup.py` is a command line utility for training and saving policies for classical gym environments. Its basic usage is as follows:
 
 ```bash
-python rl.py -F RESULTS_DIR           \
+python rl_clipup.py -F RESULTS_DIR           \
     with env_name=GYM_ENVIRONMENT_ID  \
          policy=POLICY                \
          save_interval=SAVE_INTERVAL  \
@@ -46,23 +62,23 @@ where:
 To see the full list of available hyperparameters with their explanations and their default values, one can use the following shell command:
 
 ```bash
-python rl.py print_config
+python rl_clipup.py print_config
 ```
 
 One can also see the effects of changing hyperparameter(s), without executing the experiment, via:
 
 ```bash
-python rl.py print_config with hyperparameter1=newvalue1 hyperparameter2=newvalue2 ...
+python rl_clipup.py print_config with hyperparameter1=newvalue1 hyperparameter2=newvalue2 ...
 ```
 
 ### Available pre-configurations
 
-`rl.py` comes with pre-configurations for certain environments.
+`rl_clipup.py` comes with pre-configurations for certain environments.
 
 For example, the following shell command:
 
 ```bash
-python rl.py -F RESULTS_DIR with lunarlander
+python rl_clipup.py -F RESULTS_DIR with lunarlander
 ```
 
 ...evolves a LunarLanderContinuous-v2 and saves it into `RESULTS_DIR`.
@@ -70,16 +86,16 @@ python rl.py -F RESULTS_DIR with lunarlander
 Also, the following command:
 
 ```bash
-python rl.py -F RESULTS_DIR with pybullet_humanoid save_interval=50
+python rl_clipup.py -F RESULTS_DIR with pybullet_humanoid save_interval=50
 ```
 
-...starts an evolutionary computation run for solving `pybullet_envs:HumanoidBulletEnv-v0`, and saves the policy at every 50 generations. Such an explicit `save_interval` value is recommended for pybullet humanoid, since the computational experiments for this environment lasts long, and one might want to look at how the current agent is behaving without having to wait until the end of the run.
+...starts an evolutionary computation run for solving `pybullet_envs:HumanoidBulletEnv-v0`, and saves the policy at every 50 generations. Such an explicit `save_interval` value is recommended for pybullet humanoid, since the computational experiments for this environment last long, and one might want to look at how the current agent is behaving without having to wait until the end of the run.
 
 Other available pre-configurations are `walker` (for the MuJoCo environment `Walker-v4`) and `humanoid` (for the MuJoCo environment `Humanoid-v4`).
 
-## Script for testing and/or visualizing policies: `rl_enjoy.py`
+### Script for testing and/or visualizing policies: `rl_enjoy.py`
 
-The policies trained/evolved by `rl.py` are saved as pickle files. These pickle files can then be tested with the help of `rl_enjoy.py`.
+The policies trained/evolved by `rl_clipup.py` are saved as pickle files. These pickle files can then be tested with the help of `rl_enjoy.py`.
 The simplest usage is:
 
 ```bash

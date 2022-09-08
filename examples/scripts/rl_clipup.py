@@ -35,7 +35,7 @@ Nihat Engin Toklu, Paweł Liskowski, and Rupesh Kumar Srivastava.
 International Conference on Parallel Problem Solving from Nature. Springer, Cham, 2020.
 
 An extended version of this paper can be found online:
-https://arxiv.org/pdf/2008.02387.pdf
+https://arxiv.org/abs/2008.02387
 
 To run an experiment use:
 
