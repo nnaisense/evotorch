@@ -6,7 +6,6 @@ The scripts provided here demonstrate key features of EvoTorch for new users and
 ## Black-box optimization
 
 - [bbo_vectorized.py](./bbo_vectorized.py): demonstrates single objective black-box optimization using a distribution-based algorithm, accelerated using vectorization on a single GPU/CPU.
-- [bbo_vecparallel.py](./bbo_vecparallel.py): modifies example above to use vectorization together with parallelization over multiple GPUs, and use a simple GA instead of distribution-based search.
 - [moo_parallel.py](./moo_parallel.py): demonstrates multi-objective optimization using parallelization on all CPU cores without vectorization.
 
 ---
