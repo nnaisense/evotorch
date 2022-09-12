@@ -11,7 +11,7 @@
       
       
       <link rel="icon" href="../../../assets/favicon.ico">
-      <meta name="generator" content="mkdocs-1.3.1, mkdocs-material-8.4.3">
+      <meta name="generator" content="mkdocs-1.3.1, mkdocs-material-8.4.4">
     
     
       
@@ -1978,17 +1978,17 @@ within the namespace <code>evotorch.algorithms</code> needs
 to be configured so that it knows which cross-over operator
 and which mutation operator it should apply on the
 solutions. The way this is done is as follows:</p>
-<div class="highlight"><pre><span></span><code>import evotorch.algorithms as dra
-import evotorch.operators as dro
+<div class="highlight"><pre><span></span><code>import evotorch.algorithms as ea
+import evotorch.operators as eo
 
 problem = ...   # initialize the Problem
 
-ga = dra.SteadyStateGA(problem, popsize=...)
+ga = ea.SteadyStateGA(problem, popsize=...)
 
 # Configure the genetic algorithm to use
 # simulated binary cross-over
 ga.use(
-    dro.SimulatedBinaryCrossOver(
+    eo.SimulatedBinaryCrossOver(
         problem,
         tournament_size=...,
         cross_over_rate=...,
@@ -1999,7 +1999,7 @@ ga.use(
 # Configure the genetic algorithm to use
 # Gaussian mutation
 ga.use(
-    dro.GaussianMutation(
+    eo.GaussianMutation(
         problem,
         stdev=...
     )
@@ -4297,6 +4297,7 @@ Complex Systems 3, 493-530.
     </div>
 
   </div>
+
 
 
 

@@ -11,7 +11,7 @@
       
       
       <link rel="icon" href="../../assets/favicon.ico">
-      <meta name="generator" content="mkdocs-1.3.1, mkdocs-material-8.4.3">
+      <meta name="generator" content="mkdocs-1.3.1, mkdocs-material-8.4.4">
     
     
       
@@ -1956,6 +1956,7 @@ z = x - x'
 <a id="__codelineno-11-12" name="__codelineno-11-12" href="#__codelineno-11-12"></a>        <span class="o">...</span>
 </code></pre></div>
 <p>For a similar reason, when we are creating <code>torch</code> tensors that we will use within the evaluation, it is also important to ensure they share the same data type and device. For this reason, <a class="autorefs autorefs-internal" href="../../reference/evotorch/core/#evotorch.core.Problem">Problem</a> instances support a number of <code>torch.Tensor</code> generation methods out-of-the-box. Earlier, we used the method <code>make_gaussian</code> to generate a random center <span class="arithmatex">\(x'\)</span> for the fitness evaluation to use. This method will generate a sample from a Gaussian distribution with the shape, center and standard deviation specified, but of particular relevance, it will ensure that the generated sample uses the device and data type associated with the <a class="autorefs autorefs-internal" href="../../reference/evotorch/core/#evotorch.core.Problem">Problem</a> instance. There are a number of similar methods available, which can be found detailed in the <a class="autorefs autorefs-internal" href="../../reference/evotorch/#evotorch">API reference</a>.</p>
+
 
 
 

@@ -11,7 +11,7 @@
       
       
       <link rel="icon" href="../../assets/favicon.ico">
-      <meta name="generator" content="mkdocs-1.3.1, mkdocs-material-8.4.3">
+      <meta name="generator" content="mkdocs-1.3.1, mkdocs-material-8.4.4">
     
     
       
@@ -1956,6 +1956,7 @@ When working with a custom <a class="autorefs autorefs-internal" href="../../ref
 <p>With <code>num_gpus_per_actors</code> set as <code>'all'</code>, since all the GPUs are visible to all actors, the <code>aux_device</code> property can only guess which auxiliary device is being targeted. The simple guess made by <code>aux_device</code> in this case is <code>'cuda:I'</code> where <code>I</code> is the index of the actor. This might be an erroneous guess if the number of actors are more than the number of GPUs. Therefore, with <code>num_gpus_per_actor</code> set as <code>'all'</code> it is recommended that the users do not heavily rely on <code>aux_device</code>, and instead introduce their own case-specific rules for sharing/using the GPUs. Alternatively, if the users wish to rely on the property <code>aux_device</code>, they might want to consider another option from this list of common use-cases.</p>
 </div>
 <p>A general remark is that, for all these special values for <code>num_actors</code> which count the number of CPUs (and GPUs), if it turns out that the number of actors to be created is only 1 (most probably because there is only one CPU provided by the ray cluster), then no actor will be created (and therefore there won't be any GPU assignment to any actor). This is because having only 1 actor would not bring any parallelization benefit, while still bringing the performance overhead of interprocess communication.</p>
+
 
 
 
