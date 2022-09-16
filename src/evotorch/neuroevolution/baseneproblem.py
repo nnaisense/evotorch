@@ -12,21 +12,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""
-Problem types for neuroevolution
-"""
+from ..core import Problem
 
-__all__ = (
-    "GymNE",
-    "NEProblem",
-    "SupervisedNE",
-    "VecGymNE",
-    "net",
-    "baseneproblem",
-)
 
-from . import baseneproblem, net
-from .gymne import GymNE
-from .neproblem import NEProblem
-from .supervisedne import SupervisedNE
-from .vecgymne import VecGymNE
+class BaseNEProblem(Problem):
+    """
+    This is the base class for all neuro-evolution problems.
+
+    Currently, this class does not offer any additional functionality.
+    Its purpose is to collect all neuro-evolution problems under the same
+    branch of inheritance.
+    """
+
+    pass

@@ -12,13 +12,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""This namespace various RL-specific utilities."""
-from typing import Iterable
+"""This namespace provides various reinforcement learning utilities."""
+
+from copy import deepcopy
+from typing import Any, Iterable, Optional, Union
 
 import gym
 import torch
+from gym.spaces import Box
 from torch import nn
 
+from .misc import device_of_module
+from .runningnorm import RunningNorm
 from .runningstat import RunningStat
 
 
@@ -141,42 +146,140 @@ def take_step_in_env(env: gym.Env, action: Iterable) -> tuple:
     return observation, reward, done, info
 
 
-class ObsNormLayer(nn.Module):
-    """Observation normalization layer for a policy network"""
+class ActClipWrapperModule(nn.Module):
+    def __init__(self, wrapped_module: nn.Module, obs_space: Box):
+        super().__init__()
 
-    def __init__(self, stats: RunningStat, trainable_stats: bool):
-        """`__init__(...)`: Initialize the observation normalization layer
+        device = device_of_module(wrapped_module)
+
+        if not isinstance(obs_space, Box):
+            raise TypeError(f"Unrecognized observation space: {obs_space}")
+
+        self.wrapped_module = wrapped_module
+        self.register_buffer("_low", torch.from_numpy(obs_space.low).to(device))
+        self.register_buffer("_high", torch.from_numpy(obs_space.high).to(device))
+
+    def forward(self, x: torch.Tensor, h: Any = None) -> Union[torch.Tensor, tuple]:
+        if h is None:
+            result = self.wrapped_module(x)
+        else:
+            result = self.wrapped_module(x, h)
+
+        if isinstance(result, tuple):
+            x, h = result
+            got_h = True
+        else:
+            x = result
+            h = None
+            got_h = False
+
+        x = torch.max(x, self._low)
+        x = torch.min(x, self._high)
+
+        if got_h:
+            return x, h
+        else:
+            return x
+
+
+class ObsNormWrapperModule(nn.Module):
+    def __init__(self, wrapped_module: nn.Module, rn: Union[RunningStat, RunningNorm]):
+        super().__init__()
+
+        device = device_of_module(wrapped_module)
+        self.wrapped_module = wrapped_module
+
+        with torch.no_grad():
+            normalizer = deepcopy(rn.to_layer()).to(device)
+        self.normalizer = normalizer
+
+    def forward(self, x: torch.Tensor, h: Any = None) -> Union[torch.Tensor, tuple]:
+        x = self.normalizer(x)
+
+        if h is None:
+            result = self.wrapped_module(x)
+        else:
+            result = self.wrapped_module(x, h)
+
+        if isinstance(result, tuple):
+            x, h = result
+            got_h = True
+        else:
+            x = result
+            h = None
+            got_h = False
+
+        if got_h:
+            return x, h
+        else:
+            return x
+
+
+class AliveBonusScheduleWrapper(gym.Wrapper):
+    """
+    A Wrapper which awards the agent for being alive in a scheduled manner
+    This wrapper is meant to be used for non-vectorized environments.
+    """
+
+    def __init__(self, env: gym.Env, alive_bonus_schedule: tuple, **kwargs):
+        """
+        `__init__(...)`: Initialize the AliveBonusScheduleWrapper.
 
         Args:
-            stats: The RunninStat object storing the mean and stdev of
-                all of the observations.
-            trainable_stats: Whether or not the normalization data
-                are to be stored as trainable parameters.
+            env: Environment to wrap.
+            alive_bonus_schedule: If given as a tuple `(t, b)`, an alive
+                bonus `b` will be added onto all the rewards beyond the
+                timestep `t`.
+                If given as a tuple `(t0, t1, b)`, a partial (linearly
+                increasing towards `b`) alive bonus will be added onto
+                all the rewards between the timesteps `t0` and `t1`,
+                and a full alive bonus (which equals to `b`) will be added
+                onto all the rewards beyond the timestep `t1`.
+            kwargs: Expected in the form of additional keyword arguments,
+                these will be passed to the initialization method of the
+                superclass.
         """
-        nn.Module.__init__(self)
+        super().__init__(env, **kwargs)
+        self.__t: Optional[int] = None
 
-        mean = torch.tensor(stats.mean, dtype=torch.float32)
-        stdev = torch.tensor(stats.stdev, dtype=torch.float32)
-
-        if trainable_stats:
-            self.obs_mean = nn.Parameter(mean)
-            self.obs_stdev = nn.Parameter(stdev)
+        if len(alive_bonus_schedule) == 3:
+            self.__t0, self.__t1, self.__bonus = (
+                int(alive_bonus_schedule[0]),
+                int(alive_bonus_schedule[1]),
+                float(alive_bonus_schedule[2]),
+            )
+        elif len(alive_bonus_schedule) == 2:
+            self.__t0, self.__t1, self.__bonus = (
+                int(alive_bonus_schedule[0]),
+                int(alive_bonus_schedule[0]),
+                float(alive_bonus_schedule[1]),
+            )
         else:
-            self.obs_mean = mean
-            self.obs_stdev = stdev
+            raise ValueError(
+                f"The argument `alive_bonus_schedule` was expected to have 2 or 3 elements."
+                f" However, its value is {repr(alive_bonus_schedule)} (having {len(alive_bonus_schedule)} elements)."
+            )
 
-    def forward(self, x):
-        x = x - self.obs_mean
-        x = x / self.obs_stdev
-        return x
+        if self.__t1 > self.__t0:
+            self.__gap = self.__t1 - self.__t0
+        else:
+            self.__gap = None
 
+    def reset(self, *args, **kwargs):
+        self.__t = 0
+        return self.env.reset(*args, **kwargs)
 
-class ActClipLayer(nn.Module):
-    def __init__(self, box: gym.spaces.Box):
-        nn.Module.__init__(self)
+    def step(self, action) -> tuple:
+        step_result = self.env.step(action)
+        self.__t += 1
 
-        self.lb = torch.as_tensor(box.low, dtype=torch.float32)
-        self.ub = torch.as_tensor(box.high, dtype=torch.float32)
+        observation = step_result[0]
+        reward = step_result[1]
+        rest = step_result[2:]
 
-    def forward(self, x):
-        return torch.min(torch.max(x, self.lb), self.ub)
+        if self.__t >= self.__t1:
+            reward = reward + self.__bonus
+        elif (self.__gap is not None) and (self.__t >= self.__t0):
+            reward = reward + ((self.__t - self.__t0) / self.__gap) * self.__bonus
+
+        return (observation, reward) + rest

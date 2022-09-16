@@ -13,8 +13,7 @@
 # limitations under the License.
 
 import gym
-import pybullet_envs
-from gym.envs.registration import EnvSpec, register
+from gym.envs.registration import register
 
 
 class TinyTrajHumanoidBulletEnv(gym.Env):
@@ -22,13 +21,13 @@ class TinyTrajHumanoidBulletEnv(gym.Env):
     ENTRY_POINT = __name__ + ":TinyTrajHumanoidBulletEnv"
     MAX_EPISODE_STEPS = 200
 
-    def __init__(self, trajectory_length=200):
+    def __init__(self, trajectory_length=200, **kwargs):
         gym.Env.__init__(self)
 
         self.__tlimit = trajectory_length
         self.__done = True
         self.__t = 0
-        self.__contained_env = gym.make("HumanoidBulletEnv-v0", new_step_api=False)
+        self.__contained_env = gym.make("pybullet_envs:HumanoidBulletEnv-v0", **kwargs)
 
         self.observation_space = self.__contained_env.observation_space
         self.action_space = self.__contained_env.action_space
@@ -37,7 +36,17 @@ class TinyTrajHumanoidBulletEnv(gym.Env):
     def step(self, action):
         assert not self.__done, "Trying to progress in a finished trajectory"
 
-        observation, _, done, info = self.__contained_env.step(action)
+        step_results = self.__contained_env.step(action)
+        num_step_results = len(step_results)
+
+        if num_step_results == 4:
+            observation, reward, done, info = step_results
+        elif num_step_results == 5:
+            observation, reward, terminated, truncated, info = step_results
+            done = terminated or truncated
+        else:
+            assert False, "Unexpected number of returns from the step method"
+
         self.__t += 1
 
         if self.__t >= self.__tlimit:
@@ -46,7 +55,11 @@ class TinyTrajHumanoidBulletEnv(gym.Env):
         self.__done = done
 
         reward = sum(self.__contained_env.rewards[1:])
-        return observation, reward, done, info
+
+        if num_step_results == 4:
+            return observation, reward, done, info
+        elif num_step_results == 5:
+            return observation, reward, terminated, truncated, info
 
     def reset(self, **kwargs):
         self.__done = False

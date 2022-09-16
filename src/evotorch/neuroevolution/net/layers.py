@@ -17,6 +17,7 @@
 from typing import Callable, List, Optional, Tuple, Union
 
 import torch
+import torch.nn.functional as nnf
 from torch import nn
 
 
@@ -157,127 +158,126 @@ class Apply(nn.Module):
         return "operator={}, argument={}".format(repr(self._operator), self._argument)
 
 
-class StatefulModule(nn.Module):
-    """Base class for stateful modules.
-    Not to be instantiated directly.
-    """
+class RNN(nn.Module):
+    def __init__(
+        self,
+        input_size: int,
+        hidden_size: int,
+        nonlinearity: str = "tanh",
+        *,
+        dtype: torch.dtype = torch.float32,
+        device: Union[str, torch.device] = "cpu",
+    ):
+        super().__init__()
 
-    def __init__(self, module_class, **kwargs):
-        nn.Module.__init__(self)
-        assert "batch_first" not in kwargs, "The `batch_first` option is not supported"
-        self._layer = module_class(**kwargs)
-        self.reset()
+        input_size = int(input_size)
+        hidden_size = int(hidden_size)
+        nonlinearity = str(nonlinearity)
 
-    @property
-    def state(self):
-        """Get the tensor of the internal state.
-        If the recurrent network is just initialized or reset,
-        then there is no state, so, a None is given.
-        Not having a state means that an initial internal state tensor of
-        compatible size with the input will be created at the
-        first usage of this network.
-        Each element of this initial internal state tensor is 0.
-        """
-        return self._state
+        self.W1 = nn.Parameter(torch.randn(hidden_size, input_size, dtype=dtype, device=device))
+        self.W2 = nn.Parameter(torch.randn(hidden_size, hidden_size, dtype=dtype, device=device))
+        self.b1 = nn.Parameter(torch.zeros(hidden_size, dtype=dtype, device=device))
+        self.b2 = nn.Parameter(torch.zeros(hidden_size, dtype=dtype, device=device))
 
-    def reset(self):
-        """Reset the internal state"""
-        self._state = None
-
-    def forward(self, x):
-        if len(x.shape) == 1:
-            input_size = x.shape[0]
-            x = x.view(1, 1, input_size)
-            batch_size = 1
-            orgdim = 1
-        elif len(x.shape) == 2:
-            batch_size, input_size = x.shape
-            x = x.view(1, batch_size, input_size)
-            orgdim = 2
+        if nonlinearity == "tanh":
+            self.actfunc = torch.tanh
         else:
-            assert False, (
-                "expected a tensor with 1 or 2 dimensions, " + "but received a tensor of shape " + str(x.shape)
-            )
+            self.actfunc = getattr(nnf, nonlinearity)
 
-        if self._state is None:
-            x, self._state = self._layer(x)
+        self.nonlinearity = nonlinearity
+        self.input_size = input_size
+        self.hidden_size = hidden_size
+
+    def forward(self, x: torch.Tensor, h: Optional[torch.Tensor] = None) -> tuple:
+        if h is None:
+            h = torch.zeros(self.hidden_size, dtype=x.dtype, device=x.device)
+        act = self.actfunc
+        W1 = self.W1
+        W2 = self.W2
+        b1 = self.b1.unsqueeze(-1)
+        b2 = self.b2.unsqueeze(-1)
+        x = x.unsqueeze(-1)
+        h = h.unsqueeze(-1)
+        y = act(((W1 @ x) + b1) + ((W2 @ h) + b2))
+        y = y.squeeze(-1)
+        return y, y
+
+    def __repr__(self) -> str:
+        clsname = type(self).__name__
+        return f"{clsname}(input_size={self.input_size}, hidden_size={self.hidden_size}, nonlinearity={repr(self.nonlinearity)})"
+
+
+class LSTM(nn.Module):
+    def __init__(
+        self,
+        input_size: int,
+        hidden_size: int,
+        *,
+        dtype: torch.dtype = torch.float32,
+        device: Union[str, torch.device] = "cpu",
+    ):
+        super().__init__()
+        input_size = int(input_size)
+        hidden_size = int(hidden_size)
+
+        self.input_size = input_size
+        self.hidden_size = hidden_size
+
+        def input_weight():
+            return nn.Parameter(torch.randn(self.hidden_size, self.input_size, dtype=dtype, device=device))
+
+        def weight():
+            return nn.Parameter(torch.randn(self.hidden_size, self.hidden_size, dtype=dtype, device=device))
+
+        def bias():
+            return nn.Parameter(torch.zeros(self.hidden_size, dtype=dtype, device=device))
+
+        self.W_ii = input_weight()
+        self.W_if = input_weight()
+        self.W_ig = input_weight()
+        self.W_io = input_weight()
+
+        self.W_hi = weight()
+        self.W_hf = weight()
+        self.W_hg = weight()
+        self.W_ho = weight()
+
+        self.b_ii = bias()
+        self.b_if = bias()
+        self.b_ig = bias()
+        self.b_io = bias()
+
+        self.b_hi = bias()
+        self.b_hf = bias()
+        self.b_hg = bias()
+        self.b_ho = bias()
+
+    def forward(self, x: torch.Tensor, hidden=None) -> tuple:
+        sigm = torch.sigmoid
+        tanh = torch.tanh
+
+        if hidden is None:
+            h_prev = torch.zeros(self.hidden_size, dtype=x.dtype, device=x.device)
+            c_prev = torch.zeros(self.hidden_size, dtype=x.dtype, device=x.device)
         else:
-            x, self._state = self._layer(x, self._state)
+            h_prev, c_prev = hidden
 
-        if orgdim == 1:
-            x = x.view(-1)
-        elif orgdim == 2:
-            x = x.view(batch_size, -1)
-        else:
-            assert False, "unknown value for orgdim"
+        i_t = sigm(self.W_ii @ x + self.b_ii + self.W_hi @ h_prev + self.b_hi)
+        f_t = sigm(self.W_if @ x + self.b_if + self.W_hf @ h_prev + self.b_hf)
+        g_t = tanh(self.W_ig @ x + self.b_ig + self.W_hg @ h_prev + self.b_hg)
+        o_t = sigm(self.W_io @ x + self.b_io + self.W_ho @ h_prev + self.b_ho)
+        c_t = f_t * c_prev + i_t * g_t
+        h_t = o_t * tanh(c_t)
 
-        return x
+        return h_t, (h_t, c_t)
 
-    @property
-    def batch_first(self):
-        """Return True if the module expects the batch dimension first.
-        Otherwise, return False.
-        """
-        return self._layer.batch_first
+    def __repr__(self) -> str:
+        clsname = type(self).__name__
+        return f"{clsname}(input_size={self.input_size}, hidden_size={self.hidden_size})"
 
 
-class RecurrentNet(StatefulModule):
-    """Representation of a fully connected recurrent net as a torch Module.
-
-    Differently from torch.nn.RNN, the forward pass function of this class
-    does NOT expect the hidden state, nor does it return
-    the resulting hidden state of the pass.
-    Instead, the hidden states are stored within the module itself.
-
-    The forward pass function can take a 1-dimensional tensor of length
-    input_size, or it can take a 2-dimensional tensor of size
-    (batch_size, input_size).
-
-    Because the instances of this class are stateful,
-    remember to reset() the internal state when needed.
-    """
-
-    def __init__(self, **kwargs):
-        """
-        `__init__(...)`: Initialize the recurrent net.
-
-        Args:
-            input_size: The input size, expected as an int.
-            hidden_size: Number of neurons, expected as an int.
-            nonlinearity: The activation function,
-                expected as 'tanh' or 'relu'.
-            num_layers: Number of layers of the recurrent net.
-        """
-
-        StatefulModule.__init__(self, nn.RNN, **kwargs)
-
-
-class LSTMNet(StatefulModule):
-    """Representation of an LSTM layer.
-
-    Differently from torch.nn.LSTM, the forward pass function of this class
-    does NOT expect the hidden state, nor does it return
-    the resulting hidden state of the pass.
-    Instead, the hidden states are stored within the module itself.
-
-    The forward pass function can take a 1-dimensional tensor of length
-    input_size, or it can take a 2-dimensional tensor of size
-    `(batch_size, input_size)`.
-
-    Because the instances of this class are stateful,
-    remember to reset() the internal state when needed.
-    """
-
-    def __init__(self, **kwargs):
-        """
-        `__init__(...)`: Initialize the LSTM net.
-
-        Args:
-            input_size: The input size, expected as an int.
-            hidden_size: Number of neurons, expected as an int.
-            num_layers: Number of layers of the recurrent net.
-        """
-        StatefulModule.__init__(self, nn.LSTM, **kwargs)
+RecurrentNet = RNN
+LSTMNet = LSTM
 
 
 class FeedForwardNet(nn.Module):
@@ -566,22 +566,3 @@ class LocomotorNet(nn.Module):
         self._t += 1
 
         return u_linear + u_nonlinear
-
-
-def reset_module_state(net: nn.Module):
-    """
-    Reset a torch module's state by calling its reset() method.
-
-    If the module is a torch.nn.Sequential, then the function
-    applies itself recursively to the submodules of the Sequential net.
-    If the module does not have a reset() method, nothing happens.
-
-
-    Args:
-        net: The torch module whose state will be reset.
-    """
-    if hasattr(net, "reset"):
-        net.reset()
-    elif isinstance(net, nn.Sequential):
-        for i_module in range(len(net)):
-            reset_module_state(net[i_module])

@@ -14,8 +14,11 @@
 
 """This namespace contains the `GymNE` class."""
 
+import pickle
 from collections.abc import Mapping
 from copy import deepcopy
+from datetime import datetime
+from pathlib import Path
 from typing import Any, Callable, Iterable, List, Optional, Union
 
 import gym
@@ -23,12 +26,40 @@ import numpy as np
 import torch
 from torch import nn
 
-from ..core import BoundsPairLike, SolutionBatch
-from ..tools.misc import Device
+from ..core import BoundsPairLike, Solution, SolutionBatch
+from ..tools import Device, ReadOnlyTensor
 from .neproblem import NEProblem
 from .net import RunningStat
-from .net.layers import reset_module_state
-from .net.rl import ActClipLayer, ObsNormLayer, _accumulate_all_across_dicts, reset_env, take_step_in_env
+from .net.rl import (
+    ActClipWrapperModule,
+    AliveBonusScheduleWrapper,
+    ObsNormWrapperModule,
+    _accumulate_all_across_dicts,
+    reset_env,
+    take_step_in_env,
+)
+from .net.statefulmodule import ensure_stateful
+
+_gym_older_than_0_26 = False
+
+
+def _check_gym_version():
+    # Determine the gym version without failing when __version__ has an unexpected value.
+    # Perhaps such unexpected values could be encountered when using a custom/modified version
+    # of gym, and we do not wish this module to fail in those scenarios.
+    from ..tools.versionchecking import check_version
+
+    global _gym_older_than_0_26
+
+    gym_ver = check_version(gym, 2)
+
+    if gym_ver is not None:
+        a, b = gym_ver
+        if (a == 0) and (b < 26):
+            _gym_older_than_0_26 = True
+
+
+_check_gym_version()
 
 
 def ensure_space_types(env: gym.Env) -> None:
@@ -44,23 +75,33 @@ def ensure_space_types(env: gym.Env) -> None:
         )
 
 
+def _make_env(env: Union[str, Callable], **kwargs) -> gym.Env:
+    if isinstance(env, str):
+        return gym.make(env, **kwargs)
+    else:
+        return env(**kwargs)
+
+
 class GymNE(NEProblem):
     """
-    Representation of a NeuroevolutionProblem where the goal is to maximize
+    Representation of a NEProblem where the goal is to maximize
     the total reward obtained in a `gym` environment.
     """
 
     def __init__(
         self,
-        env_name: str,
-        network: Union[str, nn.Module, Callable[[], nn.Module]],
+        env: Optional[Union[str, Callable]] = None,
+        network: Optional[Union[str, nn.Module, Callable[[], nn.Module]]] = None,
         *,
+        env_name: Optional[Union[str, Callable]] = None,
         network_args: Optional[dict] = None,
         env_config: Optional[Mapping] = None,
         observation_normalization: bool = False,
         num_episodes: int = 1,
         episode_length: Optional[int] = None,
         decrease_rewards_by: Optional[float] = None,
+        alive_bonus_schedule: Optional[tuple] = None,
+        action_noise_stdev: Optional[float] = None,
         num_actors: Optional[Union[int, str]] = "max",
         actor_config: Optional[dict] = None,
         num_subbatches: Optional[int] = None,
@@ -71,7 +112,10 @@ class GymNE(NEProblem):
         `__init__(...)`: Initialize the GymNE.
 
         Args:
-            env_name: Name of the `gym` environment.
+            env: The gym environment to solve. Expected as a Callable
+                (maybe a function returning a gym.Env, or maybe a gym.Env
+                subclass), or as a string referring to a gym environment
+                ID (e.g. "Ant-v4", "Humanoid-v4", etc.).
             network: A network structure string, or a Callable (which can be
                 a class inheriting from `torch.nn.Module`, or a function
                 which returns a `torch.nn.Module` instance), or an instance
@@ -83,6 +127,13 @@ class GymNE(NEProblem):
                 Please see the documentation of the function
                 `evotorch.neuroevolution.net.str_to_net(...)` to see how such
                 a neural network structure string looks like.
+                Note that this network can be a recurrent network.
+                When the network's `forward(...)` method can optionally accept
+                an additional positional argument for the hidden state of the
+                network and returns an additional value for its next state,
+                then the policy is treated as a recurrent one.
+            env_name: Deprecated alias for the keyword argument `env`.
+                It is recommended to use the argument `env` instead.
             network_args: Optionally a dict-like object, storing keyword
                 arguments to be passed to the network while instantiating it.
             env_config: Keyword arguments to pass to `gym.make(...)` while
@@ -107,6 +158,23 @@ class GymNE(NEProblem):
                 the user can set the argument `decrease_rewards_by`
                 to a positive float number, and that number will
                 be subtracted from each reward.
+            alive_bonus_schedule: Use this to add a customized amount of
+                alive bonus.
+                If left as None (which is the default), additional alive
+                bonus will not be added.
+                If given as a tuple `(t, b)`, an alive bonus `b` will be
+                added onto all the rewards beyond the timestep `t`.
+                If given as a tuple `(t0, t1, b)`, a partial (linearly
+                increasing towards `b`) alive bonus will be added onto
+                all the rewards between the timesteps `t0` and `t1`,
+                and a full alive bonus (which equals to `b`) will be added
+                onto all the rewards beyond the timestep `t1`.
+            action_noise_stdev: If given as a real number `s`, then, for
+                each generated action, Gaussian noise with standard
+                deviation `s` will be sampled, and then this sampled noise
+                will be added onto the action.
+                If action noise is not desired, then this argument can be
+                left as None.
             num_actors: Number of actors to create for parallelized
                 evaluation of the solutions.
                 One can also set this as "max", which means that
@@ -154,9 +222,30 @@ class GymNE(NEProblem):
                 initial policy parameters will be drawn.
         """
         # Store various environment information
-        self._env_name = env_name
+        if (env is not None) and (env_name is None):
+            self._env_maker = env
+        elif (env is None) and (env_name is not None):
+            self._env_maker = env_name
+        elif (env is not None) and (env_name is not None):
+            raise ValueError(
+                f"Received values for both `env` ({repr(env)}) and `env_name` ({repr(env_name)})."
+                f" Please specify the environment to solve via only one of these arguments, not both."
+            )
+        else:
+            raise ValueError("Environment name is missing. Please specify it via the argument `env`.")
+
+        # Make sure that the network argument is not missing.
+        if network is None:
+            raise ValueError(
+                "Received None via the argument `network`."
+                "Please provide the network as a string, or as a `Callable`, or as a `torch.nn.Module` instance."
+            )
+
+        # Store various environment information
         self._env_config = {} if env_config is None else deepcopy(dict(env_config))
         self._decrease_rewards_by = 0.0 if decrease_rewards_by is None else float(decrease_rewards_by)
+        self._alive_bonus_schedule = alive_bonus_schedule
+        self._action_noise_stdev = None if action_noise_stdev is None else float(action_noise_stdev)
         self._observation_normalization = bool(observation_normalization)
         self._num_episodes = int(num_episodes)
         self._episode_length = None if episode_length is None else int(episode_length)
@@ -169,7 +258,7 @@ class GymNE(NEProblem):
         self._collected_stats: Optional[RunningStat] = None
 
         # Create a temporary environment to read its dimensions
-        tmp_env = gym.make(self._env_name, **(self._env_config))
+        tmp_env = _make_env(self._env_maker, **(self._env_config))
 
         # Store the temporary environment's dimensions
         self._obs_length = len(tmp_env.observation_space.low)
@@ -208,11 +297,23 @@ class GymNE(NEProblem):
 
     @property
     def _network_constants(self) -> dict:
-        return {"obs_length": self._obs_length, "act_length": self._act_length, "obs_space": self._obs_shape}
+        return {
+            "obs_length": self._obs_length,
+            "act_length": self._act_length,
+            "obs_space": self._obs_shape,
+            "obs_shape": self._obs_shape,
+        }
+
+    def _instantiate_new_env(self, **kwargs) -> gym.Env:
+        env_config = {**kwargs, **(self._env_config)}
+        env = _make_env(self._env_maker, **env_config)
+        if self._alive_bonus_schedule is not None:
+            env = AliveBonusScheduleWrapper(env, self._alive_bonus_schedule)
+        return env
 
     def _get_env(self) -> gym.Env:
         if self._env is None:
-            self._env = gym.make(self._env_name, **(self._env_config))
+            self._env = self._instantiate_new_env()
         return self._env
 
     def _normalize_observation(self, observation: Iterable, *, update_stats: bool = True) -> Iterable:
@@ -228,6 +329,11 @@ class GymNE(NEProblem):
     def _use_policy(self, observation: Iterable, policy: nn.Module) -> Iterable:
         with torch.no_grad():
             result = policy(torch.as_tensor(observation, dtype=torch.float32, device="cpu")).numpy()
+        if self._action_noise_stdev is not None:
+            result = (
+                result
+                + self.make_gaussian(len(result), center=0.0, stdev=self._action_noise_stdev, device="cpu").numpy()
+            )
         env = self._get_env()
         if isinstance(env.action_space, gym.spaces.Discrete):
             result = np.argmax(result)
@@ -261,11 +367,17 @@ class GymNE(NEProblem):
         else:
             decrease_rewards_by = float(decrease_rewards_by)
 
-        reset_module_state(policy)
-        env = self._get_env()
+        policy = ensure_stateful(policy)
+        policy.reset()
+
+        if visualize and (not _gym_older_than_0_26):
+            # Beginning with gym 0.26, we need to specify the render mode when instantiating the environment.
+            env = self._instantiate_new_env(render_mode="human")
+        else:
+            env = self._get_env()
 
         observation = self._normalize_observation(reset_env(env), update_stats=update_stats)
-        if visualize:
+        if visualize and _gym_older_than_0_26:
             env.render()
         t = 0
 
@@ -303,14 +415,40 @@ class GymNE(NEProblem):
 
     def run(
         self,
-        policy: nn.Module,
+        policy: Union[nn.Module, Iterable],
         *,
         update_stats: bool = False,
         visualize: bool = False,
         num_episodes: Optional[int] = None,
         decrease_rewards_by: Optional[float] = None,
     ) -> dict:
-        """Evaluate the policy parameters on the gym environment."""
+        """
+        Evaluate the policy on the gym environment.
+
+        Args:
+            policy: The policy to be evaluated. This can be a torch module
+                or a sequence of real numbers representing the parameters
+                of a policy network.
+            update_stats: Whether or not to update the observation
+                normalization data while running the policy. If observation
+                normalization is not enabled, then this argument will be
+                ignored.
+            visualize: Whether or not to render the environment while running
+                the policy.
+            num_episodes: Over how many episodes will the policy be evaluated.
+                Expected as None (which is the default), or as an integer.
+                If given as None, then the `num_episodes` value that was given
+                while initializing this GymNE will be used.
+            decrease_rewards_by: How much each reward value should be
+                decreased. If left as None, the `decrease_rewards_by` value
+                value that was given while initializing this GymNE will be
+                used.
+        Returns:
+            A dictionary containing the score and the timestep count.
+        """
+        if not isinstance(policy, nn.Module):
+            policy = self.make_net(policy)
+
         if num_episodes is None:
             num_episodes = self._num_episodes
 
@@ -334,12 +472,34 @@ class GymNE(NEProblem):
 
     def visualize(
         self,
-        policy: nn.Module,
+        policy: Union[nn.Module, Iterable],
         *,
         update_stats: bool = False,
         num_episodes: Optional[int] = 1,
         decrease_rewards_by: Optional[float] = None,
     ) -> dict:
+        """
+        Evaluate the policy and render its actions in the environment.
+
+        Args:
+            policy: The policy to be evaluated. This can be a torch module
+                or a sequence of real numbers representing the parameters
+                of a policy network.
+            update_stats: Whether or not to update the observation
+                normalization data while running the policy. If observation
+                normalization is not enabled, then this argument will be
+                ignored.
+            num_episodes: Over how many episodes will the policy be evaluated.
+                Expected as None (which is the default), or as an integer.
+                If given as None, then the `num_episodes` value that was given
+                while initializing this GymNE will be used.
+            decrease_rewards_by: How much each reward value should be
+                decreased. If left as None, the `decrease_rewards_by` value
+                value that was given while initializing this GymNE will be
+                used.
+        Returns:
+            A dictionary containing the score and the timestep count.
+        """
         return self.run(
             policy=policy,
             update_stats=update_stats,
@@ -479,7 +639,7 @@ class GymNE(NEProblem):
         )
         return result["cumulative_reward"]
 
-    def to_policy(self, x: Iterable, *, trainable_stats: bool = False, clip_actions: bool = True) -> nn.Module:
+    def to_policy(self, x: Iterable, *, clip_actions: bool = True) -> nn.Module:
         """
         Convert the given parameter vector to a policy as a PyTorch module.
 
@@ -490,9 +650,6 @@ class GymNE(NEProblem):
             x: An sequence of real numbers, containing the parameters
                 of a policy. Can be a PyTorch tensor, a numpy array,
                 or a SolutionVector.
-            trainable_stats: Whether or not the observation stats within
-                the observation normalization layer are to be stored as
-                trainable parameters.
             clip_actions: Whether or not to add an action clipping layer so
                 that the generated actions will always be within an
                 acceptable range for the environment.
@@ -500,18 +657,67 @@ class GymNE(NEProblem):
             The policy expressed by the parameters.
         """
 
-        policy = [self.make_net(x)]
+        policy = self.make_net(x)
 
-        if self.observation_normalization:
-            policy.insert(0, ObsNormLayer(self._obs_stats, trainable_stats=trainable_stats))
+        if self.observation_normalization and (self._obs_stats.count > 0):
+            policy = ObsNormWrapperModule(policy, self._obs_stats)
 
         if clip_actions and isinstance(self._get_env().action_space, gym.spaces.Box):
-            policy.append(ActClipLayer(self._get_env().action_space))
+            policy = ActClipWrapperModule(policy, self._get_env().action_space)
 
-        if len(policy) == 1:
-            return policy[0]
+        return policy
+
+    def save_solution(self, solution: Iterable, fname: Union[str, Path]):
+        """
+        Save the solution into a pickle file.
+        Among the saved data within the pickle file are the solution
+        (as a PyTorch tensor), the policy (as a `torch.nn.Module` instance),
+        and observation stats (if any).
+
+        Args:
+            solution: The solution to be saved. This can be a PyTorch tensor,
+                a `Solution` instance, or any `Iterable`.
+            fname: The file name of the pickle file to be created.
+        """
+
+        # Convert the solution to a PyTorch tensor on the cpu.
+        if isinstance(solution, torch.Tensor):
+            solution = solution.to("cpu")
+        elif isinstance(solution, Solution):
+            solution = solution.values.clone().to("cpu")
         else:
-            return nn.Sequential(*policy)
+            solution = torch.as_tensor(solution, dtype=torch.float32, device="cpu")
+
+        if isinstance(solution, ReadOnlyTensor):
+            solution = solution.as_subclass(torch.Tensor)
+
+        policy = self.to_policy(solution).to("cpu")
+
+        # Store the solution and the policy.
+        result = {
+            "solution": solution,
+            "policy": policy,
+        }
+
+        # If available, store the observation stats.
+        if self.observation_normalization and (self._obs_stats is not None):
+            result["obs_mean"] = torch.as_tensor(self._obs_stats.mean)
+            result["obs_stdev"] = torch.as_tensor(self._obs_stats.stdev)
+            result["obs_sum"] = torch.as_tensor(self._obs_stats.sum)
+            result["obs_sum_of_squares"] = torch.as_tensor(self._obs_stats.sum_of_squares)
+
+        # Some additional data.
+        result["interaction_count"] = self.interaction_count
+        result["episode_count"] = self.episode_count
+        result["time"] = datetime.now()
+
+        # If the environment is specified via a string ID, then store that ID.
+        if isinstance(self._env_maker, str):
+            result["env"] = self._env_maker
+
+        # Save the dictionary which stores the data.
+        with open(fname, "wb") as f:
+            pickle.dump(result, f)
 
     def get_env(self) -> gym.Env:
         """

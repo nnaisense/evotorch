@@ -23,7 +23,7 @@ import io
 import math
 import os
 import random
-from collections.abc import Mapping, Sequence
+from collections.abc import Sequence
 from contextlib import nullcontext
 from copy import deepcopy
 from typing import Any, Callable, Iterable, List, NamedTuple, Optional, Tuple, Union
@@ -3767,6 +3767,38 @@ class SolutionBatch(Serializable):
                 memo=memo,
             )
 
+    def to(self, device: Device) -> "SolutionBatch":
+        """
+        Get the counterpart of this SolutionBatch on the new device.
+
+        If the specified device is the device of this SolutionBatch,
+        then this SolutionBatch itself is returned.
+        If the specified device is a different device, then a clone
+        of this SolutionBatch on this different device is first
+        created, and then this new clone is returned.
+
+        Please note that the `to(...)` method is not supported when
+        the dtype is `object`.
+
+        Args:
+            device: The device on which the resulting SolutionBatch
+                will be stored.
+        Returns:
+            The SolutionBatch on the specified device.
+        """
+        if isinstance(self._data, ObjectArray):
+            raise ValueError("The `to(...)` method is not supported when the dtype is `object`.")
+
+        device = torch.device(device)
+        if device == self.device:
+            return self
+        else:
+            new_batch = SolutionBatch(like=self, device=device, empty=True)
+            with torch.no_grad():
+                new_batch._data[:] = self._data.to(device)
+                new_batch._evdata[:] = self._evdata.to(device)
+            return new_batch
+
     @property
     def device(self) -> Device:
         """
@@ -4357,6 +4389,27 @@ class Solution(Serializable):
                 otherwise_deepcopy=True,
                 memo=memo,
             )
+
+    def to(self, device: Device) -> "Solution":
+        """
+        Get the counterpart of this Solution on the new device.
+
+        If the specified device is the device of this Solution,
+        then this Solution itself is returned.
+        If the specified device is a different device, then a clone
+        of this Solution on this different device is first
+        created, and then this new clone is returned.
+
+        Please note that the `to(...)` method is not supported when
+        the dtype is `object`.
+
+        Args:
+            device: The device on which the resulting Solution
+                will be stored.
+        Returns:
+            The Solution on the specified device.
+        """
+        return Solution(self._batch.to(device), 0)
 
     def to_batch(self) -> SolutionBatch:
         """

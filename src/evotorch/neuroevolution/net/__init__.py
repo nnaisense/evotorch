@@ -18,11 +18,31 @@ __all__ = (
     "count_parameters",
     "fill_parameters",
     "parameter_vector",
+    "device_of_module",
+    "layers",
+    "misc",
+    "rl",
+    "vecrl",
+    "multilayered",
+    "MultiLayered",
+    "statefulmodule",
+    "StatefulModule",
+    "parser",
     "str_to_net",
+    "Policy",
     "RunningStat",
+    "RunningNorm",
+    "functional",
+    "ModuleExpectingFlatParameters",
+    "make_functional_module",
 )
 
-from . import layers, misc, parser
-from .misc import count_parameters, fill_parameters, parameter_vector
+from . import functional, layers, misc, multilayered, parser, rl, statefulmodule, vecrl
+from .functional import ModuleExpectingFlatParameters, make_functional_module
+from .misc import count_parameters, device_of_module, fill_parameters, parameter_vector
+from .multilayered import MultiLayered
 from .parser import str_to_net
+from .runningnorm import RunningNorm
 from .runningstat import RunningStat
+from .statefulmodule import StatefulModule
+from .vecrl import Policy

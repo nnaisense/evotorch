@@ -19,6 +19,7 @@ evolutionary algorithms.
 
 import io
 from collections.abc import Mapping
+from datetime import datetime
 from typing import Any, Iterable, Optional
 
 import torch
@@ -299,7 +300,9 @@ class SearchAlgorithm(LazyReporter):
         self._before_step_hook = Hook()
         self._after_step_hook = Hook()
         self._log_hook = Hook()
+        self._end_of_run_hook = Hook()
         self._steps_count: int = 0
+        self._first_step_datetime: Optional[datetime] = None
 
     @property
     def problem(self) -> Problem:
@@ -343,12 +346,34 @@ class SearchAlgorithm(LazyReporter):
         return self._log_hook
 
     @property
-    def steps_count(self) -> int:
+    def end_of_run_hook(self) -> Hook:
+        """
+        Use this Hook to add more behavior to the search algorithm
+        at the end of a run.
+
+        This Hook is executed after all the generations of a run
+        are done.
+
+        The functions in this Hook are assumed to expect a single
+        argument, that is the status dictionary of the search algorithm.
+        """
+        return self._end_of_run_hook
+
+    @property
+    def step_count(self) -> int:
         """
         Number of search steps performed.
 
         This is equivalent to the number of generations, or to the
         number of iterations.
+        """
+        return self._steps_count
+
+    @property
+    def steps_count(self) -> int:
+        """
+        Deprecated alias for the `step_count` property.
+        It is recommended to use the `step_count` property instead.
         """
         return self._steps_count
 
@@ -358,6 +383,10 @@ class SearchAlgorithm(LazyReporter):
         """
         self._before_step_hook()
         self.clear_status()
+
+        if self._first_step_datetime is None:
+            self._first_step_datetime = datetime.now()
+
         self._step()
         self._steps_count += 1
         self.update_status({"iter": self._steps_count})
@@ -377,16 +406,40 @@ class SearchAlgorithm(LazyReporter):
         """
         raise NotImplementedError
 
-    def run(self, num_generations: int):
+    def run(self, num_generations: int, *, reset_first_step_datetime: bool = True):
         """
         Run the algorithm for the given number of generations
         (i.e. iterations).
 
         Args:
             num_generations: Number of generations.
+            reset_first_step_datetime: If this argument is given as True,
+                then, the datetime of the first search step will be forgotten.
+                Forgetting the first step's datetime means that the first step
+                taken by this new run will be the new first step datetime.
         """
+        if reset_first_step_datetime:
+            self.reset_first_step_datetime()
+
         for _ in range(int(num_generations)):
             self.step()
+
+        if len(self._end_of_run_hook) >= 1:
+            self._end_of_run_hook(dict(self.status))
+
+    @property
+    def first_step_datetime(self) -> Optional[datetime]:
+        """
+        Get the datetime when the algorithm took the first search step.
+        If a step is not taken at all, then the result will be None.
+        """
+        return self._first_step_datetime
+
+    def reset_first_step_datetime(self):
+        """
+        Reset (or forget) the first step's datetime.
+        """
+        self._first_step_datetime = None
 
 
 class SinglePopulationAlgorithmMixin:

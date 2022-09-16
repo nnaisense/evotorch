@@ -22,13 +22,15 @@ import ray
 import torch
 from torch import nn
 
-from ..core import BoundsPairLike, DType, ObjectiveSense, Problem, Solution
+from ..core import BoundsPairLike, DType, ObjectiveSense, Solution
 from ..tools.misc import Device, is_sequence
+from .baseneproblem import BaseNEProblem
 from .net.misc import count_parameters, fill_parameters
 from .net.parser import str_to_net
+from .net.statefulmodule import ensure_stateful
 
 
-class NEProblem(Problem):
+class NEProblem(BaseNEProblem):
     """
     Base class for neuro-evolution problems where the goal is to optimize the
     parameters of a neural network represented as a PyTorch module.
