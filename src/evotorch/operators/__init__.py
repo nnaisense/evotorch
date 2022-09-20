@@ -46,17 +46,17 @@ to be configured so that it knows which cross-over operator
 and which mutation operator it should apply on the
 solutions. The way this is done is as follows:
 
-    import evotorch.algorithms as dra
-    import evotorch.operators as dro
+    import evotorch.algorithms as ea
+    import evotorch.operators as eo
 
     problem = ...   # initialize the Problem
 
-    ga = dra.SteadyStateGA(problem, popsize=...)
+    ga = ea.SteadyStateGA(problem, popsize=...)
 
     # Configure the genetic algorithm to use
     # simulated binary cross-over
     ga.use(
-        dro.SimulatedBinaryCrossOver(
+        eo.SimulatedBinaryCrossOver(
             problem,
             tournament_size=...,
             cross_over_rate=...,
@@ -67,7 +67,7 @@ solutions. The way this is done is as follows:
     # Configure the genetic algorithm to use
     # Gaussian mutation
     ga.use(
-        dro.GaussianMutation(
+        eo.GaussianMutation(
             problem,
             stdev=...
         )
