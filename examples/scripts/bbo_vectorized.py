@@ -31,7 +31,7 @@ problem = Problem(
     solution_length=10,
     initial_bounds=(-10, 10),
     vectorized=True,
-    device="cuda:0",  # Change to "cpu" if a GPU is not available
+    device="cuda:0" if torch.cuda.is_available() else "cpu",  # Change to "cpu" if a GPU is not available
 )
 
 # Run the distribution-based search algorithm SNES for 500 steps and log results to standard output every 100 steps
