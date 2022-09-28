@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import pickle
 from copy import copy, deepcopy
 from itertools import product
 from typing import Callable, Iterable, Optional, Union
@@ -26,17 +27,29 @@ from evotorch.tools.objectarray import ObjectArray
 
 
 class CloningMethods:
+    @staticmethod
     def clone_via_method(x):
         return x.clone()
 
+    @staticmethod
     def clone_via_copy(x):
         return copy(x)
 
+    @staticmethod
     def clone_via_deepcopy(x):
         return deepcopy(x)
 
+    @staticmethod
     def clone_via_clone_func(x):
         return ett.clone(x)
+
+    @staticmethod
+    def deep_clone(x):
+        return ett.cloning.deep_clone(x, otherwise_deepcopy=True)
+
+    @staticmethod
+    def pickle_and_unpickle(x):
+        return pickle.loads(pickle.dumps(x))
 
 
 class DummyProblems:
@@ -296,6 +309,8 @@ def test_batch_slicing():
         CloningMethods.clone_via_copy,
         CloningMethods.clone_via_deepcopy,
         CloningMethods.clone_via_method,
+        CloningMethods.deep_clone,
+        CloningMethods.pickle_and_unpickle,
     ],
 )
 def test_batch_cloning(clone_func):
@@ -393,6 +408,7 @@ def test_solutions_referring_to_batch():
         CloningMethods.clone_via_copy,
         CloningMethods.clone_via_deepcopy,
         CloningMethods.clone_via_method,
+        CloningMethods.deep_clone,
     ],
 )
 def test_solution_cloning(clone_func):

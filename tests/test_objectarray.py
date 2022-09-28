@@ -119,7 +119,7 @@ def test_cloning2():
 def test_immutability():
     # Prepare data to put into an ObjectArray
     a = set([1, 2])
-    b = {"x": 3, "y": [4, 5], "z": (6, 7)}
+    b = {"x": 3, "y": [4, 5], "z": [6, 7]}
 
     # Make a new ObjectArray
     objs = make_tensor([a, b], dtype=object)
@@ -132,7 +132,7 @@ def test_immutability():
     assert isinstance(objs[0], imm.ImmutableSet)
     assert isinstance(objs[1], imm.ImmutableDict)
     assert isinstance(objs[1]["y"], imm.ImmutableList)
-    assert isinstance(objs[1]["z"], imm.ImmutableTuple)
+    assert isinstance(objs[1]["z"], imm.ImmutableList)
 
     # An ObjectArray can be converted to a numpy array
     objs2 = objs.numpy()
@@ -145,7 +145,7 @@ def test_immutability():
     assert isinstance(objs2[0], set)
     assert isinstance(objs2[1], dict)
     assert isinstance(objs2[1]["y"], list)
-    assert isinstance(objs2[1]["z"], tuple)
+    assert isinstance(objs2[1]["z"], list)
 
     # The immutable elements in the ObjectArray cannot be modified
     with pytest.raises(AttributeError):

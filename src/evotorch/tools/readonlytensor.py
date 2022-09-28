@@ -107,8 +107,11 @@ class ReadOnlyTensor(torch.Tensor):
         __str__ = __to_string
         __repr__ = __to_string
 
-    def clone(self) -> torch.Tensor:
-        return super().clone().as_subclass(torch.Tensor)
+    def clone(self, *, preserve_read_only: bool = False) -> torch.Tensor:
+        result = super().clone()
+        if not preserve_read_only:
+            result = result.as_subclass(torch.Tensor)
+        return result
 
     def __mutable_if_independent(self, other: torch.Tensor) -> torch.Tensor:
         self_ptr = self.storage().data_ptr()
@@ -135,11 +138,11 @@ class ReadOnlyTensor(torch.Tensor):
         arr.flags["WRITEABLE"] = False
         return arr
 
-    # def __copy__(self):
-    #    return ReadOnlyTensor(copy(self.as_subclass(torch.Tensor)))
+    def __copy__(self):
+        return self.clone(preserve_read_only=True)
 
-    # def __deepcopy__(self, memo):
-    #    return deepcopy(self.as_subclass(torch.Tensor), memo)
+    def __deepcopy__(self, memo):
+        return self.clone(preserve_read_only=True)
 
     @classmethod
     def __torch_function__(cls, func: Callable, types: Iterable, args: tuple = (), kwargs: Optional[Mapping] = None):
