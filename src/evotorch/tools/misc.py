@@ -339,32 +339,84 @@ def is_real_vector(x: Any):
         return False
 
 
-def cast_tensors_in_container(container: Any, *, dtype: Optional[DType] = None, device: Optional[Device] = None) -> Any:
+def cast_tensors_in_container(
+    container: Any,
+    *,
+    dtype: Optional[DType] = None,
+    device: Optional[Device] = None,
+    memo: Optional[dict] = None,
+) -> Any:
+    """
+    Cast and/or transfer all the tensors in a Python container.
+
+    Args:
+        dtype: If given as a dtype and not as None, then all the PyTorch
+            tensors in the container will be cast to this dtype.
+        device: If given as a device and not as None, then all the PyTorch
+            tensors in the container will be copied to this device.
+        memo: Optionally a memo dictionary to handle shared objects and
+            circular references. In most scenarios, when calling this
+            function from outside, this is expected as None.
+    Returns:
+        A new copy of the original container in which the tensors have the
+        desired dtype and/or device.
+    """
+
+    if memo is None:
+        memo = {}
+
+    container_id = id(container)
+    if container_id in memo:
+        return memo[container_id]
+
     cast_kwargs = {}
     if dtype is not None:
         cast_kwargs["dtype"] = to_torch_dtype(dtype)
     if device is not None:
         cast_kwargs["device"] = device
 
+    def call_self(sub_container: Any) -> Any:
+        return cast_tensors_in_container(sub_container, dtype=dtype, device=device, memo=memo)
+
     if isinstance(container, torch.Tensor):
         result = torch.as_tensor(container, **cast_kwargs)
+        memo[container_id] = result
     elif (container is None) or isinstance(container, (Number, str, bytes, bool)):
         result = container
     elif isinstance(container, set):
-        result = set([cast_tensors_in_container(x, **cast_kwargs) for x in container])
+        result = set()
+        memo[container_id] = result
+        for x in container:
+            result.add(call_self(x))
     elif isinstance(container, Mapping):
         result = {}
+        memo[container_id] = result
         for k, v in container.items():
-            result[k] = cast_tensors_in_container(v, **cast_kwargs)
+            result[k] = call_self(v)
+    elif isinstance(container, tuple):
+        result = []
+        memo[container_id] = result
+        for x in container:
+            result.append(call_self(x))
+        if hasattr(container, "_fields"):
+            result = type(container)(*result)
+        else:
+            result = type(container)(result)
+        memo[container_id] = result
     elif isinstance(container, Iterable):
-        result = [cast_tensors_in_container(x, **cast_kwargs) for x in container]
+        result = []
+        memo[container_id] = result
+        for x in container:
+            result.append(call_self(x))
     else:
         raise TypeError(f"Encountered an object of unrecognized type: {type(container)}")
 
     return result
 
 
-def dtype_of_container(container: Any) -> Optional[torch.dtype]:
+def dtype_of_container(
+    container: Any, *, visited: Optional[dict] = None, visiting: Optional[str] = None
+) -> Optional[torch.dtype]:
     """
     Get the dtype of the given container.
 
@@ -379,9 +431,31 @@ def dtype_of_container(container: Any) -> Optional[torch.dtype]:
     Args:
         container: A sequence or a dictionary of objects from which the
             dtype information will be extracted.
+        visited: Optionally a dictionary which stores the (sub)containers
+            which are already visited. In most cases, when this function
+            is called from outside, this is expected as None.
+        visiting: Optionally a set which stores the (sub)containers
+            which are being visited. This set is used to prevent recursion
+            errors while handling circular references. In most cases,
+            when this function is called from outside, this argument is
+            expected as None.
     Returns:
         The dtype if available, None otherwise.
     """
+
+    container_id = id(container)
+
+    if visited is None:
+        visited = {}
+
+    if container_id in visited:
+        return visited[container_id]
+
+    if visiting is None:
+        visiting = set()
+
+    if container_id in visiting:
+        return None
 
     class result:
         dtype: Optional[torch.dtype] = None
@@ -395,23 +469,37 @@ def dtype_of_container(container: Any) -> Optional[torch.dtype]:
                     if new_dtype != cls.dtype:
                         raise ValueError(f"Encountered tensors whose `dtype`s mismatch: {new_dtype}, {cls.dtype}")
 
+    def call_self(sub_container):
+        return dtype_of_container(sub_container, visited=visited, visiting=visiting)
+
     if isinstance(container, torch.Tensor):
         result.update(container.dtype)
     elif (container is None) or isinstance(container, (Number, str, bytes, bool)):
         pass
     elif isinstance(container, Mapping):
-        for _, v in container.items():
-            result.update(dtype_of_container(v))
+        visiting.add(container_id)
+        try:
+            for _, v in container.items():
+                result.update(call_self(v))
+        finally:
+            visiting.remove(container_id)
     elif isinstance(container, Iterable):
-        for v in container:
-            result.update(dtype_of_container(v))
+        visiting.add(container_id)
+        try:
+            for v in container:
+                result.update(call_self(v))
+        finally:
+            visiting.remove(container_id)
     else:
         raise TypeError(f"Encountered an object of unrecognized type: {type(container)}")
 
+    visited[container_id] = result.dtype
     return result.dtype
 
 
-def device_of_container(container: Any) -> Optional[torch.device]:
+def device_of_container(
+    container: Any, *, visited: Optional[dict] = None, visiting: Optional[str] = None
+) -> Optional[torch.device]:
     """
     Get the device of the given container.
 
@@ -426,9 +514,30 @@ def device_of_container(container: Any) -> Optional[torch.device]:
     Args:
         container: A sequence or a dictionary of objects from which the
             device information will be extracted.
+        visited: Optionally a dictionary which stores the (sub)containers
+            which are already visited. In most cases, when this function
+            is called from outside, this is expected as None.
+        visiting: Optionally a set which stores the (sub)containers
+            which are being visited. This set is used to prevent recursion
+            errors while handling circular references. In most cases,
+            when this function is called from outside, this argument is
+            expected as None.
     Returns:
         The device if available, None otherwise.
     """
+    container_id = id(container)
+
+    if visited is None:
+        visited = {}
+
+    if container_id in visited:
+        return visited[container_id]
+
+    if visiting is None:
+        visiting = set()
+
+    if container_id in visiting:
+        return None
 
     class result:
         device: Optional[torch.device] = None
@@ -442,19 +551,31 @@ def device_of_container(container: Any) -> Optional[torch.device]:
                     if new_device != cls.device:
                         raise ValueError(f"Encountered tensors whose `device`s mismatch: {new_device}, {cls.device}")
 
+    def call_self(sub_container):
+        return device_of_container(sub_container, visited=visited, visiting=visiting)
+
     if isinstance(container, torch.Tensor):
         result.update(container.device)
     elif (container is None) or isinstance(container, (Number, str, bytes, bool)):
         pass
     elif isinstance(container, Mapping):
-        for _, v in container.items():
-            result.update(device_of_container(v))
+        visiting.add(container_id)
+        try:
+            for _, v in container.items():
+                result.update(call_self(v))
+        finally:
+            visiting.remove(container_id)
     elif isinstance(container, Iterable):
-        for v in container:
-            result.update(device_of_container(v))
+        visiting.add(container_id)
+        try:
+            for v in container:
+                result.update(call_self(v))
+        finally:
+            visiting.remove(container_id)
     else:
         raise TypeError(f"Encountered an object of unrecognized type: {type(container)}")
 
+    visited[container_id] = result.device
     return result.device
 
 
@@ -465,10 +586,19 @@ def clone(x: Any, *, memo: Optional[dict] = None) -> Any:
 
     The cloning is done in no_grad mode.
 
+    When this function is used on read-only containers (e.g. ReadOnlyTensor,
+    ImmutableContainer, etc.), the created clones preserve their read-only
+    behaviors. For creating a mutable clone of an immutable object,
+    use their `clone()` method instead.
+
     Returns:
         The deep copy of the given object.
     """
-    return copy.deepcopy(x, memo=memo)
+    from .cloning import deep_clone
+
+    if memo is None:
+        memo = {}
+    return deep_clone(x, otherwise_deepcopy=True, memo=memo)
 
 
 @torch.no_grad()
@@ -821,22 +951,41 @@ def is_tensor_on_cpu(tensor) -> bool:
     return str(tensor.device) == "cpu"
 
 
-def numpy_copy(x: Iterable, dtype: DType) -> np.ndarray:
+def numpy_copy(x: Iterable, dtype: Optional[DType] = None) -> np.ndarray:
     """
     Return a numpy copy of the given iterable.
+
+    The newly created numpy array will be mutable, even if the
+    original iterable object is read-only.
 
     Args:
         x: Any Iterable whose numpy copy will be returned.
         dtype: The desired dtype. Can be given as a numpy dtype,
             as a torch dtype, or a native dtype (e.g. int, float),
             or as a string (e.g. "float32").
+            If left as None, dtype will be determined according
+            to the data contained by the original iterable object.
     Returns:
         The numpy copy of the original iterable object.
     """
-    dtype = to_numpy_dtype(dtype)
-    if isinstance(x, torch.Tensor):
-        x = x.cpu()
-    return np.array(x, dtype=dtype)
+    from .objectarray import ObjectArray
+
+    needs_casting = dtype is not None
+
+    if isinstance(x, ObjectArray):
+        result = x.numpy()
+    elif isinstance(x, torch.Tensor):
+        result = x.cpu().clone().numpy()
+    elif isinstance(x, np.ndarray):
+        result = x.copy()
+    else:
+        needs_casting = False
+        result = np.array(x, dtype=dtype)
+
+    if needs_casting:
+        result = result.astype(dtype)
+
+    return result
 
 
 @torch.jit.script
@@ -941,7 +1090,8 @@ def make_tensor(
     from .readonlytensor import as_read_only_tensor
 
     if (dtype is not None) and is_dtype_object(dtype):
-        data = list(data)
+        if not hasattr(data, "__len__"):
+            data = list(data)
         n = len(data)
         result = ObjectArray(n)
         result[:] = data

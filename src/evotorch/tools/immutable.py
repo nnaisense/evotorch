@@ -15,10 +15,13 @@
 from collections import OrderedDict
 from collections.abc import Iterable, Mapping, Sequence, Set
 from numbers import Number
-from typing import Any, Union
+from typing import Any, Optional, Union
 
 import numpy as np
 import torch
+
+from .cloning import ReadOnlyClonable, deep_clone
+from .recursiveprintable import RecursivePrintable
 
 
 def _is_basic_data(x: Any) -> bool:
@@ -44,34 +47,42 @@ def is_immutable_container_or_tensor(x: Any) -> bool:
     )
 
 
-def as_immutable(x: Any) -> Any:
+def as_immutable(x: Any, *, memo: Optional[dict] = None) -> Any:
     from .objectarray import ObjectArray
     from .readonlytensor import ReadOnlyTensor
 
+    if memo is None:
+        memo = {}
+
+    x_id = id(x)
+    if x_id in memo:
+        return memo[x_id]
+
+    put_into_memo = True
+
     if is_immutable_container_or_tensor(x) or _is_basic_data(x):
-        return x
+        put_into_memo = False
+        result = x
     elif isinstance(x, torch.Tensor):
-        return x.clone().as_subclass(ReadOnlyTensor)
+        result = x.clone().as_subclass(ReadOnlyTensor)
     elif isinstance(x, ObjectArray):
-        return x.clone().get_read_only_view()
+        result = x.clone().get_read_only_view()
     elif isinstance(x, np.ndarray):
         if _numpy_array_stores_objects(x):
             result = ObjectArray(len(x))
             for i, element in enumerate(x):
                 result[i] = element
-            return result.get_read_only_view()
+            result = result.get_read_only_view()
         else:
             result = x.copy()
             result.flags["WRITEABLE"] = False
-            return result
+            result = result
     elif isinstance(x, Mapping):
-        return ImmutableDict(x)
-    elif isinstance(x, tuple):
-        return ImmutableTuple(x)
+        result = ImmutableDict(x, memo)
     elif isinstance(x, set):
-        return ImmutableSet(x)
+        result = ImmutableSet(x, memo=memo)
     elif isinstance(x, Iterable):
-        return ImmutableList(x)
+        result = ImmutableList(x, memo=memo)
     else:
         raise TypeError(
             f"as_immutable(...) encountered an object of unsupported type."
@@ -79,45 +90,75 @@ def as_immutable(x: Any) -> Any:
             f" Type of the encountered object: {repr(type(x))}."
         )
 
+    if put_into_memo:
+        memo[x_id] = result
 
-def mutable_copy(x: Any) -> Any:
+    return result
+
+
+def mutable_copy(x: Any, *, memo: Optional[dict] = None) -> Any:
     from .objectarray import ObjectArray
     from .readonlytensor import ReadOnlyTensor
 
+    if memo is None:
+        memo = {}
+
+    x_id = id(x)
+    if x_id in memo:
+        return memo[x_id]
+
     if _is_basic_data(x):
-        return x
-    elif is_immutable_container_or_tensor(x):
-        if isinstance(x, ImmutableContainer):
-            return x.clone()
-        elif isinstance(x, np.ndarray):
-            return x.copy()
-        else:
-            return x.clone()
+        result = x
+    elif isinstance(x, (ReadOnlyTensor, ObjectArray)):
+        result = x.clone(preserve_read_only=False)
+    elif isinstance(x, np.ndarray):
+        result = x.copy()
+    elif isinstance(x, torch.Tensor):
+        result = x.clone()
+    elif isinstance(x, ImmutableContainer):
+        result = x.clone(memo=memo, preserve_read_only=False)
     else:
-        raise TypeError(
-            f"mutable_copy(...) encountered an object of unsupported type."
-            f" Encountered object: {repr(x)}."
-            f" Type of the encountered object: {repr(type(x))}."
-        )
+        raise TypeError(f"Encountered an object of unrecognized type. The object is {repr(x)}. Its type is {type(x)}")
+
+    if (x_id not in memo) and (result is not x):
+        memo[x_id] = result
+
+    return result
 
 
-class ImmutableContainer:
-    def clone(self) -> Iterable:
-        raise NotImplementedError
+class ImmutableContainer(ReadOnlyClonable, RecursivePrintable):
+    def _get_cloned_state(self, *, memo: dict) -> dict:
+        return deep_clone(self.__dict__, otherwise_deepcopy=True, memo=memo)
+
+    def __setstate__(self, state: dict):
+        self.__dict__.update(state)
+
+        # After pickling and unpickling, numpy arrays become mutable.
+        # Since we are dealing with immutable containers here, we need to forcefully make all numpy arrays read-only.
+        if isinstance(self, Mapping):
+            all_values = self.values()
+        elif isinstance(self, Sequence):
+            all_values = self
+        else:
+            raise NotImplementedError
+
+        for v in all_values:
+            if isinstance(v, np.ndarray):
+                v.flags["WRITEABLE"] = False
 
 
 class ImmutableSequence(ImmutableContainer, Sequence):
-    def __init__(self, x: Iterable):
-        self.__data: list = [as_immutable(item) for item in x]
+    def __init__(self, x: Iterable, *, memo: Optional[dict] = None):
+        if memo is None:
+            memo = {}
+        memo[id(x)] = self
+        self.__data: list = [as_immutable(item, memo=memo) for item in x]
 
     def __len__(self) -> int:
         return len(self.__data)
 
     def __getitem__(self, i):
         return self.__data[i]
-
-    def __repr__(self) -> str:
-        return f"{type(self).__name__}({self.__data})"
 
     def __add__(self, other: Iterable) -> "ImmutableSequence":
         cls = type(self)
@@ -126,9 +167,6 @@ class ImmutableSequence(ImmutableContainer, Sequence):
     def __radd__(self, other: Iterable) -> "ImmutableSequence":
         cls = type(self)
         return cls(list(other) + list(self))
-
-    def clone(self) -> Iterable:
-        pass
 
     def __eq__(self, other: Iterable) -> bool:
         self_length = len(self)
@@ -147,18 +185,20 @@ class ImmutableSequence(ImmutableContainer, Sequence):
 
 
 class ImmutableList(ImmutableSequence):
-    def clone(self) -> list:
-        return [mutable_copy(x) for x in self]
-
-
-class ImmutableTuple(ImmutableSequence):
-    def clone(self) -> tuple:
-        return tuple([mutable_copy(x) for x in self])
+    def _get_mutable_clone(self, *, memo: dict) -> list:
+        result = []
+        memo[id(self)] = result
+        for x in self:
+            result.append(mutable_copy(x, memo=memo))
+        return result
 
 
 class ImmutableSet(ImmutableContainer, Set):
-    def __init__(self, x: Iterable):
-        self.__data: set = set([as_immutable(item) for item in x])
+    def __init__(self, x: Iterable, *, memo: Optional[dict] = None):
+        if memo is None:
+            memo = {}
+        memo[id(x)] = self
+        self.__data: set = set([as_immutable(item, memo=memo) for item in x])
 
     def __contains__(self, x: Any) -> bool:
         return as_immutable(x) in self.__data
@@ -170,11 +210,12 @@ class ImmutableSet(ImmutableContainer, Set):
     def __len__(self) -> int:
         return len(self.__data)
 
-    def __repr__(self) -> str:
-        return f"{type(self).__name__}({self.__data})"
-
-    def clone(self) -> Iterable:
-        return set([mutable_copy(x) for x in self])
+    def _get_mutable_clone(self, *, memo: dict) -> set:
+        result = set()
+        memo[id(self)] = result
+        for x in self:
+            result.add(mutable_copy(x, memo=memo))
+        return result
 
 
 def _acceptable_key(x: Any) -> Union[int, str]:
@@ -199,13 +240,25 @@ def _acceptable_key(x: Any) -> Union[int, str]:
 
 
 class ImmutableDict(ImmutableContainer, Mapping):
-    def __init__(self, x: Iterable, **kwargs):
+    def __init__(self, *args, **kwargs):
+        if len(args) == 1:
+            x = args[0]
+            memo = {}
+        elif len(args) == 2:
+            x, memo = args
+            if memo is None:
+                memo = {}
+        else:
+            raise TypeError("Wrong number of positional arguments. Expected 1 or 2 arguments.")
+
+        memo[id(x)] = self
+
         self.__data: OrderedDict = OrderedDict()
         iterator = x.items() if isinstance(x, Mapping) else x
         for k, v in iterator:
-            self.__data[_acceptable_key(k)] = as_immutable(v)
+            self.__data[_acceptable_key(k)] = as_immutable(v, memo=memo)
         for k, v in kwargs.items():
-            self.__data[str(k)] = as_immutable(v)
+            self.__data[str(k)] = as_immutable(v, memo=memo)
 
     def __getitem__(self, k):
         k = _acceptable_key(k)
@@ -218,15 +271,11 @@ class ImmutableDict(ImmutableContainer, Mapping):
     def __len__(self) -> int:
         return len(self.__data)
 
-    def __repr__(self) -> str:
-        type_name = type(self).__name__
-        contents = ", ".join([repr(k) + ": " + repr(v) for (k, v) in self.__data.items()])
-        return type_name + "({" + contents + "})"
-
-    def clone(self) -> "ImmutableDict":
+    def _get_mutable_clone(self, *, memo: dict) -> dict:
         result = {}
+        memo[id(self)] = result
         for k, v in self.items():
-            k = mutable_copy(k)
-            v = mutable_copy(v)
+            k = mutable_copy(k, memo=memo)
+            v = mutable_copy(v, memo=memo)
             result[k] = v
         return result

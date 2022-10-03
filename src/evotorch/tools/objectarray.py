@@ -19,13 +19,13 @@ but with an ability to store arbitrary type of data (not just numbers).
 """
 
 from collections.abc import Sequence
-from copy import deepcopy
 from typing import Any, Iterable, Optional
 
 import numpy as np
 import torch
 
 from .misc import Device, DType, Size, clone, is_integer, is_sequence
+from .recursiveprintable import RecursivePrintable
 
 
 class ObjectArrayStorage:
@@ -36,7 +36,7 @@ class ObjectArrayStorage:
         return id(self._source._objects)
 
 
-class ObjectArray(Sequence):
+class ObjectArray(Sequence, RecursivePrintable):
     """
     An object container with an interface similar to PyTorch tensors.
 
@@ -339,27 +339,60 @@ class ObjectArray(Sequence):
             return result
 
     def __setitem__(self, i: Any, x: Any):
+        self.set_item(i, x)
+
+    def set_item(self, i: Any, x: Any, *, memo: Optional[dict] = None):
+        """
+        Set the i-th item of the ObjectArray as x.
+
+        Args:
+            i: An index or a slice.
+            x: The object that will be put into the ObjectArray.
+            memo: Optionally a dictionary which maps from the ids of the
+                already placed objects to their clones within ObjectArray.
+                In most scenarios, when this method is called from outside,
+                this can be left as None.
+        """
         from .immutable import as_immutable
+
+        if memo is None:
+            memo = {}
+
+        memo[id(self)] = self
 
         if self._read_only:
             raise ValueError("This ObjectArray is read-only, therefore, modification is not allowed.")
+
         if is_integer(i):
             index = int(self._indices[i])
-            self._objects[index] = as_immutable(x)
+            self._objects[index] = as_immutable(x, memo=memo)
         else:
             indices = self._indices[i]
             if not isinstance(x, Iterable):
                 raise TypeError(f"Expected an iterable, but got {repr(x)}")
+
+            if indices.ndim != 1:
+                raise ValueError(
+                    "Received indices that would change the dimensionality of the ObjectArray."
+                    " However, an ObjectArray can only be 1-dimensional."
+                )
+
+            slice_refers_to_whole_array = (len(indices) == len(self._indices)) and torch.all(indices == self._indices)
+            if slice_refers_to_whole_array:
+                memo[id(x)] = self
+
             if not hasattr(x, "__len__"):
                 x = list(x)
+
             if len(x) != len(indices):
                 raise TypeError(
                     f"The slicing operation refers to {len(indices)} elements."
                     f" However, the given objects sequence has {len(x)} elements."
                 )
+
             for q, obj in enumerate(x):
                 index = int(indices[q])
-                self._objects[index] = as_immutable(obj)
+                self._objects[index] = as_immutable(obj, memo=memo)
 
     def __len__(self) -> int:
         return len(self._indices)
@@ -368,22 +401,65 @@ class ObjectArray(Sequence):
         for i in range(len(self)):
             yield self[i]
 
-    def clone(self, *, memo: Optional[dict] = None) -> "ObjectArray":
+    def clone(self, *, preserve_read_only: bool = False, memo: Optional[dict] = None) -> Iterable:
         """
         Get a deep copy of the ObjectArray.
 
-        Note that the newly made deep copy will NOT be read-only,
-        even if the original is.
-
+        Args:
+            preserve_read_only: Whether or not to preserve the read-only
+                attribute. Note that the default value is False, which
+                means that the newly made clone will NOT be read-only
+                even if the original ObjectArray is.
+            memo: Optionally a dictionary which maps from the ids of the
+                already cloned objects to their clones.
+                In most scenarios, when this method is called from outside,
+                this can be left as None.
         Returns:
-            An non-read-only deep copy of the original ObjectArray.
+            The clone of the original ObjectArray.
         """
+        from .cloning import deep_clone
+
         if memo is None:
             memo = {}
-        result = ObjectArray(len(self))
-        for i in range(len(self)):
-            result[i] = deepcopy(self[i], memo=memo)
-        return result
+
+        self_id = id(self)
+        if self_id in memo:
+            return memo[self_id]
+
+        if not preserve_read_only:
+            return self.numpy(memo=memo)
+        else:
+            result = ObjectArray(len(self))
+            memo[self_id] = result
+
+            for i, item in enumerate(self):
+                result[i] = deep_clone(item, otherwise_deepcopy=True, memo=memo)
+
+            return result
+
+    def __copy__(self) -> "ObjectArray":
+        return self.clone(preserve_read_only=True)
+
+    def __deepcopy__(self, memo: Optional[dict]) -> "ObjectArray":
+        if memo is None:
+            memo = {}
+        return self.clone(preserve_read_only=True, memo=memo)
+
+    def __setstate__(self, state: dict):
+        self.__dict__.update(state)
+
+        # After pickling and unpickling, numpy arrays become mutable.
+        # Since we are dealing with immutable containers here, we need to forcefully make all numpy arrays read-only.
+        for v in self:
+            if isinstance(v, np.ndarray):
+                v.flags["WRITEABLE"] = False
+
+    # def __getstate__(self) -> dict:
+    #     from .cloning import deep_clone
+    #     self_id = id(self)
+    #     memo = {self_id: self}
+    #     cloned_dict = deep_clone(self.__dict__, otherwise_deepcopy=True, memo=memo)
+    #     return cloned_dict
 
     def get_read_only_view(self) -> "ObjectArray":
         """
@@ -400,40 +476,10 @@ class ObjectArray(Sequence):
         """
         return self._read_only
 
-    def __copy__(self) -> "ObjectArray":
-        return self.clone()
-
-    def __deepcopy__(self, memo: Optional[dict]) -> "ObjectArray":
-        return self.clone(memo=memo)
-
-    def __getstate__(self):
-        return self.clone().__dict__
-
     def storage(self) -> ObjectArrayStorage:
         return ObjectArrayStorage(self)
 
-    def _to_string(self) -> str:
-        inside = []
-        for ind in self._indices:
-            i = int(ind)
-            inside.append(self._objects[i])
-        type_name = type(self).__name__
-        details = [
-            "elements: " + repr(inside),
-            "ptr: " + repr(self.storage().data_ptr()),
-        ]
-        if self.is_read_only:
-            details.append("is_read_only: " + repr(self.is_read_only))
-        details = ", ".join(details)
-        return f"<{type_name}, {details}>"
-
-    def __repr__(self) -> str:
-        return self._to_string()
-
-    def __str__(self) -> str:
-        return self._to_string()
-
-    def numpy(self) -> np.ndarray:
+    def numpy(self, *, memo: Optional[dict] = None) -> np.ndarray:
         """
         Convert this ObjectArray to a numpy array.
 
@@ -446,13 +492,16 @@ class ObjectArray(Sequence):
         """
         from .immutable import mutable_copy
 
+        if memo is None:
+            memo = {}
+
         n = len(self)
         result = np.empty(n, dtype=object)
+
+        memo[id(self)] = result
+
         for i, item in enumerate(self):
-            if isinstance(item, ObjectArray):
-                result[i] = item.numpy()
-            else:
-                result[i] = mutable_copy(item)
+            result[i] = mutable_copy(item, memo=memo)
 
         return result
 

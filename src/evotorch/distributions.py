@@ -22,11 +22,12 @@ from .tools import Device, DType, cast_tensors_in_container, device_of_container
 from .tools import multiply_rows_by_scalars as dot
 from .tools import rowwise_sum as total
 from .tools import to_torch_dtype
+from .tools.cloning import Serializable, deep_clone
 from .tools.ranking import rank
 from .tools.tensormaker import TensorMakerMixin
 
 
-class Distribution(TensorMakerMixin):
+class Distribution(TensorMakerMixin, Serializable):
     """
     Base class for any search distribution.
     """
@@ -385,6 +386,14 @@ class Distribution(TensorMakerMixin):
         if optimizers is None:
             optimizers = {}
         return learning_rates.get(param_name, None), optimizers.get(param_name, None)
+
+    @torch.no_grad()
+    def _get_cloned_state(self, *, memo: dict) -> dict:
+        return deep_clone(
+            self.__dict__,
+            otherwise_deepcopy=True,
+            memo=memo,
+        )
 
 
 class SeparableGaussian(Distribution):

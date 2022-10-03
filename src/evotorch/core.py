@@ -24,6 +24,7 @@ import math
 import os
 import random
 from collections.abc import Mapping, Sequence
+from contextlib import nullcontext
 from copy import deepcopy
 from typing import Any, Callable, Iterable, List, NamedTuple, Optional, Tuple, Union
 
@@ -91,6 +92,7 @@ from .tools import (
     split_workload,
     to_torch_dtype,
 )
+from .tools.cloning import Serializable, deep_clone
 from .tools.hook import Hook
 from .tools.objectarray import ObjectArray
 from .tools.tensormaker import TensorMakerMixin
@@ -349,7 +351,14 @@ class RemoteMethod:
         return f"<{type(self).__name__} {repr(self._method_name)}{further}>"
 
 
-class Problem(TensorMakerMixin):
+def _no_grad_if_basic_dtype(dtype: DType):
+    if is_dtype_object(dtype):
+        return nullcontext()
+    else:
+        return torch.no_grad()
+
+
+class Problem(TensorMakerMixin, Serializable):
     """
     Representation of a problem to be optimized.
 
@@ -1048,7 +1057,7 @@ class Problem(TensorMakerMixin):
 
         # Initialize the Hook instances (and the related status dictionary for the `_after_eval_hook`)
         self._before_eval_hook: Hook = Hook()
-        self._after_eval_hook: Hook = Hook([self._get_best_and_worst])
+        self._after_eval_hook: Hook = Hook()
         self._after_eval_status: dict = {}
         self._remote_hook: Hook = Hook()
         self._before_grad_hook: Hook = Hook()
@@ -1972,7 +1981,13 @@ class Problem(TensorMakerMixin):
             self._sync_after()
 
         if self.is_main:
-            self._after_eval_status = self.after_eval_hook.accumulate_dict(batch)
+            self._after_eval_status = {}
+
+            best_and_worst = self._get_best_and_worst(batch)
+            if best_and_worst is not None:
+                self._after_eval_status.update(best_and_worst)
+
+            self._after_eval_status.update(self.after_eval_hook.accumulate_dict(batch))
 
     def _evaluate_all(self, batch: "SolutionBatch"):
         if self._actors is None:
@@ -2105,7 +2120,7 @@ class Problem(TensorMakerMixin):
                 raise IndexError("Objective index out of range.")
             return obj_index
 
-    def __getstate__(self):
+    def _get_cloned_state(self, *, memo: dict) -> dict:
         # Collect the inner states of the remote Problem clones
         if self._actors is not None:
             self._remote_states = ray.get(
@@ -2118,17 +2133,17 @@ class Problem(TensorMakerMixin):
             if k in ("_actors", "_actor_pool") or k in self._nonserialized_attribs:
                 result[k] = None
             else:
-                result[k] = v
+                v_id = id(v)
+                if v_id in memo:
+                    result[k] = memo[v_id]
+                else:
+                    with _no_grad_if_basic_dtype(self.dtype):
+                        result[k] = deep_clone(
+                            v,
+                            otherwise_deepcopy=True,
+                            memo=memo,
+                        )
         return result
-
-    def clone(self, memo: Optional[dict] = None) -> "Problem":
-        """
-        Get a clone of the Problem object.
-        """
-        print("Clone")
-        cloned = object.__new__(type(self))
-        cloned.__dict__.update(deepcopy(self.__getstate__(), memo))
-        return cloned
 
     def _get_local_interaction_count(self) -> int:
         """
@@ -2377,7 +2392,7 @@ class Problem(TensorMakerMixin):
 
             if torch.device(self.device) != torch.device("cpu"):
                 # If the main device of this problem instance is not CPU, then we move the tensors to the main device.
-                result = cast_tensors_in_container(mapresult, device=device)
+                result = cast_tensors_in_container(result, device=self.device)
 
             if must_sync_after:
                 # If a post-gradient synchronization is required, we trigger the synchronization operations.
@@ -2684,12 +2699,6 @@ class Problem(TensorMakerMixin):
             "mean_eval": float(torch.mean(resulting_batch.access_evals(obj_index))),
         }
 
-    def __copy__(self):
-        return self.clone()
-
-    def __deepcopy__(self, memo: Optional[dict]):
-        return self.clone(memo)
-
     def is_on_cpu(self) -> bool:
         """
         Whether or not the Problem object has its device set as "cpu".
@@ -2905,7 +2914,7 @@ def _pareto_sort(utils: torch.Tensor, crowdsort: bool, crowdsort_upto: int) -> T
 ParetoInfo = NamedTuple("ParetoInfo", fronts=list, ranks=torch.Tensor)
 
 
-class SolutionBatch:
+class SolutionBatch(Serializable):
     """
     Representation of a batch of solutions.
 
@@ -3743,24 +3752,20 @@ class SolutionBatch:
         else:
             return Solution(parent=self, index=i)
 
-    def __copy__(self):
-        return deepcopy(self)
-
-    def clone(self, memo: Optional[dict] = None) -> "SolutionBatch":
-        """
-        Get a deepcopy of the SolutionBatch.
-
-        Returns:
-            An identical deep copy of the original SolutionBatch.
-        """
-        return deepcopy(self, memo=memo)
-
     def __len__(self):
         return int(self._data.shape[0])
 
     def __iter__(self):
         for i in range(len(self)):
             yield self[i]
+
+    def _get_cloned_state(self, *, memo: dict) -> dict:
+        with _no_grad_if_basic_dtype(self.dtype):
+            return deep_clone(
+                self.__dict__,
+                otherwise_deepcopy=True,
+                memo=memo,
+            )
 
     @property
     def device(self) -> Device:
@@ -4020,7 +4025,7 @@ def _all_none(x):
         return False
 
 
-class Solution:
+class Solution(Serializable):
     """
     Representation of a single Solution.
 
@@ -4238,24 +4243,6 @@ class Solution:
         with torch.no_grad():
             return not bool(torch.any(torch.isnan(self._batch.evals[0, :num_objs])))
 
-    def clone(self, memo: Optional[dict] = None) -> "Solution":
-        """
-        Get a clone of the Solution.
-
-        Note that, after this cloning operation, this Solution will not
-        refer to a Solution to its original parent SolutionBatch
-        (i.e. it will not share memory with the parent SolutionBatch).
-        Instead, it will be a new independent Solution object.
-        """
-        new_batch = self._batch.clone(memo)
-        return Solution(new_batch, 0)
-
-    def __copy__(self):
-        return self.clone()
-
-    def __deepcopy__(self, memo: Optional[dict]):
-        return self.clone(memo)
-
     @property
     def dtype(self) -> DType:
         """
@@ -4362,6 +4349,14 @@ class Solution:
 
     def __str__(self) -> str:
         return self._to_string()
+
+    def _get_cloned_state(self, *, memo: dict) -> dict:
+        with _no_grad_if_basic_dtype(self.dtype):
+            return deep_clone(
+                self.__dict__,
+                otherwise_deepcopy=True,
+                memo=memo,
+            )
 
     def to_batch(self) -> SolutionBatch:
         """
