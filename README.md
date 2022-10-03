@@ -29,7 +29,7 @@
 
 Welcome to the EvoTorch project!
 EvoTorch is an open source evolutionary computation library developed at [NNAISENSE](https://nnaisense.com), built on top of [PyTorch](https://pytorch.org/).
-See the [documentation](https://docs.evotorch.ai) for in-depth guidance about using EvoTorch, and [join us on Slack](https://join.slack.com/t/slack-cll4186/shared_invite/zt-1cpigvsqa-Jw8MeOizlW1bJKOms9WnBQ) for discussions.
+See the [documentation](https://docs.evotorch.ai) for in-depth guidance about using EvoTorch, and [join us on Slack](https://join.slack.com/t/evotorch/shared_invite/zt-1hcj9prrl-wQBMX4JtaB6WdGKSDjZGXw) for discussions.
 
 Get started by installing EvoTorch:
 ```
