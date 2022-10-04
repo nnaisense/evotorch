@@ -38,6 +38,22 @@ if gym_ver is not None:
 
 
 def make_env_for_rendering(*args, **kwargs):
+    """
+    Initialize a new gym environment with human-mode rendering.
+
+    Beginning with gym 0.26, it is required to specify the rendering mode
+    while initializing the environment. If the gym version is newer than
+    or equal to 0.26, this function passes the keyword argument
+    `render_mode="human"` to `gym.make(...)`.
+
+    Args:
+        args: Expected in the form of positional arguments. These are
+            passed directly to `gym.make(...)`.
+        kwargs: Expected in the form of keyword arguments. These are
+            passed directly to `gym.make(...)`.
+    Returns:
+        The newly made gym environment.
+    """
     if new_render_api:
         env_config = {"render_mode": "human"}
     else:
@@ -48,6 +64,22 @@ def make_env_for_rendering(*args, **kwargs):
 
 
 def make_env_for_recording(*args, **kwargs):
+    """
+    Initialize a new gym environment with human-mode rendering.
+
+    Beginning with gym 0.26, it is required to specify the rendering mode
+    while initializing the environment. If the gym version is newer than
+    or equal to 0.26, this function passes the keyword argument
+    `render_mode="rgb_array"` to `gym.make(...)`.
+
+    Args:
+        args: Expected in the form of positional arguments. These are
+            passed directly to `gym.make(...)`.
+        kwargs: Expected in the form of keyword arguments. These are
+            passed directly to `gym.make(...)`.
+    Returns:
+        The newly made gym environment.
+    """
     if new_render_api:
         env_config = {"render_mode": "rgb_array"}
     else:
@@ -58,6 +90,12 @@ def make_env_for_recording(*args, **kwargs):
 
 
 def rgb_array_from_env(env: gym.Env) -> np.ndarray:
+    """
+    Render the current state of the environment into numpy array.
+
+    Returns:
+        The newly made numpy array containing the rendering result.
+    """
     if new_render_api:
         return env.render()
     else:
