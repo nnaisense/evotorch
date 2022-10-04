@@ -1,22 +1,32 @@
 # Neuroevolution for `gym` Environments
 
-## Overview of [GymNE][evotorch.neuroevolution.gymne.GymNE]
-
-[`gym` environments](https://www.gymlibrary.ml/) are a mainstay of reinforcement learning literature. When attempting to learn agents for these environments with neuroevolution, we typically use an episodic reward. For a given `environment` and `policy`, the evaluation of the `policy` typically follows:
+A common use case for neuroevolution is to evolve neural network _policies_ that maximize the _episodic return_ (the total reward) of an agent in a Reinforcement Learning (RL) environment.
+EvoTorch provides built-in support for environments that support the commonly-used [Gym](https://www.gymlibrary.ml/) API.
+In this API, the evaluation of the `policy` for a given `environment` and `policy` typically follows:
 
 ```python
-episodic_reward = 0.0
-done = False
-observation = environment.reset()
-while not done:
+episodic_return = 0.0
+terminated, truncated = False, False
+observation, info = environment.reset()
+while not (terminated or truncated):
     action = policy(observation)
-    observation, step_reward, done, info = environment.step(action)
-    episodic_reward += step_reward
+    observation, step_reward, terminated, truncated, info = environment.step(action)
+    episodic_return += step_reward
 ```
 
-where `episodic_reward` is a value learn to maximize.
+where `episodic_return` is the value we wish to maximize, and the `policy` is represented by a (PyTorch) neural network that wish to train.
 
-EvoTorch provides direct support for Neuroevolution of agents for `gym` environments through the [GymNE][evotorch.neuroevolution.gymne.GymNE] class. This class exploits the `gym.make` function, meaning that you can create a reinforcement learning problem simply by passing the name of the environment. For example,
+!!! note "Old vs New Gym API"
+    Gym's long-used API changed in Sept 2022 with the release of [v0.26.0](https://github.com/openai/gym/releases/tag/0.26.0). EvoTorch supports environments defined using both new and old APIs. 
+
+## [GymNE][evotorch.neuroevolution.gymne.GymNE] and [VecGymNE][evotorch.neuroevolution.gymne.GymNE]
+
+EvoTorch provides two custom `Problem` classes with very similar arguments for easily applying and scaling up neuroevolution across CPUs and GPUs:
+
+* [GymNE][evotorch.neuroevolution.gymne.GymNE]: This class can be used for any Gym environment. Each problem actor (configured using the `num_actors` argument) maintains an instance of the environment to use for evaluation of each policy network in the population. Thus, this class uses parallelization but not vectorization.
+* [VecGymNE][evotorch.neuroevolution.gymne.GymNE]: This class is specially designed for use with [_vectorized_ environments](https://www.gymlibrary.dev/content/vectorising/). In addition to potentially exploiting vectorization for environment simulators, **this class further vectorizes policy evaluations using [functorch](https://pytorch.org/functorch/stable/)** making it possible to fully utilize accelerators such as GPUs for neuroevolution. This is the recommended class to use for environments from massively parallel simulators such as [Brax](https://github.com/google/brax) and [IsaacGym](https://github.com/NVIDIA-Omniverse/OmniIsaacGymEnvs).
+
+For the simplest cases, you can create a reinforcement learning problem simply by specifying the name of the environment. For example,
 
 ```python
 from evotorch.neuroevolution import GymNE
@@ -32,7 +42,7 @@ problem = GymNE(
 )
 ```
 
-Will create a [GymNE][evotorch.neuroevolution.gymne.GymNE] instance for the [`"LunarLanderContinuous-v2"` environment](https://www.gymlibrary.ml/environments/box2d/lunar_lander/) with a `Linear` policy which takes `obs_length` inputs (the number of observations) and returns `act_length` actions (the number of actions). In general, [GymNE][evotorch.neuroevolution.gymne.GymNE] automatically provides both `obs_length`, `act_length` and `obs_space` ([the observation spaces of the policy](https://www.gymlibrary.ml/content/api/#gym.Env.observation_space)) to the instantiation of the policy, meaning that you can also define classes with respect to the dimensions of the environment:
+will create a [GymNE][evotorch.neuroevolution.gymne.GymNE] instance for the [`"LunarLanderContinuous-v2"` environment](https://www.gymlibrary.ml/environments/box2d/lunar_lander/) with a `Linear` policy which takes `obs_length` inputs (the number of observations) and returns `act_length` actions (the number of actions). In general, [GymNE][evotorch.neuroevolution.gymne.GymNE] automatically provides both `obs_length`, `act_length` and `obs_space` ([the observation spaces of the policy](https://www.gymlibrary.ml/content/api/#gym.Env.observation_space)) to the instantiation of the policy, meaning that you can also define classes with respect to the dimensions of the environment:
 
 ```python
 from gym.spaces import Space
@@ -71,13 +81,13 @@ problem = GymNE(
 
 will effectively disable `gravity` in the `"LunarLanderContinuous-v2"` environment.
 
-It should be noted that [GymNE][evotorch.neuroevolution.gymne.GymNE] has its own function, `to_policy`, which you should use instead of `parameterize_net`. This function wraps `parameterize_net`, but adds any additional layers for observation normalization and action clipping as specified by the problem and environment. Therefore, you should generally use `to_policy` for [GymNE][evotorch.neuroevolution.gymne.GymNE], rather than `parameterize_net`.
+It should be noted that [GymNE][evotorch.neuroevolution.gymne.GymNE] (and [VecGymNE][evotorch.neuroevolution.gymne.VecGymNE]) has its own method, `to_policy()`, which you should use instead of `parameterize_net`. This method wraps `parameterize_net()`, but adds any additional layers for observation normalization and action clipping as specified by the problem and environment. Therefore, you should generally use `to_policy()` for [GymNE][evotorch.neuroevolution.gymne.GymNE] and [VecGymNE][evotorch.neuroevolution.gymne.VecGymNE], rather than `parameterize_net()`.
 
 [GymNE][evotorch.neuroevolution.gymne.GymNE] has a number of useful arguments that will help you to recreate experiments from neuroevolution literature:
 
 ## Controlling the Number of Episodes
 
-Firstly, there is the `num_episodes` argument, which allows you to evaluate individual networks repeatedly and have their episodic rewards averaged. This is particularly useful when studying noisy environments, and when using population-based evolutionary algorithms whose selection procedures and elitism mechanisms may be more sensitive to noise. For example, instantiating the problem
+The `num_episodes` argument allows you to evaluate individual networks repeatedly and have their episodic returns averaged. This is particularly useful when studying noisy environments, and when using population-based evolutionary algorithms whose selection procedures and elitism mechanisms may be more sensitive to noise. For example, instantiating the problem
 
 ```python
 problem = GymNE(
@@ -88,7 +98,7 @@ problem = GymNE(
 )
 ```
 
-will specify that each solution should be evaluated $5$ times with their episodic rewards averaged, rather than just the default behaviour of evaluating the reward on a single episode.
+will specify that each solution should be evaluated $5$ times with their episodic returns averaged, rather than just the default behaviour of evaluating the return from a single episode.
 
 ## Using Observation Normalization
 
