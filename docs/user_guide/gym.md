@@ -1,7 +1,7 @@
 # Neuroevolution for `gym` Environments
 
 A common use case for neuroevolution is to evolve neural network _policies_ that maximize the _episodic return_ (the total reward) of an agent in a Reinforcement Learning (RL) environment.
-EvoTorch provides built-in support for environments that support the commonly-used [Gym](https://www.gymlibrary.ml/) API.
+EvoTorch provides built-in support for environments that support the commonly-used [Gym](https://www.gymlibrary.dev/) API.
 In this API, the evaluation of the `policy` for a given `environment` and `policy` typically follows:
 
 ```python
