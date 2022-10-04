@@ -19,12 +19,12 @@ where `episodic_return` is the value we wish to maximize, and the `policy` is re
 !!! note "Old vs New Gym API"
     Gym's long-used API changed in Sept 2022 with the release of [v0.26.0](https://github.com/openai/gym/releases/tag/0.26.0). EvoTorch supports environments defined using both new and old APIs. 
 
-## [GymNE][evotorch.neuroevolution.gymne.GymNE] and [VecGymNE][evotorch.neuroevolution.gymne.GymNE]
+## [GymNE][evotorch.neuroevolution.gymne.GymNE] and [VecGymNE][evotorch.neuroevolution.vecgymne.VecGymNE]
 
 EvoTorch provides two custom `Problem` classes with very similar arguments for easily applying and scaling up neuroevolution across CPUs and GPUs:
 
 * [GymNE][evotorch.neuroevolution.gymne.GymNE]: This class can be used for any Gym environment. Each problem actor (configured using the `num_actors` argument) maintains an instance of the environment to use for evaluation of each policy network in the population. Thus, this class uses parallelization but not vectorization.
-* [VecGymNE][evotorch.neuroevolution.gymne.GymNE]: This class is specially designed for use with [_vectorized_ environments](https://www.gymlibrary.dev/content/vectorising/). In addition to potentially exploiting vectorization for environment simulators, **this class further vectorizes policy evaluations using [functorch](https://pytorch.org/functorch/stable/)** making it possible to fully utilize accelerators such as GPUs for neuroevolution. This is the recommended class to use for environments from massively parallel simulators such as [Brax](https://github.com/google/brax) and [IsaacGym](https://github.com/NVIDIA-Omniverse/OmniIsaacGymEnvs).
+* [VecGymNE][evotorch.neuroevolution.vecgymne.VecGymNE]: This class is specially designed for use with [_vectorized_ environments](https://www.gymlibrary.dev/content/vectorising/). In addition to potentially exploiting vectorization for environment simulators, **this class further vectorizes policy evaluations using [functorch](https://pytorch.org/functorch/stable/)** making it possible to fully utilize accelerators such as GPUs for neuroevolution. This is the recommended class to use for environments from massively parallel simulators such as [Brax](https://github.com/google/brax) and [IsaacGym](https://github.com/NVIDIA-Omniverse/OmniIsaacGymEnvs).
 
 For the simplest cases, you can create a reinforcement learning problem simply by specifying the name of the environment. For example,
 
@@ -81,9 +81,9 @@ problem = GymNE(
 
 will effectively disable `gravity` in the `"LunarLanderContinuous-v2"` environment.
 
-It should be noted that [GymNE][evotorch.neuroevolution.gymne.GymNE] (and [VecGymNE][evotorch.neuroevolution.gymne.VecGymNE]) has its own method, `to_policy()`, which you should use instead of `parameterize_net`. This method wraps `parameterize_net()`, but adds any additional layers for observation normalization and action clipping as specified by the problem and environment. Therefore, you should generally use `to_policy()` for [GymNE][evotorch.neuroevolution.gymne.GymNE] and [VecGymNE][evotorch.neuroevolution.gymne.VecGymNE], rather than `parameterize_net()`.
+It should be noted that [GymNE][evotorch.neuroevolution.gymne.GymNE] (and [VecGymNE][evotorch.neuroevolution.vecgymne.VecGymNE]) has its own method, `to_policy()`, which you should use instead of `parameterize_net`. This method wraps `parameterize_net()`, but adds any additional layers for observation normalization and action clipping as specified by the problem and environment. Therefore, you should generally use `to_policy()` for [GymNE][evotorch.neuroevolution.gymne.GymNE] and [VecGymNE][evotorch.neuroevolution.vecgymne.VecGymNE], rather than `parameterize_net()`.
 
-[GymNE][evotorch.neuroevolution.gymne.GymNE] has a number of useful arguments that will help you to recreate experiments from neuroevolution literature:
+[GymNE][evotorch.neuroevolution.gymne.GymNE] and [VecGymNE][evotorch.neuroevolution.vecgymne.VecGymNE] have a number of useful arguments that will help you to recreate experiments from neuroevolution literature:
 
 ## Controlling the Number of Episodes
 
