@@ -42,15 +42,16 @@ problem = GymNE(
 )
 ```
 
-will create a [GymNE][evotorch.neuroevolution.gymne.GymNE] instance for the [`"LunarLanderContinuous-v2"` environment](https://www.gymlibrary.ml/environments/box2d/lunar_lander/) with a `Linear` policy which takes `obs_length` inputs (the number of observations) and returns `act_length` actions (the number of actions). In general, [GymNE][evotorch.neuroevolution.gymne.GymNE] automatically provides both `obs_length`, `act_length` and `obs_space` ([the observation spaces of the policy](https://www.gymlibrary.ml/content/api/#gym.Env.observation_space)) to the instantiation of the policy, meaning that you can also define classes with respect to the dimensions of the environment:
+will create a [GymNE][evotorch.neuroevolution.gymne.GymNE] instance for the [`"LunarLanderContinuous-v2"` environment](https://www.gymlibrary.dev/environments/box2d/lunar_lander/) with a `Linear` policy which takes `obs_length` inputs (the number of observations) and returns `act_length` actions (the number of actions).
+You can also tell [GymNE][evotorch.neuroevolution.gymne.GymNE] to use a custom [PyTorch module](https://pytorch.org/docs/stable/generated/torch.nn.Module.html#torch.nn.Module) subclass as the policy. Usage of `GymNE` with a custom policy could look like this:
+
 
 ```python
-from gym.spaces import Space
 import torch
 
 
 class CustomPolicy(torch.nn.Module):
-    def __init__(self, obs_length: int, act_length: int, obs_space: Space):
+    def __init__(self, obs_length: int, act_length: int):
         super().__init__()
         self.lin1 = torch.nn.Linear(obs_length, 32)
         self.act = torch.nn.Tanh()
@@ -67,7 +68,16 @@ problem = GymNE(
 )
 ```
 
-You can specify additional arguments to pass to the instantiation of the environment, as you would pass [key-word arguments to `gym.make`](https://www.gymlibrary.ml/environments/box2d/lunar_lander/#arguments), using the `env_config` dictionary. For example:
+Notice that in the example code above, `CustomPolicy` expects two arguments: `obs_length` and `act_length`. `GymNE` will inspect the expected arguments of the custom policy and automatically provide values for them. A custom policy class might expect none, some, or all of the following arguments:
+
+- `obs_length`: Length of the observation vector, as an integer.
+- `act_length`: Length of the action vector, as an integer.
+- `obs_shape`: Shape of the observation space, as a tuple of integers.
+- `act_shape`: Shape of the action space, as a tuple of integers.
+- `obs_space`: The observation space, as a [Box](https://www.gymlibrary.dev/api/spaces/#box).
+- `act_space`: The action space, as a [Box](https://www.gymlibrary.dev/api/spaces/#box). Please note that, even if the gym environment's action space is discrete, this will be given as a Box. The reason is that `GymNE` always expects the policy network to produce tensors of real numbers (whose shape is specified by the given Box).
+
+You can specify additional arguments to pass to the instantiation of the environment, as you would pass [key-word arguments to `gym.make`](https://www.gymlibrary.dev/environments/box2d/lunar_lander/#arguments), using the `env_config` dictionary. For example:
 
 ```python
 problem = GymNE(
@@ -81,7 +91,8 @@ problem = GymNE(
 
 will effectively disable `gravity` in the `"LunarLanderContinuous-v2"` environment.
 
-It should be noted that [GymNE][evotorch.neuroevolution.gymne.GymNE] (and [VecGymNE][evotorch.neuroevolution.vecgymne.VecGymNE]) has its own method, `to_policy()`, which you should use instead of `parameterize_net`. This method wraps `parameterize_net()`, but adds any additional layers for observation normalization and action clipping as specified by the problem and environment. Therefore, you should generally use `to_policy()` for [GymNE][evotorch.neuroevolution.gymne.GymNE] and [VecGymNE][evotorch.neuroevolution.vecgymne.VecGymNE], rather than `parameterize_net()`.
+[GymNE][evotorch.neuroevolution.gymne.GymNE] and [VecGymNE][evotorch.neuroevolution.vecgymne.VecGymNE] provide a helper method named `to_policy(...)` to convert a solution (where the solution can be a 1-dimensional tensor or an instance of [Solution][evotorch.core.Solution]) to a policy network. While one could also use the methods `parameterize_net(...)` or `make_net(...)` for similar purposes, it is recommended to use `to_policy(...)`, because `to_policy` will wrap the policy network with observation normalization and action clipping modules to make sure that the inputs to the network are properly processed and the produced actions do not violate the boundaries of the action space.
+Further remarks regarding the differences between `parameterize_net(...)` and `to_policy(...)` are: (i) `parameterize_net(...)` is not available in `VecGymNE`, and (ii) `parameterize_net(...)` can be considered a lower level method and strictly expects PyTorch tensors (not `Solution` objects).
 
 [GymNE][evotorch.neuroevolution.gymne.GymNE] and [VecGymNE][evotorch.neuroevolution.vecgymne.VecGymNE] have a number of useful arguments that will help you to recreate experiments from neuroevolution literature:
 
@@ -126,24 +137,25 @@ print(problem.to_policy(problem.make_zeros(problem.solution_length)))
 
 ???+ abstract "Output"
     ```
-    Sequential(
-        (0): ObsNormLayer()
-        (1): CustomPolicy(
-            (lin1): Linear(in_features=8, out_features=32, bias=True)
-            (act): Tanh()
-            (lin2): Linear(in_features=32, out_features=2, bias=True)
+    ActClipWrapperModule(
+      (wrapped_module): ObsNormWrapperModule(
+        (wrapped_module): CustomPolicy(
+          (lin1): Linear(in_features=8, out_features=32, bias=True)
+          (act): Tanh()
+          (lin2): Linear(in_features=32, out_features=2, bias=True)
         )
-        (2): ActClipLayer()
+        (normalizer): ObsNormLayer()
+      )
     )
     ```
 
-you will observe that the policy contains an [ObsNormLayer][evotorch.neuroevolution.net.rl.ObsNormLayer] which automatically applies observation normalization to the input to the policy, and an [ActClipLayer][evotorch.neuroevolution.net.rl.ActClipLayer] which automatically clips the actions to the space of the environment.
+you will observe that the policy contains an [ObsNormWrapperModule][evotorch.neuroevolution.net.rl.ObsNormWrapperModule] which automatically applies observation normalization to the input to the policy, and an [ActClipWrapperModule][evotorch.neuroevolution.net.rl.ActClipWrapperModule] which automatically clips the actions to the space of the environment.
 
 ## Modifying the step reward
 
 A number of `gym` environments use an `alive_bonus`: a scalar value that is added to the `step_reward` in each step to encourage RL agents to survive for longer. In evolutionary RL, however, [it has been observed](https://arxiv.org/pdf/2008.02387.pdf) that this `alive_bonus` is detrimental and creates unhelpful local optimal. While you can of course disabled particular rewards with the `env_config` argument when available, we also provide direct support for you to decrease the `step_reward` by a scalar amount.
 
-For example, the `"Humanoid-v4"` environment [has an `alive_bonus` value of 5](https://www.gymlibrary.ml/environments/mujoco/humanoid/#rewards). You can easily offset this using the `decrease_rewards_by` keyword argument:
+For example, the `"Humanoid-v4"` environment [has an `alive_bonus` value of 5](https://www.gymlibrary.dev/environments/mujoco/humanoid/#rewards). You can easily offset this using the `decrease_rewards_by` keyword argument:
 
 ```python
 problem = GymNE(
