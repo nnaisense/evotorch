@@ -23,7 +23,7 @@ import torch
 from torch import nn
 
 from ..core import BoundsPairLike, DType, ObjectiveSense, Solution
-from ..tools.misc import Device, is_sequence
+from ..tools.misc import Device, is_sequence, inject
 from .baseneproblem import BaseNEProblem
 from .net.misc import count_parameters, fill_parameters
 from .net.parser import str_to_net
@@ -263,12 +263,23 @@ class NEProblem(BaseNEProblem):
             return self.aux_device
 
     @property
+    def _str_network_constants(self) -> dict:
+        """
+        Named constants which will be passed to `str_to_net`.
+        To be overridden by the user for custom fixed constants for a problem.
+        """
+        return {}
+
+    @property
     def _network_constants(self) -> dict:
-        """Named constants which can be passed to the network instantiation e.g. input/output dimension. To be overridden by the user for custom fixed constants for a problem"""
+        """
+        Named constants which will be passed to the network instantiation.
+        To be overridden by the user for custom fixed constants for a problem.
+        """
         return {}
 
     def network_constants(self) -> dict:
-        """Named constants which can be passed to the network instantiation e.g. input/output dimension"""
+        """Named constants which can be passed to the network instantiation"""
         constants = {}
         constants.update(self._network_constants)
         constants.update(self._network_args)
@@ -286,13 +297,16 @@ class NEProblem(BaseNEProblem):
         # Branching point determines instantiation of network
         if isinstance(network, str):
             # Passed argument was a string representation of a torch module
-            instantiated_network = str_to_net(network, **self.network_constants())
+            net_consts = {}
+            net_consts.update(self.network_constants())
+            net_consts.update(self._str_network_constants)
+            instantiated_network = str_to_net(network, **net_consts)
         elif isinstance(network, nn.Module):
             # Passed argument was directly a torch module
             instantiated_network = network
         else:
             # Passed argument was callable yielding network
-            instantiated_network = network(**self.network_constants())
+            instantiated_network = inject(network, self._network_constants)(**self._network_args)
 
         # Map to device
         device = self.network_device if device is None else device

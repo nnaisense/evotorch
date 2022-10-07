@@ -26,8 +26,9 @@ from gym.spaces import Box
 from torch import nn
 
 from ..core import Solution, SolutionBatch
-from ..tools import Device, ReadOnlyTensor, split_workload
+from ..tools import Device, ReadOnlyTensor, split_workload, inject
 from .baseneproblem import BaseNEProblem
+from .net import str_to_net
 from .net.rl import ActClipWrapperModule, ObsNormWrapperModule
 from .net.runningnorm import RunningNorm
 from .net.vecrl import Policy, TorchWrapper, make_vector_env
@@ -53,27 +54,41 @@ def _numpy_arrays_specify_bounds(low: np.ndarray, high: np.ndarray) -> bool:
     return not _numpy_arrays_specify_no_bounds(low, high)
 
 
-def _make_dummy_env(env: Union[str, Callable]) -> gym.vector.VectorEnv:
+def _make_dummy_env(env: Union[str, Callable], **kwargs) -> gym.vector.VectorEnv:
     if isinstance(env, str):
-        result = make_vector_env(env, num_envs=1)
+        result = make_vector_env(env, num_envs=1, **kwargs)
     else:
-        result = env(num_envs=1)
+        result = env(num_envs=1, **kwargs)
     result = TorchWrapper(result, discrete_to_continuous_act=True)
     return result
 
 
-def _env_spaces(env: Union[str, Callable]) -> tuple:
-    tmp_env = _make_dummy_env(env)
+def _env_spaces(env: Union[str, Callable], **kwargs) -> tuple:
+    tmp_env = _make_dummy_env(env, **kwargs)
     return tmp_env.single_observation_space, tmp_env.single_action_space
 
 
-def _env_constants(env: Union[str, Callable]) -> dict:
-    obs_space, act_space = _env_spaces(env)
+def _env_constants_for_str_net(env: Union[str, Callable], **kwargs) -> dict:
+    obs_space, act_space = _env_spaces(env, **kwargs)
     return {
         "obs_length": obs_space.shape[0],
         "act_length": act_space.shape[0],
         "obs_shape": obs_space.shape,
         "obs_space": obs_space.shape,
+        "act_shape": act_space.shape,
+        "act_space": act_space.shape,
+    }
+
+
+def _env_constants_for_callable_net(env: Union[str, Callable], **kwargs) -> dict:
+    obs_space, act_space = _env_spaces(env, **kwargs)
+    return {
+        "obs_length": obs_space.shape[0],
+        "act_length": act_space.shape[0],
+        "obs_shape": obs_space.shape,
+        "obs_space": obs_space,
+        "act_shape": act_space.shape,
+        "act_space": act_space,
     }
 
 
@@ -138,6 +153,23 @@ class VecGymNE(BaseNEProblem):
                 an additional positional argument for the hidden state of the
                 network and returns an additional value for its next state,
                 then the policy is treated as a recurrent one.
+                When the network is given as a callable object (e.g.
+                a subclass of `nn.Module` or a function), then the expected
+                arguments of this object will be inspected. Depending on the
+                explicitly listed argument names of the object, the following
+                keyword arguments will be passed:
+                (i) `obs_length` (the length of the observation vector),
+                (ii) `act_length` (the length of the action vector),
+                (iii) `obs_shape` (the shape tuple of the observation space),
+                (iv) `act_shape` (the shape tuple of the action space),
+                (v) `obs_space` (the Box object specifying the observation
+                space, and
+                (vi) `act_space` (the Box object specifying the action
+                space). Note that `act_space` will always be given as a
+                `gym.spaces.Box` instance, even when the actual gym
+                environment has a discrete action space. This because the
+                neural network is always expected to return a tensor of real
+                numbers.
             env_config: Keyword arguments to pass to the environment while
                 it is being created.
             max_num_envs: Maximum number of environments to be instantiated.
@@ -292,17 +324,28 @@ class VecGymNE(BaseNEProblem):
 
         if isinstance(network, str):
             # If the network is given as a string, then we will need the values for the constants `obs_length`,
-            # `act_length`, and `obs_space`. To obtain those values, we use our helper function `_env_constants(...)`
-            # which temporarily instantiates the specified environment and returns its needed constants.
-            env_constants = _env_constants(self._env_maker)
-        else:
-            # If the network is not given as a string, then we do not need extra constants.
-            # Therefore, extra environment constants can be set as an empty dictionary.
-            # This scenario allows us to avoid making a temporary instance of the environment.
+            # `act_length`, and `obs_space`. To obtain those values, we use our helper function
+            # `_env_constants_for_str_net(...)` which temporarily instantiates the specified environment and returns
+            # its needed constants.
+            env_constants = _env_constants_for_str_net(self._env_maker, **(self._env_config))
+        elif isinstance(network, nn.Module):
+            # If the network is an already instantiated nn.Module, then we do not prepare any pre-defined constants.
             env_constants = {}
+        else:
+            # If the network is given as a Callable, then we will need the values for the constants `obs_length`,
+            # `act_length`, and `obs_space`. To obtain those values, we use our helper function
+            # `_env_constants_for_callable_net(...)` which temporarily instantiates the specified environment and
+            # returns its needed constants.
+            env_constants = _env_constants_for_callable_net(self._env_maker, **(self._env_config))
 
         # Build a `Policy` instance according to the given architecture, and store it.
-        self._policy = Policy(network, **network_args, **env_constants)
+        if isinstance(network, str):
+            instantiated_net = str_to_net(network, **{**env_constants, **network_args})
+        elif isinstance(network, nn.Module):
+            instantiated_net = network
+        else:
+            instantiated_net = inject(network, env_constants)(**network_args)
+        self._policy = Policy(instantiated_net)
 
         # Store the boolean which indicates whether or not there will be observation normalization.
         self._observation_normalization = bool(observation_normalization)

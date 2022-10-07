@@ -793,3 +793,19 @@ def test_numpy_copy(x):
 
         assert_allclose(x, FloatTensor([1, 2, 3]), atol=0.00001)
         assert_dtype_matches(copied, type_)
+
+
+def test_inject():
+    def f(a, b):
+        return f"{a}{b}"
+
+    assert misc.inject(f, {"b": "bb"})(a="aa") == "aabb"
+    assert misc.inject(f, {"a": "aa", "c": "cc"})(b="bb") == "aabb"
+
+
+def test_inject_with_star():
+    def f(*, a, b):
+        return f"{a}{b}"
+
+    assert misc.inject(f, {"b": "bb"})(a="aa") == "aabb"
+    assert misc.inject(f, {"a": "aa", "c": "cc"})(b="bb") == "aabb"

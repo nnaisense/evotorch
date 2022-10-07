@@ -132,6 +132,23 @@ class GymNE(NEProblem):
                 an additional positional argument for the hidden state of the
                 network and returns an additional value for its next state,
                 then the policy is treated as a recurrent one.
+                When the network is given as a callable object (e.g.
+                a subclass of `nn.Module` or a function), then the expected
+                arguments of this object will be inspected. Depending on the
+                explicitly listed argument names of the object, the following
+                keyword arguments will be passed:
+                (i) `obs_length` (the length of the observation vector),
+                (ii) `act_length` (the length of the action vector),
+                (iii) `obs_shape` (the shape tuple of the observation space),
+                (iv) `act_shape` (the shape tuple of the action space),
+                (v) `obs_space` (the Box object specifying the observation
+                space, and
+                (vi) `act_space` (the Box object specifying the action
+                space). Note that `act_space` will always be given as a
+                `gym.spaces.Box` instance, even when the actual gym
+                environment has a discrete action space. This because the
+                neural network is always expected to return a tensor of real
+                numbers.
             env_name: Deprecated alias for the keyword argument `env`.
                 It is recommended to use the argument `env` instead.
             network_args: Optionally a dict-like object, storing keyword
@@ -265,9 +282,13 @@ class GymNE(NEProblem):
 
         if isinstance(tmp_env.action_space, gym.spaces.Discrete):
             self._act_length = tmp_env.action_space.n
+            self._box_act_space = gym.spaces.Box(low=float("-inf"), high=float("inf"), shape=(self._act_length,))
         else:
             self._act_length = len(tmp_env.action_space.low)
+            self._box_act_space = tmp_env.action_space
 
+        self._act_space = tmp_env.action_space
+        self._obs_space = tmp_env.observation_space
         self._obs_shape = tmp_env.observation_space.low.shape
 
         # Validate the space types of the environment
@@ -300,8 +321,17 @@ class GymNE(NEProblem):
         return {
             "obs_length": self._obs_length,
             "act_length": self._act_length,
-            "obs_space": self._obs_shape,
-            "obs_shape": self._obs_shape,
+            "obs_space": self._obs_space,
+            "act_space": self._box_act_space,
+            "obs_shape": self._obs_space.shape,
+            "act_shape": self._box_act_space.shape,
+        }
+
+    @property
+    def _str_network_constants(self) -> dict:
+        return {
+            "obs_space": self._obs_space.shape,
+            "act_space": self._box_act_space.shape,
         }
 
     def _instantiate_new_env(self, **kwargs) -> gym.Env:
