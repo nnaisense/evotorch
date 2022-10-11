@@ -25,7 +25,9 @@ EvoTorch provides two custom `Problem` classes with very similar arguments for e
 
 * [GymNE][evotorch.neuroevolution.gymne.GymNE]: This class can be used for any Gym environment. Each problem actor (configured using the `num_actors` argument) maintains an instance of the environment to use for evaluation of each policy network in the population. Thus, this class uses parallelization but not vectorization.
 * [VecGymNE][evotorch.neuroevolution.vecgymne.VecGymNE]: This class is specially designed for use with [_vectorized_ environments](https://www.gymlibrary.dev/content/vectorising/). In addition to potentially exploiting vectorization for environment simulators, **this class further vectorizes policy evaluations using [functorch](https://pytorch.org/functorch/stable/)** making it possible to fully utilize accelerators such as GPUs for neuroevolution. This is the recommended class to use for environments from massively parallel simulators such as [Brax](https://github.com/google/brax) and [IsaacGym](https://github.com/NVIDIA-Omniverse/OmniIsaacGymEnvs).
-
+!!! info "Brax and IsaacGym environments"
+    Brax environments are supported out-of-the-box by `VecGymNE` and can be used to instantiate a problem object by appending `brax::` to an available environment name, such as `brax::humanoid`. For further details regarding Brax environments, see the dedicated example notebook in the repository (`examples/notebooks`). Out-of-the-box support for IsaacGym environments is under development.
+ 
 For the simplest cases, you can create a reinforcement learning problem simply by specifying the name of the environment. For example,
 
 ```python
