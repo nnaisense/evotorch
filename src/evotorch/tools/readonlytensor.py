@@ -16,27 +16,12 @@ from typing import Any, Callable, Iterable, Mapping, Optional, Union
 
 import numpy as np
 import torch
+from packaging.version import Version
 
-_torch_older_than_1_12 = False
-
-
-def _check_torch_version():
-    # Determine the PyTorch version without failing when __version__ has an unexpected value.
-    # Perhaps such unexpected values could be encountered when using a custom/modified version
-    # of PyTorch, and we do not wish this module to fail in those scenarios.
-    from .versionchecking import check_version
-
-    global _torch_older_than_1_12
-
-    torch_ver = check_version(torch, 2)
-
-    if torch_ver is not None:
-        a, b = torch_ver
-        if (a == 0) or ((a == 1) and (b < 12)):
-            _torch_older_than_1_12 = True
-
-
-_check_torch_version()
+# Determine the PyTorch version without failing when __version__ has an unexpected value.
+# Perhaps such unexpected values could be encountered when using a custom/modified version
+# of PyTorch, and we do not wish this module to fail in those scenarios.
+_torch_older_than_1_12 = Version(torch.__version__) < Version("1.12")
 
 
 class ReadOnlyTensor(torch.Tensor):

@@ -24,6 +24,7 @@ from typing import Any, Callable, Iterable, List, Optional, Union
 import gym
 import numpy as np
 import torch
+from packaging.version import Version
 from torch import nn
 
 from ..core import BoundsPairLike, Solution, SolutionBatch
@@ -40,26 +41,10 @@ from .net.rl import (
 )
 from .net.statefulmodule import ensure_stateful
 
-_gym_older_than_0_26 = False
-
-
-def _check_gym_version():
-    # Determine the gym version without failing when __version__ has an unexpected value.
-    # Perhaps such unexpected values could be encountered when using a custom/modified version
-    # of gym, and we do not wish this module to fail in those scenarios.
-    from ..tools.versionchecking import check_version
-
-    global _gym_older_than_0_26
-
-    gym_ver = check_version(gym, 2)
-
-    if gym_ver is not None:
-        a, b = gym_ver
-        if (a == 0) and (b < 26):
-            _gym_older_than_0_26 = True
-
-
-_check_gym_version()
+# Determine the gym version without failing when __version__ has an unexpected value.
+# Perhaps such unexpected values could be encountered when using a custom/modified version
+# of gym, and we do not wish this module to fail in those scenarios.
+_gym_older_than_0_26 = Version(gym.__version__) < Version("0.26")
 
 
 def ensure_space_types(env: gym.Env) -> None:
