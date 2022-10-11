@@ -19,7 +19,6 @@ This namespace contains various utility functions, classes, and type aliases.
 
 __all__ = (
     "cloning",
-    "versionchecking",
     "Hook",
     "as_immutable",
     "mutable_copy",
@@ -84,17 +83,7 @@ __all__ = (
 )
 
 
-from . import (
-    cloning,
-    hook,
-    immutable,
-    objectarray,
-    ranking,
-    readonlytensor,
-    recursiveprintable,
-    tensormaker,
-    versionchecking,
-)
+from . import cloning, hook, immutable, objectarray, ranking, readonlytensor, recursiveprintable, tensormaker
 from .hook import Hook
 from .immutable import as_immutable, mutable_copy
 from .misc import (
