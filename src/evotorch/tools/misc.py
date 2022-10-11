@@ -14,7 +14,6 @@
 
 """Miscellaneous utility functions"""
 
-import contextlib
 import inspect
 import math
 from collections.abc import Mapping
@@ -1954,20 +1953,20 @@ def inject(f: Callable, keyword_arguments: Mapping, forgiving: bool = True) -> C
     """
     signature = None
 
-    context = contextlib.suppress(Exception) if forgiving else contextlib.nullcontext()
-    with context:
+    try:
         signature = inspect.signature(f)
+    except (ValueError, TypeError):
+        if forgiving:
+            return f
+        raise
 
-    if signature is None:
-        return f
-    else:
-        to_inject = {}
-        parameters = signature.parameters
-        for parameter_name in parameters.keys():
-            if parameter_name in keyword_arguments:
-                to_inject[parameter_name] = keyword_arguments[parameter_name]
+    to_inject = {
+        p.name: keyword_arguments[p.name]
+        for p in signature.parameters.values()
+        if p.name in keyword_arguments  # and p.kind == p.KEYWORD_ONLY
+    }
 
-        def with_injections(*args, **kwargs):
-            return f(*args, **{**to_inject, **kwargs})
+    def with_injections(*args, **kwargs):
+        return f(*args, **{**to_inject, **kwargs})
 
-        return with_injections
+    return with_injections
