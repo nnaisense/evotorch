@@ -12,8 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import contextlib
-from copy import copy, deepcopy
 from typing import Any, Callable, Iterable, Mapping, Optional, Union
 
 import numpy as np
@@ -26,17 +24,16 @@ def _check_torch_version():
     # Determine the PyTorch version without failing when __version__ has an unexpected value.
     # Perhaps such unexpected values could be encountered when using a custom/modified version
     # of PyTorch, and we do not wish this module to fail in those scenarios.
+    from .versionchecking import check_version
+
     global _torch_older_than_1_12
 
-    if hasattr(torch, "__version__"):
-        ver = torch.__version__
-        if isinstance(ver, str):
-            vers = ver.split(".")
-            with contextlib.suppress(Exception):
-                a = int(vers[0])
-                b = int(vers[1])
-                if (a <= 1) and (b < 12):
-                    _torch_older_than_1_12 = True
+    torch_ver = check_version(torch, 2)
+
+    if torch_ver is not None:
+        a, b = torch_ver
+        if (a == 0) or ((a == 1) and (b < 12)):
+            _torch_older_than_1_12 = True
 
 
 _check_torch_version()

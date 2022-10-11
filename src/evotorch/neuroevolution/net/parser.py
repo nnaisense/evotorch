@@ -24,6 +24,7 @@ import torch
 from torch import nn
 
 from . import layers
+from .multilayered import MultiLayered
 
 
 class NetParsingError(Exception):
@@ -85,7 +86,7 @@ class NetParsingError(Exception):
 
 
 def submodules(a: nn.Module) -> list:
-    if isinstance(a, nn.Sequential):
+    if isinstance(a, (nn.Sequential, MultiLayered)):
         return [module for module in a]
     else:
         return [a]
@@ -93,7 +94,7 @@ def submodules(a: nn.Module) -> list:
 
 def concat_modules(a: nn.Module, b: nn.Module) -> nn.Module:
     all_modules = submodules(a) + submodules(b)
-    return nn.Sequential(*all_modules)
+    return MultiLayered(*all_modules)
 
 
 def _get_nn_module(name: str) -> Type:
@@ -228,7 +229,7 @@ def str_to_net(s: str, **constants) -> nn.Module:
     )
     ```
 
-    By using `str_to_net(...)` one can construct the same
+    By using `str_to_net(...)` one can construct an equivalent
     module via:
 
     ```python
@@ -276,31 +277,62 @@ def str_to_net(s: str, **constants) -> nn.Module:
     `StructuredControlNet`, then, the layer type to be instantiated
     would be `evotorch.neuroevolution.net.layers.StructuredControlNet`.
 
-    **Notes regarding usage with `evotorch.neuroevolution.GymNE`:**
-    While instantiating a `GymNE`, one can specify a neural net
-    structure string as the policy. Therefore, while filling the policy
-    string for a `GymNE`, all these rules mentioned above apply.
-    Additionally, while using `str_to_net(...)` internally,
-    `GymNE` defines these extra constants:
+    The namespace `evotorch.neuroevolution.net.layers` contains its own
+    implementations for RNN and LSTM. These recurrent layer implementations
+    work similarly to their counterparts `torch.nn.RNN` and `torch.nn.LSTM`,
+    except that EvoTorch's implementations do not expect the data with extra
+    leftmost dimensions for batching and for timesteps. Instead, they expect
+    to receive a single input and a single current hidden state, and produce
+    a single output and a single new hidden state. These recurrent layer
+    implementations of EvoTorch can be used within a neural net structure
+    string. Therefore, the following examples are valid:
+
+    ```python
+    rnn1 = str_to_net("RNN(4, 8) >> Linear(8, 2)")
+
+    rnn2 = str_to_net(
+        '''
+        Linear(4, 10)
+        >> Tanh()
+        >> RNN(input_size=10, hidden_size=24, nonlinearity='tanh'
+        >> Linear(24, 2)
+        '''
+    )
+
+    lstm1 = str_to_net("LSTM(4, 32) >> Linear(32, 2)")
+
+    lstm2 = str_to_net("LSTM(input_size=4, hidden_size=32) >> Linear(32, 2)")
+    ```
+
+    **Notes regarding usage with `evotorch.neuroevolution.GymNE`
+    or with `evotorch.neuroevolution.VecGymNE`:**
+
+    While instantiating a `GymNE` or a `VecGymNE`, one can specify a neural
+    net structure string as the policy. Therefore, while filling the policy
+    string for a `GymNE`, all these rules mentioned above apply. Additionally,
+    while using `str_to_net(...)` internally, `GymNE` and `VecGymNE` define
+    these extra constants:
     `obs_length` (length of the observation vector),
     `act_length` (length of the action vector for continuous-action
     environments, or number of actions for discrete-action
-    environments), and `obs_shape` (shape of the observation as a tuple,
-    assuming that the observation space is of type `gym.spaces.Box`,
-    usable within the string like `obs_shape[0]`, `obs_shape[1]`, etc.,
-    or simply `obs_shape` to refer to the entire tuple).
+    environments), and
+    `obs_shape` (shape of the observation as a tuple, assuming that the
+    observation space is of type `gym.spaces.Box`, usable within the string
+    like `obs_shape[0]`, `obs_shape[1]`, etc., or simply `obs_shape` to refer
+    to the entire tuple).
 
-    Therefore, while using with `GymNE`, one can define a
+    Therefore, while instantiating a `GymNE` or a `VecGymNE`, one can define a
     single-hidden-layered policy via this string:
 
     ```
     "Linear(obs_length, 16) >> Tanh() >> Linear(16, act_length) >> Tanh()"
     ```
 
-    (where one might choose to omit the last `Tanh()` as `GymNE`
-    will clip the output of the final layer to conform with the
-    action boundaries of the environment, which one might think as a
-    type of hard-tanh anyway).
+    In the policy string above, one might choose to omit the last `Tanh()`, as
+    `GymNE` and `VecGymNE` will clip the final output of the policy to conform
+    to the action boundaries defined by the target reinforcement learning
+    environment, and such a clipping operation might be seen as using an
+    activation function similar to hard-tanh anyway.
 
     Args:
         s: The string which expresses the neural net structure.

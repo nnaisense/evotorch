@@ -14,7 +14,7 @@
 
 """Utilities for reading and for writing neural network parameters"""
 
-from typing import Optional
+from typing import Optional, Union
 
 import torch
 from torch import nn
@@ -86,3 +86,31 @@ def count_parameters(net: nn.Module) -> int:
         count += p.numel()
 
     return count
+
+
+def device_of_module(m: nn.Module, default: Optional[Union[str, torch.device]] = None) -> torch.device:
+    """
+    Get the device in which the module exists.
+
+    This function looks at the first parameter of the module, and returns
+    its device. This function is not meant to be used on modules whose
+    parameters exist on different devices.
+
+    Args:
+        m: The module whose device is being queried.
+        default: The fallback device to return if the module has no
+            parameters. If this is left as None, the fallback device
+            is assumed to be "cpu".
+    Returns:
+        The device of the module, determined from its first parameter.
+    """
+    if default is None:
+        default = torch.device("cpu")
+
+    device = default
+
+    for p in m.parameters():
+        device = p.device
+        break
+
+    return device

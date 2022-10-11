@@ -19,6 +19,7 @@ This namespace contains various utility functions, classes, and type aliases.
 
 __all__ = (
     "cloning",
+    "versionchecking",
     "Hook",
     "as_immutable",
     "mutable_copy",
@@ -43,6 +44,7 @@ __all__ = (
     "ensure_ray",
     "ensure_tensor_length_and_dtype",
     "expect_none",
+    "inject",
     "is_bool",
     "is_bool_vector",
     "is_dtype_bool",
@@ -82,7 +84,7 @@ __all__ = (
 )
 
 
-from . import cloning, hook, immutable, objectarray, ranking, readonlytensor, recursiveprintable, tensormaker
+from . import cloning, hook, immutable, objectarray, ranking, readonlytensor, recursiveprintable, tensormaker, versionchecking
 from .hook import Hook
 from .immutable import as_immutable, mutable_copy
 from .misc import (
@@ -106,6 +108,7 @@ from .misc import (
     ensure_ray,
     ensure_tensor_length_and_dtype,
     expect_none,
+    inject,
     is_bool,
     is_bool_vector,
     is_dtype_bool,

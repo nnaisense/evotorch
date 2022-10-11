@@ -14,13 +14,15 @@
 
 """Miscellaneous utility functions"""
 
-import copy
-import math
 from collections.abc import Mapping
 from numbers import Integral, Number, Real
-from typing import Any, Iterable, NamedTuple, Optional, Type, Union
+from typing import Any, Callable, Iterable, NamedTuple, Optional, Type, Union
 
+import contextlib
+import inspect
+import math
 import numpy as np
+
 import torch
 from torch import nn
 
@@ -1888,3 +1890,83 @@ def device_of(x: Any) -> Device:
         return result
     else:
         return x.device
+
+
+def inject(f: Callable, keyword_arguments: Mapping, forgiving: bool = True) -> Callable:
+    """
+    Inject values for the specified keyword arguments of a function.
+    The return value is a new callable object where the specified
+    keyword arguments have their new default values.
+
+    As an example, consider the following function:
+
+    ```python
+    def f(apple, orange, banana, strawberry) -> dict:
+        return {
+            "apple": apple,
+            "orange": orange,
+            "banana": banana,
+            "strawberry": strawberry,
+        }
+    ```
+
+    Now let us apply `inject` on `f` as follows:
+
+    ```python
+    injected = inject(f, {"orange": 4, "banana": 5, "grape": 7})
+    ```
+
+    At this point, we have a new callable object stored by the
+    variable `injected`. We can call it like this:
+
+    ```python
+    injected(apple=1, strawberry=10)
+    ```
+
+    The resulting dictionary is:
+
+    ```
+    {"apple": 1, "orange": 4, "banana": 5, "strawberry": 10}
+    ```
+
+    We observe the following important things:
+
+    - `apple` and `strawberry` are 1 and 10, as specified while calling
+      `injected`.
+    - `orange` and `banana` are 4 and 5, as specified via the `inject`
+      function.
+    - Even though the `inject` function received a default value for an
+      argument named `grape`, this argument was not injected because
+      `f` does not expect an argument named `grape`.
+
+    Args:
+        f: The callable object to which the specified arguments will be
+            injected.
+        keyword_arguments: A dictionary-like object mapping from keyword
+            argument names (as strings) to argument values.
+        forgiving: If `forgiving` is given as True, then the `inject`
+            function will continue to work even when the signature
+            of `f` cannot be received successfully.
+            If `forgiving` is False and the signature of `f` cannot be
+            received, an error will be raised.
+    Returns:
+        A new callable object where the specified arguments have their new
+        defaults.
+    """
+    signature = None
+
+    context = contextlib.suppress(Exception) if forgiving else contextlib.nullcontext()
+    with context:
+        signature = inspect.signature(f)
+
+    if signature is None:
+        return f
+    else:
+        to_inject = {}
+        parameters = signature.parameters
+        for parameter_name in parameters.keys():
+            if parameter_name in keyword_arguments:
+                to_inject[parameter_name] = keyword_arguments[parameter_name]
+        def with_injections(*args, **kwargs):
+            return f(*args, **{**to_inject, **kwargs})
+        return with_injections

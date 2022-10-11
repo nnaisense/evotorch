@@ -43,6 +43,20 @@ except ImportError:
     )
     __version__ = "undefined"
 
+# flake8: noqa
+
+import os  # isort: skip
+
+_top_imports = os.getenv("EVOTORCH_TOP_IMPORTS")
+if _top_imports is not None:
+    import importlib  # isort: skip
+
+    _top_imports = _top_imports.split(",")
+    for _top_import in _top_imports:
+        _top_import_stripped = _top_import.strip()
+        if len(_top_import_stripped) > 0:
+            importlib.import_module(_top_import)
+
 from . import tools  # isort: skip
 from . import core  # isort: skip
 from .core import Problem, Solution, SolutionBatch  # isort: skip

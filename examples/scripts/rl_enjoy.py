@@ -25,6 +25,81 @@ import numpy as np
 import torch
 
 from evotorch.neuroevolution.net.rl import reset_env, take_step_in_env
+from evotorch.tools.versionchecking import check_version
+
+new_render_api = True
+
+gym_ver = check_version(gym, 2)
+
+if gym_ver is not None:
+    a, b = gym_ver
+    if (a == 0) and (b < 26):
+        new_render_api = False
+
+
+def make_env_for_rendering(*args, **kwargs):
+    """
+    Initialize a new gym environment with human-mode rendering.
+
+    Beginning with gym 0.26, it is required to specify the rendering mode
+    while initializing the environment. If the gym version is newer than
+    or equal to 0.26, this function passes the keyword argument
+    `render_mode="human"` to `gym.make(...)`.
+
+    Args:
+        args: Expected in the form of positional arguments. These are
+            passed directly to `gym.make(...)`.
+        kwargs: Expected in the form of keyword arguments. These are
+            passed directly to `gym.make(...)`.
+    Returns:
+        The newly made gym environment.
+    """
+    if new_render_api:
+        env_config = {"render_mode": "human"}
+    else:
+        env_config = {}
+
+    env_config.update(kwargs)
+    return gym.make(*args, **env_config)
+
+
+def make_env_for_recording(*args, **kwargs):
+    """
+    Initialize a new gym environment with human-mode rendering.
+
+    Beginning with gym 0.26, it is required to specify the rendering mode
+    while initializing the environment. If the gym version is newer than
+    or equal to 0.26, this function passes the keyword argument
+    `render_mode="rgb_array"` to `gym.make(...)`.
+
+    Args:
+        args: Expected in the form of positional arguments. These are
+            passed directly to `gym.make(...)`.
+        kwargs: Expected in the form of keyword arguments. These are
+            passed directly to `gym.make(...)`.
+    Returns:
+        The newly made gym environment.
+    """
+    if new_render_api:
+        env_config = {"render_mode": "rgb_array"}
+    else:
+        env_config = {}
+
+    env_config.update(kwargs)
+    return gym.make(*args, **env_config)
+
+
+def rgb_array_from_env(env: gym.Env) -> np.ndarray:
+    """
+    Render the current state of the environment into numpy array.
+
+    Returns:
+        The newly made numpy array containing the rendering result.
+    """
+    if new_render_api:
+        return env.render()
+    else:
+        return env.render(mode="rgb_array")
 
 
 def str_if_non_empty(s: Optional[str]) -> Optional[str]:
@@ -90,11 +165,16 @@ def main(
         env_name = loaded["env_name"]
     policy = loaded["policy"]
     kwargs = {}
-    if ("BulletEnv" in env_name) and (record_prefix is None):
+    if ("BulletEnv" in env_name) and (record_prefix is None) and (not new_render_api):
         kwargs["render"] = True
     if config is not None:
         kwargs.update(config)
-    env = gym.make(env_name, **kwargs)
+
+    if record_prefix is None:
+        env = make_env_for_rendering(env_name, **kwargs)
+    else:
+        env = make_env_for_recording(env_name, **kwargs)
+
     if set_in_env is not None:
         for k, v in set_in_env.items():
             setattr(env.unwrapped, k, v)
@@ -122,7 +202,7 @@ def main(
             from matplotlib import pyplot as plt
 
             if scene_index % record_period == 0:
-                img = env.render(mode="rgb_array")
+                img = rgb_array_from_env(env)
                 if extract is not None:
                     extract_parts = extract.split(",")
                     x1 = int(extract_parts[0])
