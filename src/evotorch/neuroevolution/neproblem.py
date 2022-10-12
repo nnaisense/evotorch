@@ -23,7 +23,7 @@ import torch
 from torch import nn
 
 from ..core import BoundsPairLike, DType, ObjectiveSense, Solution
-from ..tools.misc import Device, is_sequence, inject
+from ..tools.misc import Device, inject, is_sequence
 from .baseneproblem import BaseNEProblem
 from .net.misc import count_parameters, fill_parameters
 from .net.parser import str_to_net

@@ -14,15 +14,14 @@
 
 """Miscellaneous utility functions"""
 
+import contextlib
+import inspect
+import math
 from collections.abc import Mapping
 from numbers import Integral, Number, Real
 from typing import Any, Callable, Iterable, NamedTuple, Optional, Type, Union
 
-import contextlib
-import inspect
-import math
 import numpy as np
-
 import torch
 from torch import nn
 
@@ -1967,6 +1966,8 @@ def inject(f: Callable, keyword_arguments: Mapping, forgiving: bool = True) -> C
         for parameter_name in parameters.keys():
             if parameter_name in keyword_arguments:
                 to_inject[parameter_name] = keyword_arguments[parameter_name]
+
         def with_injections(*args, **kwargs):
             return f(*args, **{**to_inject, **kwargs})
+
         return with_injections

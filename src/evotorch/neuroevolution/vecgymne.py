@@ -26,7 +26,7 @@ from gym.spaces import Box
 from torch import nn
 
 from ..core import Solution, SolutionBatch
-from ..tools import Device, ReadOnlyTensor, split_workload, inject
+from ..tools import Device, ReadOnlyTensor, inject, split_workload
 from .baseneproblem import BaseNEProblem
 from .net import str_to_net
 from .net.rl import ActClipWrapperModule, ObsNormWrapperModule
