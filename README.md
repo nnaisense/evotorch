@@ -23,6 +23,9 @@
     <a href="https://github.com/psf/black" rel="nofollow">
         <img src="https://img.shields.io/badge/code%20style-black-000000.svg" alt="Code style: black" />
     </a>
+    <a href="https://results.pre-commit.ci/latest/github/nnaisense/evotorch/master" rel="nofollow">
+        <img src="https://results.pre-commit.ci/badge/github/nnaisense/evotorch/master.svg" alt="pre-commit.ci status" />
+    </a>
 </div>
 
 ---
