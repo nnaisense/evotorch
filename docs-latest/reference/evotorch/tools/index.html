@@ -2129,6 +2129,13 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#evotorch.tools.misc.inject" class="md-nav__link">
+    inject()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#evotorch.tools.misc.is_bool" class="md-nav__link">
     is_bool()
   </a>
@@ -5928,6 +5935,192 @@ other than None.</p></td>
 <a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a>    <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
 <a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a>        <span class="k">if</span> <span class="n">v</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
 <a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a>            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">msg_prefix</span><span class="si">}</span><span class="s2">: expected `</span><span class="si">{</span><span class="n">k</span><span class="si">}</span><span class="s2">` as None, however, it was found to be </span><span class="si">{</span><span class="nb">repr</span><span class="p">(</span><span class="n">v</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</code></pre></div>
+        </details>
+    </div>
+
+  </div>
+
+
+
+  <div class="doc doc-object doc-function">
+
+
+
+<h3 id="evotorch.tools.misc.inject" class="doc doc-heading">
+<code class="highlight language-python"><span class="n">inject</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">keyword_arguments</span><span class="p">,</span> <span class="n">forgiving</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span></code>
+
+
+<a href="#evotorch.tools.misc.inject" class="headerlink" title="Permanent link">&para;</a></h3>
+
+    <div class="doc doc-contents ">
+
+      <p>Inject values for the specified keyword arguments of a function.
+The return value is a new callable object where the specified
+keyword arguments have their new default values.</p>
+<p>As an example, consider the following function:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="k">def</span> <span class="nf">f</span><span class="p">(</span><span class="n">apple</span><span class="p">,</span> <span class="n">orange</span><span class="p">,</span> <span class="n">banana</span><span class="p">,</span> <span class="n">strawberry</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    <span class="k">return</span> <span class="p">{</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>        <span class="s2">&quot;apple&quot;</span><span class="p">:</span> <span class="n">apple</span><span class="p">,</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>        <span class="s2">&quot;orange&quot;</span><span class="p">:</span> <span class="n">orange</span><span class="p">,</span>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>        <span class="s2">&quot;banana&quot;</span><span class="p">:</span> <span class="n">banana</span><span class="p">,</span>
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>        <span class="s2">&quot;strawberry&quot;</span><span class="p">:</span> <span class="n">strawberry</span><span class="p">,</span>
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>    <span class="p">}</span>
+</code></pre></div>
+<p>Now let us apply <code>inject</code> on <code>f</code> as follows:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="n">injected</span> <span class="o">=</span> <span class="n">inject</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="p">{</span><span class="s2">&quot;orange&quot;</span><span class="p">:</span> <span class="mi">4</span><span class="p">,</span> <span class="s2">&quot;banana&quot;</span><span class="p">:</span> <span class="mi">5</span><span class="p">,</span> <span class="s2">&quot;grape&quot;</span><span class="p">:</span> <span class="mi">7</span><span class="p">})</span>
+</code></pre></div>
+<p>At this point, we have a new callable object stored by the
+variable <code>injected</code>. We can call it like this:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="n">injected</span><span class="p">(</span><span class="n">apple</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">strawberry</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+</code></pre></div>
+<p>The resulting dictionary is:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>{&quot;apple&quot;: 1, &quot;orange&quot;: 4, &quot;banana&quot;: 5, &quot;strawberry&quot;: 10}
+</code></pre></div>
+<p>We observe the following important things:</p>
+<ul>
+<li><code>apple</code> and <code>strawberry</code> are 1 and 10, as specified while calling
+  <code>injected</code>.</li>
+<li><code>orange</code> and <code>banana</code> are 4 and 5, as specified via the <code>inject</code>
+  function.</li>
+<li>Even though the <code>inject</code> function received a default value for an
+  argument named <code>grape</code>, this argument was not injected because
+  <code>f</code> does not expect an argument named <code>grape</code>.</li>
+</ul>
+
+<p><strong>Parameters:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Type</th>
+      <th>Description</th>
+      <th>Default</th>
+    </tr>
+  </thead>
+  <tbody>
+      <tr>
+        <td><code>f</code></td>
+        <td><code>Callable</code></td>
+        <td><p>The callable object to which the specified arguments will be
+injected.</p></td>
+        <td><em>required</em></td>
+      </tr>
+      <tr>
+        <td><code>keyword_arguments</code></td>
+        <td><code>Mapping</code></td>
+        <td><p>A dictionary-like object mapping from keyword
+argument names (as strings) to argument values.</p></td>
+        <td><em>required</em></td>
+      </tr>
+      <tr>
+        <td><code>forgiving</code></td>
+        <td><code>bool</code></td>
+        <td><p>If <code>forgiving</code> is given as True, then the <code>inject</code>
+function will continue to work even when the signature
+of <code>f</code> cannot be received successfully.
+If <code>forgiving</code> is False and the signature of <code>f</code> cannot be
+received, an error will be raised.</p></td>
+        <td><code>True</code></td>
+      </tr>
+  </tbody>
+</table>
+<p><strong>Returns:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Type</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>Callable</code></td>
+      <td><p>A new callable object where the specified arguments have their new
+defaults.</p></td>
+    </tr>
+  </tbody>
+</table>
+        <details class="quote">
+          <summary>Source code in <code>evotorch/tools/misc.py</code></summary>
+          <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="k">def</span> <span class="nf">inject</span><span class="p">(</span><span class="n">f</span><span class="p">:</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">keyword_arguments</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">,</span> <span class="n">forgiving</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">:</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    <span class="sd">&quot;&quot;&quot;</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="sd">    Inject values for the specified keyword arguments of a function.</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="sd">    The return value is a new callable object where the specified</span>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="sd">    keyword arguments have their new default values.</span>
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="sd">    As an example, consider the following function:</span>
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>
+<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="sd">    ```python</span>
+<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span class="sd">    def f(apple, orange, banana, strawberry) -&gt; dict:</span>
+<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a><span class="sd">        return {</span>
+<a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a><span class="sd">            &quot;apple&quot;: apple,</span>
+<a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a><span class="sd">            &quot;orange&quot;: orange,</span>
+<a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a><span class="sd">            &quot;banana&quot;: banana,</span>
+<a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a><span class="sd">            &quot;strawberry&quot;: strawberry,</span>
+<a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a><span class="sd">        }</span>
+<a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a><span class="sd">    ```</span>
+<a id="__codelineno-0-18" name="__codelineno-0-18" href="#__codelineno-0-18"></a>
+<a id="__codelineno-0-19" name="__codelineno-0-19" href="#__codelineno-0-19"></a><span class="sd">    Now let us apply `inject` on `f` as follows:</span>
+<a id="__codelineno-0-20" name="__codelineno-0-20" href="#__codelineno-0-20"></a>
+<a id="__codelineno-0-21" name="__codelineno-0-21" href="#__codelineno-0-21"></a><span class="sd">    ```python</span>
+<a id="__codelineno-0-22" name="__codelineno-0-22" href="#__codelineno-0-22"></a><span class="sd">    injected = inject(f, {&quot;orange&quot;: 4, &quot;banana&quot;: 5, &quot;grape&quot;: 7})</span>
+<a id="__codelineno-0-23" name="__codelineno-0-23" href="#__codelineno-0-23"></a><span class="sd">    ```</span>
+<a id="__codelineno-0-24" name="__codelineno-0-24" href="#__codelineno-0-24"></a>
+<a id="__codelineno-0-25" name="__codelineno-0-25" href="#__codelineno-0-25"></a><span class="sd">    At this point, we have a new callable object stored by the</span>
+<a id="__codelineno-0-26" name="__codelineno-0-26" href="#__codelineno-0-26"></a><span class="sd">    variable `injected`. We can call it like this:</span>
+<a id="__codelineno-0-27" name="__codelineno-0-27" href="#__codelineno-0-27"></a>
+<a id="__codelineno-0-28" name="__codelineno-0-28" href="#__codelineno-0-28"></a><span class="sd">    ```python</span>
+<a id="__codelineno-0-29" name="__codelineno-0-29" href="#__codelineno-0-29"></a><span class="sd">    injected(apple=1, strawberry=10)</span>
+<a id="__codelineno-0-30" name="__codelineno-0-30" href="#__codelineno-0-30"></a><span class="sd">    ```</span>
+<a id="__codelineno-0-31" name="__codelineno-0-31" href="#__codelineno-0-31"></a>
+<a id="__codelineno-0-32" name="__codelineno-0-32" href="#__codelineno-0-32"></a><span class="sd">    The resulting dictionary is:</span>
+<a id="__codelineno-0-33" name="__codelineno-0-33" href="#__codelineno-0-33"></a>
+<a id="__codelineno-0-34" name="__codelineno-0-34" href="#__codelineno-0-34"></a><span class="sd">    ```</span>
+<a id="__codelineno-0-35" name="__codelineno-0-35" href="#__codelineno-0-35"></a><span class="sd">    {&quot;apple&quot;: 1, &quot;orange&quot;: 4, &quot;banana&quot;: 5, &quot;strawberry&quot;: 10}</span>
+<a id="__codelineno-0-36" name="__codelineno-0-36" href="#__codelineno-0-36"></a><span class="sd">    ```</span>
+<a id="__codelineno-0-37" name="__codelineno-0-37" href="#__codelineno-0-37"></a>
+<a id="__codelineno-0-38" name="__codelineno-0-38" href="#__codelineno-0-38"></a><span class="sd">    We observe the following important things:</span>
+<a id="__codelineno-0-39" name="__codelineno-0-39" href="#__codelineno-0-39"></a>
+<a id="__codelineno-0-40" name="__codelineno-0-40" href="#__codelineno-0-40"></a><span class="sd">    - `apple` and `strawberry` are 1 and 10, as specified while calling</span>
+<a id="__codelineno-0-41" name="__codelineno-0-41" href="#__codelineno-0-41"></a><span class="sd">      `injected`.</span>
+<a id="__codelineno-0-42" name="__codelineno-0-42" href="#__codelineno-0-42"></a><span class="sd">    - `orange` and `banana` are 4 and 5, as specified via the `inject`</span>
+<a id="__codelineno-0-43" name="__codelineno-0-43" href="#__codelineno-0-43"></a><span class="sd">      function.</span>
+<a id="__codelineno-0-44" name="__codelineno-0-44" href="#__codelineno-0-44"></a><span class="sd">    - Even though the `inject` function received a default value for an</span>
+<a id="__codelineno-0-45" name="__codelineno-0-45" href="#__codelineno-0-45"></a><span class="sd">      argument named `grape`, this argument was not injected because</span>
+<a id="__codelineno-0-46" name="__codelineno-0-46" href="#__codelineno-0-46"></a><span class="sd">      `f` does not expect an argument named `grape`.</span>
+<a id="__codelineno-0-47" name="__codelineno-0-47" href="#__codelineno-0-47"></a>
+<a id="__codelineno-0-48" name="__codelineno-0-48" href="#__codelineno-0-48"></a><span class="sd">    Args:</span>
+<a id="__codelineno-0-49" name="__codelineno-0-49" href="#__codelineno-0-49"></a><span class="sd">        f: The callable object to which the specified arguments will be</span>
+<a id="__codelineno-0-50" name="__codelineno-0-50" href="#__codelineno-0-50"></a><span class="sd">            injected.</span>
+<a id="__codelineno-0-51" name="__codelineno-0-51" href="#__codelineno-0-51"></a><span class="sd">        keyword_arguments: A dictionary-like object mapping from keyword</span>
+<a id="__codelineno-0-52" name="__codelineno-0-52" href="#__codelineno-0-52"></a><span class="sd">            argument names (as strings) to argument values.</span>
+<a id="__codelineno-0-53" name="__codelineno-0-53" href="#__codelineno-0-53"></a><span class="sd">        forgiving: If `forgiving` is given as True, then the `inject`</span>
+<a id="__codelineno-0-54" name="__codelineno-0-54" href="#__codelineno-0-54"></a><span class="sd">            function will continue to work even when the signature</span>
+<a id="__codelineno-0-55" name="__codelineno-0-55" href="#__codelineno-0-55"></a><span class="sd">            of `f` cannot be received successfully.</span>
+<a id="__codelineno-0-56" name="__codelineno-0-56" href="#__codelineno-0-56"></a><span class="sd">            If `forgiving` is False and the signature of `f` cannot be</span>
+<a id="__codelineno-0-57" name="__codelineno-0-57" href="#__codelineno-0-57"></a><span class="sd">            received, an error will be raised.</span>
+<a id="__codelineno-0-58" name="__codelineno-0-58" href="#__codelineno-0-58"></a><span class="sd">    Returns:</span>
+<a id="__codelineno-0-59" name="__codelineno-0-59" href="#__codelineno-0-59"></a><span class="sd">        A new callable object where the specified arguments have their new</span>
+<a id="__codelineno-0-60" name="__codelineno-0-60" href="#__codelineno-0-60"></a><span class="sd">        defaults.</span>
+<a id="__codelineno-0-61" name="__codelineno-0-61" href="#__codelineno-0-61"></a><span class="sd">    &quot;&quot;&quot;</span>
+<a id="__codelineno-0-62" name="__codelineno-0-62" href="#__codelineno-0-62"></a>    <span class="n">signature</span> <span class="o">=</span> <span class="kc">None</span>
+<a id="__codelineno-0-63" name="__codelineno-0-63" href="#__codelineno-0-63"></a>
+<a id="__codelineno-0-64" name="__codelineno-0-64" href="#__codelineno-0-64"></a>    <span class="n">context</span> <span class="o">=</span> <span class="n">contextlib</span><span class="o">.</span><span class="n">suppress</span><span class="p">(</span><span class="ne">Exception</span><span class="p">)</span> <span class="k">if</span> <span class="n">forgiving</span> <span class="k">else</span> <span class="n">contextlib</span><span class="o">.</span><span class="n">nullcontext</span><span class="p">()</span>
+<a id="__codelineno-0-65" name="__codelineno-0-65" href="#__codelineno-0-65"></a>    <span class="k">with</span> <span class="n">context</span><span class="p">:</span>
+<a id="__codelineno-0-66" name="__codelineno-0-66" href="#__codelineno-0-66"></a>        <span class="n">signature</span> <span class="o">=</span> <span class="n">inspect</span><span class="o">.</span><span class="n">signature</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+<a id="__codelineno-0-67" name="__codelineno-0-67" href="#__codelineno-0-67"></a>
+<a id="__codelineno-0-68" name="__codelineno-0-68" href="#__codelineno-0-68"></a>    <span class="k">if</span> <span class="n">signature</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+<a id="__codelineno-0-69" name="__codelineno-0-69" href="#__codelineno-0-69"></a>        <span class="k">return</span> <span class="n">f</span>
+<a id="__codelineno-0-70" name="__codelineno-0-70" href="#__codelineno-0-70"></a>    <span class="k">else</span><span class="p">:</span>
+<a id="__codelineno-0-71" name="__codelineno-0-71" href="#__codelineno-0-71"></a>        <span class="n">to_inject</span> <span class="o">=</span> <span class="p">{}</span>
+<a id="__codelineno-0-72" name="__codelineno-0-72" href="#__codelineno-0-72"></a>        <span class="n">parameters</span> <span class="o">=</span> <span class="n">signature</span><span class="o">.</span><span class="n">parameters</span>
+<a id="__codelineno-0-73" name="__codelineno-0-73" href="#__codelineno-0-73"></a>        <span class="k">for</span> <span class="n">parameter_name</span> <span class="ow">in</span> <span class="n">parameters</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+<a id="__codelineno-0-74" name="__codelineno-0-74" href="#__codelineno-0-74"></a>            <span class="k">if</span> <span class="n">parameter_name</span> <span class="ow">in</span> <span class="n">keyword_arguments</span><span class="p">:</span>
+<a id="__codelineno-0-75" name="__codelineno-0-75" href="#__codelineno-0-75"></a>                <span class="n">to_inject</span><span class="p">[</span><span class="n">parameter_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">keyword_arguments</span><span class="p">[</span><span class="n">parameter_name</span><span class="p">]</span>
+<a id="__codelineno-0-76" name="__codelineno-0-76" href="#__codelineno-0-76"></a>        <span class="k">def</span> <span class="nf">with_injections</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<a id="__codelineno-0-77" name="__codelineno-0-77" href="#__codelineno-0-77"></a>            <span class="k">return</span> <span class="n">f</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="p">{</span><span class="o">**</span><span class="n">to_inject</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">})</span>
+<a id="__codelineno-0-78" name="__codelineno-0-78" href="#__codelineno-0-78"></a>        <span class="k">return</span> <span class="n">with_injections</span>
 </code></pre></div>
         </details>
     </div>
