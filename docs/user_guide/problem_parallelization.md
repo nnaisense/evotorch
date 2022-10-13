@@ -34,12 +34,28 @@ By using Ray for parallelisation by default, EvoTorch therefore supports deploym
 
 In our guide on [Defining Problems](problems.md), we demonstrated the use of CUDA-capable devices using the `device` argument. However, as Ray communicates between actors on the CPU, it is recommended that when you have `num_actors > 1`, you use the default value `device = 'cpu'` so that the main [Problem][evotorch.core.Problem] instance remains on the CPU, and resultingly, [SolutionBatch][evotorch.core.SolutionBatch] instances created by [SearchAlgorithm][evotorch.algorithms.searchalgorithm.SearchAlgorithm] instances attached to the problem will also be on the CPU.
 
-This does not, however, mean that you cannot still use CUDA-capable devices for evaluation within the individual Ray actors. To use the GPU, simply use the `num_gpus_per_actor` keyword argument to specify how many GPUs will be allocated to each actor. For example, if you have 2 GPUs, you can do:
+This does not, however, mean that you cannot still use CUDA-capable devices for evaluation within the individual Ray actors.
+When working with a custom [Problem][evotorch.core.Problem] subclass, from within the methods `_evaluate(self, ...)` or `_evaluate_batch(self, ...)`, a GPU device can be obtained (as a `torch.device` instance) via the property `self.aux_device` (where `aux_device` stands for "auxiliary device"). If this custom problem at hand is not parallelised through Ray, the `aux_device` property will return the first visible CUDA-capable device within the main execution environment. If the problem is parallelised through Ray, the `aux_device` property will return the first visible CUDA-capable device within the environment of the actor (therefore, for each actor, it will return the device assigned to that actor). For example, consider this simple custom problem:
 
 ```python
-problem = Problem(
+def vectorised_sphere(x: torch.Tensor) -> torch.Tensor:
+    return torch.sum(x.pow(2.0), dim=-1)
+
+
+class VecSphere(Problem):
+    def _evaluate_batch(self, solutions: SolutionBatch):
+        xs = solutions.values.to(self.aux_device)
+        fs = vectorised_sphere(xs)
+        solutions.set_evals(fs.to(solutions.device))
+```
+
+when a [SolutionBatch][evotorch.core.SolutionBatch] is passed to a `VecSphere` instance's `_evaluate_batch` method, its `values` property is moved to the local `aux_device` for evaluation. Once the decision values have been evaluated (using the `vectorised_sphere` function in this case),  then their fitnesses are moved back to the original device of `solutions` and assigned as the fitness evaluations.
+
+To use the GPU within Ray actors, simply use the `num_gpus_per_actor` keyword argument to specify how many GPUs will be allocated to each actor. For example, if you have 2 GPUs, you can do:
+
+```python
+problem = VecSphere(
     objective_sense="min",
-    objective_func=sphere,
     solution_length=10,
     initial_bounds=(-1, 1),
     num_actors=4,
@@ -47,10 +63,7 @@ problem = Problem(
 )
 ```
 
-so that the 4 Ray actors will each be assigned half of a GPU. Then when a [SolutionBatch][evotorch.core.SolutionBatch] to be evaluated is passed to `problem`, EvoTorch will split it into sub-batches, pass each sub-batch to a Ray actor which will move it to the corresponding GPU memory and evaluate the sub-batch on the GPU. The computed fitness values will be moved back to CPU and returned to `problem` which will then assign the fitnesses of the full [SolutionBatch][evotorch.core.SolutionBatch].
-
-There might be certain problems in which, although the main device is CPU (because the `device` keyword argument was left as None or was explicitly set as "cpu"), you might wish to speed-up certain parts of the fitness evaluation by transferring some of the computation to a GPU.
-When working with a custom [Problem][evotorch.core.Problem] subclass, from within the methods `_evaluate(self, ...)` or `_evaluate_batch(self, ...)`, such a GPU device can be obtained (as a `torch.device` instance) via the property `self.aux_device` (where `aux_device` stands for "auxiliary device"). If this custom problem at hand is not parallelised, the `aux_device` property will return the first visible CUDA-capable device within the main execution environment. If the problem is parallelised, the `aux_device` property will return the first visible CUDA-capable device within the environment of the actor (therefore, for each actor, it will return the device assigned to that actor).
+so that the 4 Ray actors will each be assigned half of a GPU. Then when a [SolutionBatch][evotorch.core.SolutionBatch] to be evaluated is passed to `problem`, EvoTorch will split it into sub-batches, pass each sub-batch to a Ray actor which will then evaluate the sub-batch. In the case of `VecSphere`, this means that each of the sub-batches will then be moved to each Ray actor's local auxilliary CUDA-capable device, evaluated, and then returned to the main problem instance.
 
 ## Common Use-cases
 
