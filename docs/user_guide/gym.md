@@ -17,7 +17,7 @@ while not (terminated or truncated):
 where `episodic_return` is the value we wish to maximize, and the `policy` is represented by a (PyTorch) neural network that wish to train.
 
 !!! note "Old vs New Gym API"
-    Gym's long-used API changed in Sept 2022 with the release of [v0.26.0](https://github.com/openai/gym/releases/tag/0.26.0). EvoTorch supports environments defined using both new and old APIs. 
+    Gym's long-used API changed in Sept 2022 with the release of [v0.26.0](https://github.com/openai/gym/releases/tag/0.26.0). EvoTorch supports environments defined using both new and old APIs.
 
 ## [GymNE][evotorch.neuroevolution.gymne.GymNE] and [VecGymNE][evotorch.neuroevolution.vecgymne.VecGymNE]
 
@@ -28,7 +28,7 @@ EvoTorch provides two custom `Problem` classes with very similar arguments for e
 
 !!! info "Brax and IsaacGym environments"
     Brax environments are supported out-of-the-box by `VecGymNE` and can be used to instantiate a problem object by appending `brax::` to an available environment name, such as `brax::humanoid`. For further details regarding Brax environments, see the dedicated example notebook in the repository (`examples/notebooks`). Out-of-the-box support for IsaacGym environments is under development.
- 
+
 For the simplest cases, you can create a reinforcement learning problem simply by specifying the name of the environment. For example,
 
 ```python

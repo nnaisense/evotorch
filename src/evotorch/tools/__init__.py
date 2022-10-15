@@ -84,7 +84,17 @@ __all__ = (
 )
 
 
-from . import cloning, hook, immutable, objectarray, ranking, readonlytensor, recursiveprintable, tensormaker, versionchecking
+from . import (
+    cloning,
+    hook,
+    immutable,
+    objectarray,
+    ranking,
+    readonlytensor,
+    recursiveprintable,
+    tensormaker,
+    versionchecking,
+)
 from .hook import Hook
 from .immutable import as_immutable, mutable_copy
 from .misc import (
