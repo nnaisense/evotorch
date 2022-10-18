@@ -31,23 +31,24 @@ from .core import Problem, Solution, SolutionBatch
 
 # isort: on
 
-from . import algorithms, distributions, logging, neuroevolution, optimizers, testing
+from . import algorithms, decorators, distributions, logging, neuroevolution, optimizers, testing
 
 __all__ = (
     "__version__",
     "__author__",
     "__email__",
     "Problem",
-    "SolutionBatch",
     "Solution",
+    "SolutionBatch",
     "algorithms",
     "core",
+    "decorators",
     "distributions",
     "logging",
-    "tools",
+    "neuroevolution",
     "optimizers",
     "testing",
-    "neuroevolution",
+    "tools",
 )
 __author__ = "Nihat Engin Toklu, Timothy Atkinson, Vojtech Micka, Rupesh Kumar Srivastava"
 __email__ = "engin@nnaisense.com, timothy@nnaisense.com, vojtech@nnaisense.com, rupesh@nnaisense.com"

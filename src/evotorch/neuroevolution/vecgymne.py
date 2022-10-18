@@ -26,7 +26,7 @@ from gym.spaces import Box
 from torch import nn
 
 from ..core import Solution, SolutionBatch
-from ..tools import Device, ReadOnlyTensor, inject, split_workload
+from ..tools import Device, ReadOnlyTensor, pass_info_if_needed, split_workload
 from .baseneproblem import BaseNEProblem
 from .net import str_to_net
 from .net.rl import ActClipWrapperModule, ObsNormWrapperModule
@@ -344,7 +344,7 @@ class VecGymNE(BaseNEProblem):
         elif isinstance(network, nn.Module):
             instantiated_net = network
         else:
-            instantiated_net = inject(network, env_constants)(**network_args)
+            instantiated_net = pass_info_if_needed(network, env_constants)(**network_args)
         self._policy = Policy(instantiated_net)
 
         # Store the boolean which indicates whether or not there will be observation normalization.
