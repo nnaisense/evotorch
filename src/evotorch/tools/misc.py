@@ -1902,8 +1902,21 @@ def pass_info_if_needed(f: Callable, info: Dict[str, Any]) -> Callable:
         info (Dict[str, Any]): The info to be passed to the callable.
     Returns:
         Callable: The callable with extra arguments
+    Raises:
+        TypeError:
+            If the callable is decorated with the [][evotorch.decorators.pass_info] decorator,
+            but its signature does not match the expected signature.
     """
     if hasattr(f, "__evotorch_pass_info__"):
-        return functools.partial(f, **info)
+        try:
+            sig = inspect.signature(f)
+            sig.bind_partial(**info)
+        except TypeError:
+            raise TypeError(
+                "Callable {f} is decorated with @pass_info, but it doesn't except some of the extra arguments "
+                f"({', '.join(info.keys())}). Maybe you forgot to add **kwargs to the function signature?"
+            )
+        else:
+            return functools.partial(f, **info)
     else:
         return f

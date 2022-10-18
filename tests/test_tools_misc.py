@@ -816,3 +816,18 @@ def test_pass_info_if_needed_decorated():
 
     with pytest.raises(TypeError):
         misc.pass_info_if_needed(g, {})(a="aa")
+
+
+def test_pass_info_if_needed_signature_error():
+    @pass_info
+    def g(a, b, c="c"):
+        return f"{a}{b}{c}"
+
+    with pytest.raises(TypeError):
+        misc.pass_info_if_needed(g, {"d": "dd"})(a="aa")
+
+    with pytest.raises(TypeError):
+        misc.pass_info_if_needed(g, {"b": "bb", "d": "dd"})(a="aa")
+
+    with pytest.raises(TypeError):
+        misc.pass_info_if_needed(g, {"b": "bb", "c": "cc", "d": "dd"})(a="aa")
