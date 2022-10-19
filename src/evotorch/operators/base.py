@@ -365,7 +365,6 @@ class CrossOver(CopyingOperator):
 
     def _do_cross_over(
         self,
-        batch: SolutionBatch,
         parents1: Union[torch.Tensor, ObjectArray],
         parents2: Union[torch.Tensor, ObjectArray],
     ) -> SolutionBatch:
@@ -375,10 +374,9 @@ class CrossOver(CopyingOperator):
         This is a protected method, meant to be overriden by the inheriting
         subclass.
 
-        The arguments passed to this function are the original population
-        as a batch, and the decision values of the first and the second half
-        of the selected parents, both as PyTorch tensors or as
-        `ObjectArray`s.
+        The arguments passed to this function are the decision values of the
+        first and the second half of the selected parents, both as PyTorch
+        tensors or as `ObjectArray`s.
 
         In the overriding function, for each integer i, one is expected to
         recombine the values of the i-th row of `parents1` with the values of
@@ -388,7 +386,6 @@ class CrossOver(CopyingOperator):
         all the recombination results into the values of that new batch.
 
         Args:
-            batch: The original population, as a SolutionBatch.
             parents1: The decision values of the first half of the
                 selected parents.
             parents2: The decision values of the second half of the
