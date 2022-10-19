@@ -27,7 +27,7 @@ from packaging.version import Version
 
 from evotorch.neuroevolution.net.rl import reset_env, take_step_in_env
 
-new_render_api = Version(gym.__version__) < Version("0.26")
+new_render_api = Version(gym.__version__) >= Version("0.26")
 
 
 def make_env_for_rendering(*args, **kwargs):

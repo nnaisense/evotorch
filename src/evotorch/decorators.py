@@ -14,19 +14,41 @@
 
 """Module defining decorators for evotorch."""
 
-from typing import Any, Callable, TypeVar
-
-TFn = TypeVar("TFn", bound=Callable[..., Any])
+from typing import Callable
 
 
-def pass_info(fn_or_class: TFn) -> TFn:
-    """Decorator that marks a function or class as requiring the environment info.
+def pass_info(fn_or_class: Callable) -> Callable:
+    """
+    Decorates a callable so that the neuroevolution problem class (e.g. GymNE) will
+    pass information regarding the task at hand, in the form of keyword arguments.
+
+    For example, in the case of [GymNE][evotorch.neuroevolution.GymNE] or
+    [VecGymNE][evotorch.neuroevolution.VecGymNE], the passed information would
+    include dimensions of the observation and action spaces.
+
+    Example:
+        ```python
+        @pass_info
+        class MyModule(nn.Module):
+            def __init__(self, obs_length: int, act_length: int, **kwargs):
+                # Because MyModule is decorated with @pass_info, it receives
+                # keyword arguments related to the environment "CartPole-v0",
+                # including obs_length and act_length.
+                ...
+
+
+        problem = GymNE(
+            "CartPole-v0",
+            network=MyModule,
+            ...,
+        )
+        ```
 
     Args:
-        fn_or_class (TFn): Function or class to decorate
+        fn_or_class (Callable): Function or class to decorate
 
     Returns:
-        TFn: Decorated function or class
+        Callable: Decorated function or class
     """
     setattr(fn_or_class, "__evotorch_pass_info__", True)
     return fn_or_class

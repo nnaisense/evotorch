@@ -52,9 +52,12 @@ You can also tell [GymNE][evotorch.neuroevolution.gymne.GymNE] to use a custom [
 ```python
 import torch
 
+from evotorch.decorators import pass_info
 
+
+@pass_info
 class CustomPolicy(torch.nn.Module):
-    def __init__(self, obs_length: int, act_length: int):
+    def __init__(self, obs_length: int, act_length: int, **kwargs):
         super().__init__()
         self.lin1 = torch.nn.Linear(obs_length, 32)
         self.act = torch.nn.Tanh()
@@ -80,7 +83,7 @@ Notice that in the example code above, `CustomPolicy` expects two arguments: `ob
 - `obs_space`: The observation space, as a [Box](https://www.gymlibrary.dev/api/spaces/#box).
 - `act_space`: The action space, as a [Box](https://www.gymlibrary.dev/api/spaces/#box). Please note that, even if the gym environment's action space is discrete, this will be given as a Box. The reason is that `GymNE` always expects the policy network to produce tensors of real numbers (whose shape is specified by the given Box).
 
-You can specify additional arguments to pass to the instantiation of the environment, as you would pass [key-word arguments to `gym.make`](https://www.gymlibrary.dev/environments/box2d/lunar_lander/#arguments), using the `env_config` dictionary. For example:
+You can specify additional arguments to pass to the instantiation of the environment, as you would pass [keyword arguments to `gym.make`](https://www.gymlibrary.dev/environments/box2d/lunar_lander/#arguments), using the `env_config` dictionary. For example:
 
 ```python
 problem = GymNE(
