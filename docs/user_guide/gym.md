@@ -74,14 +74,16 @@ problem = GymNE(
 )
 ```
 
-Notice that in the example code above, `CustomPolicy` expects two arguments: `obs_length` and `act_length`. `GymNE` will inspect the expected arguments of the custom policy and automatically provide values for them. A custom policy class might expect none, some, or all of the following arguments:
+Notice that in the example code above, `CustomPolicy` is decorated via `@pass_info`. Because of this decoration, `GymNE` passes the following keyword arguments:
 
 - `obs_length`: Length of the observation vector, as an integer.
 - `act_length`: Length of the action vector, as an integer.
 - `obs_shape`: Shape of the observation space, as a tuple of integers.
 - `act_shape`: Shape of the action space, as a tuple of integers.
 - `obs_space`: The observation space, as a [Box](https://www.gymlibrary.dev/api/spaces/#box).
-- `act_space`: The action space, as a [Box](https://www.gymlibrary.dev/api/spaces/#box). Please note that, even if the gym environment's action space is discrete, this will be given as a Box. The reason is that `GymNE` always expects the policy network to produce tensors of real numbers (whose shape is specified by the given Box).
+- `act_space`: The action space, as a [Box](https://www.gymlibrary.dev/api/spaces/#box). Please note that, even if the gym environment's action space is discrete, this will be given as a Box. The reason is that, when using `GymNE` (or `VecGymNE`), the policy network is expected to produce tensors of floating-point numbers (of shape specified by the given Box).
+
+It is also possible not to use the decorator `@pass_info` for when the policy class does not expect these arguments.
 
 You can specify additional arguments to pass to the instantiation of the environment, as you would pass [keyword arguments to `gym.make`](https://www.gymlibrary.dev/environments/box2d/lunar_lander/#arguments), using the `env_config` dictionary. For example:
 
