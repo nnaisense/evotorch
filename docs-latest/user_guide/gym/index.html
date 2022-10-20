@@ -1989,7 +1989,7 @@ In this API, the evaluation of the <code>policy</code> for a given <code>environ
 <a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>
 <a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="n">problem</span> <span class="o">=</span> <span class="n">GymNE</span><span class="p">(</span>
 <a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>    <span class="c1"># Name of the environment</span>
-<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>    <span class="n">env_name</span><span class="o">=</span><span class="s2">&quot;LunarLanderContinuous-v2&quot;</span><span class="p">,</span>
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>    <span class="n">env</span><span class="o">=</span><span class="s2">&quot;LunarLanderContinuous-v2&quot;</span><span class="p">,</span>
 <a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>    <span class="c1"># Linear policy mapping observations to actions</span>
 <a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a>    <span class="n">network</span><span class="o">=</span><span class="s2">&quot;Linear(obs_length, act_length)&quot;</span><span class="p">,</span>
 <a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a>    <span class="c1"># Use 4 available CPUs. Note that you can modify this value,</span>
@@ -2017,7 +2017,7 @@ You can also tell <a class="autorefs autorefs-internal" href="../../reference/ev
 <a id="__codelineno-2-16" name="__codelineno-2-16" href="#__codelineno-2-16"></a>
 <a id="__codelineno-2-17" name="__codelineno-2-17" href="#__codelineno-2-17"></a>
 <a id="__codelineno-2-18" name="__codelineno-2-18" href="#__codelineno-2-18"></a><span class="n">problem</span> <span class="o">=</span> <span class="n">GymNE</span><span class="p">(</span>
-<a id="__codelineno-2-19" name="__codelineno-2-19" href="#__codelineno-2-19"></a>    <span class="n">env_name</span><span class="o">=</span><span class="s2">&quot;LunarLanderContinuous-v2&quot;</span><span class="p">,</span>
+<a id="__codelineno-2-19" name="__codelineno-2-19" href="#__codelineno-2-19"></a>    <span class="n">env</span><span class="o">=</span><span class="s2">&quot;LunarLanderContinuous-v2&quot;</span><span class="p">,</span>
 <a id="__codelineno-2-20" name="__codelineno-2-20" href="#__codelineno-2-20"></a>    <span class="n">network</span><span class="o">=</span><span class="n">CustomPolicy</span><span class="p">,</span>
 <a id="__codelineno-2-21" name="__codelineno-2-21" href="#__codelineno-2-21"></a>    <span class="n">num_actors</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span>
 <a id="__codelineno-2-22" name="__codelineno-2-22" href="#__codelineno-2-22"></a><span class="p">)</span>
@@ -2034,7 +2034,7 @@ You can also tell <a class="autorefs autorefs-internal" href="../../reference/ev
 <p>It is also possible not to use the decorator @<a class="autorefs autorefs-internal" href="../../reference/evotorch/decorators/#evotorch.decorators.pass_info">pass_info</a> for when the policy class does not expect these arguments.</p>
 <p>You can specify additional arguments to pass to the instantiation of the environment, as you would pass <a href="https://www.gymlibrary.dev/environments/box2d/lunar_lander/#arguments">keyword arguments to <code>gym.make</code></a>, using the <code>env_config</code> dictionary. For example:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="n">problem</span> <span class="o">=</span> <span class="n">GymNE</span><span class="p">(</span>
-<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>    <span class="n">env_name</span><span class="o">=</span><span class="s2">&quot;LunarLanderContinuous-v2&quot;</span><span class="p">,</span>
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>    <span class="n">env</span><span class="o">=</span><span class="s2">&quot;LunarLanderContinuous-v2&quot;</span><span class="p">,</span>
 <a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>    <span class="n">env_config</span><span class="o">=</span><span class="p">{</span>
 <a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>        <span class="s2">&quot;gravity&quot;</span><span class="p">:</span> <span class="o">-</span><span class="mf">1e-5</span><span class="p">,</span>
 <a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>    <span class="p">},</span>
@@ -2048,7 +2048,7 @@ Further remarks regarding the differences between <code>parameterize_net(...)</c
 <h2 id="controlling-the-number-of-episodes">Controlling the Number of Episodes<a class="headerlink" href="#controlling-the-number-of-episodes" title="Permanent link">&para;</a></h2>
 <p>The <code>num_episodes</code> argument allows you to evaluate individual networks repeatedly and have their episodic returns averaged. This is particularly useful when studying noisy environments, and when using population-based evolutionary algorithms whose selection procedures and elitism mechanisms may be more sensitive to noise. For example, instantiating the problem</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="n">problem</span> <span class="o">=</span> <span class="n">GymNE</span><span class="p">(</span>
-<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>    <span class="n">env_name</span><span class="o">=</span><span class="s2">&quot;LunarLanderContinuous-v2&quot;</span><span class="p">,</span>
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>    <span class="n">env</span><span class="o">=</span><span class="s2">&quot;LunarLanderContinuous-v2&quot;</span><span class="p">,</span>
 <a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>    <span class="n">network</span><span class="o">=</span><span class="n">CustomPolicy</span><span class="p">,</span>
 <a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>    <span class="n">num_actors</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span>
 <a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a>    <span class="n">num_episodes</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span>
@@ -2060,7 +2060,7 @@ Further remarks regarding the differences between <code>parameterize_net(...)</c
 <div class="arithmatex">\[o_i' = \frac{o_i - \mathbb{E}[o_i]}{\sqrt{\mathbb{V}[o_i]}}\]</div>
 <p>While in practice this means that the problem is non-stationary, as the expection and variance of each variable is updated as new observations are drawn, the normalizing effect on the observations generally makes successful configuration of neuroevolution substantially easier. You can enable observation normalization using the boolean flag <code>observation_normalization</code> e.g.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="n">problem</span> <span class="o">=</span> <span class="n">GymNE</span><span class="p">(</span>
-<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>    <span class="n">env_name</span><span class="o">=</span><span class="s2">&quot;LunarLanderContinuous-v2&quot;</span><span class="p">,</span>
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>    <span class="n">env</span><span class="o">=</span><span class="s2">&quot;LunarLanderContinuous-v2&quot;</span><span class="p">,</span>
 <a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>    <span class="n">network</span><span class="o">=</span><span class="n">CustomPolicy</span><span class="p">,</span>
 <a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>    <span class="n">num_actors</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span>
 <a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a>    <span class="n">observation_normalization</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
@@ -2089,7 +2089,7 @@ Further remarks regarding the differences between <code>parameterize_net(...)</c
 <p>A number of <code>gym</code> environments use an <code>alive_bonus</code>: a scalar value that is added to the <code>step_reward</code> in each step to encourage RL agents to survive for longer. In evolutionary RL, however, <a href="https://arxiv.org/pdf/2008.02387.pdf">it has been observed</a> that this <code>alive_bonus</code> is detrimental and creates unhelpful local optimal. While you can of course disabled particular rewards with the <code>env_config</code> argument when available, we also provide direct support for you to decrease the <code>step_reward</code> by a scalar amount.</p>
 <p>For example, the <code>"Humanoid-v4"</code> environment <a href="https://www.gymlibrary.dev/environments/mujoco/humanoid/#rewards">has an <code>alive_bonus</code> value of 5</a>. You can easily offset this using the <code>decrease_rewards_by</code> keyword argument:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="n">problem</span> <span class="o">=</span> <span class="n">GymNE</span><span class="p">(</span>
-<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>    <span class="n">env_name</span><span class="o">=</span><span class="s2">&quot;Humanoid-v4&quot;</span><span class="p">,</span>
+<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>    <span class="n">env</span><span class="o">=</span><span class="s2">&quot;Humanoid-v4&quot;</span><span class="p">,</span>
 <a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a>    <span class="n">network</span><span class="o">=</span><span class="n">CustomPolicy</span><span class="p">,</span>
 <a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a>    <span class="n">decrease_rewards_by</span><span class="o">=</span><span class="mf">5.0</span><span class="p">,</span>
 <a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a><span class="p">)</span>
