@@ -36,7 +36,7 @@ from evotorch.neuroevolution import GymNE
 
 problem = GymNE(
     # Name of the environment
-    env_name="LunarLanderContinuous-v2",
+    env="LunarLanderContinuous-v2",
     # Linear policy mapping observations to actions
     network="Linear(obs_length, act_length)",
     # Use 4 available CPUs. Note that you can modify this value,
@@ -68,7 +68,7 @@ class CustomPolicy(torch.nn.Module):
 
 
 problem = GymNE(
-    env_name="LunarLanderContinuous-v2",
+    env="LunarLanderContinuous-v2",
     network=CustomPolicy,
     num_actors=4,
 )
@@ -89,7 +89,7 @@ You can specify additional arguments to pass to the instantiation of the environ
 
 ```python
 problem = GymNE(
-    env_name="LunarLanderContinuous-v2",
+    env="LunarLanderContinuous-v2",
     env_config={
         "gravity": -1e-5,
     },
@@ -110,7 +110,7 @@ The `num_episodes` argument allows you to evaluate individual networks repeatedl
 
 ```python
 problem = GymNE(
-    env_name="LunarLanderContinuous-v2",
+    env="LunarLanderContinuous-v2",
     network=CustomPolicy,
     num_actors=4,
     num_episodes=5,
@@ -129,7 +129,7 @@ While in practice this means that the problem is non-stationary, as the expectio
 
 ```python
 problem = GymNE(
-    env_name="LunarLanderContinuous-v2",
+    env="LunarLanderContinuous-v2",
     network=CustomPolicy,
     num_actors=4,
     observation_normalization=True,
@@ -167,7 +167,7 @@ For example, the `"Humanoid-v4"` environment [has an `alive_bonus` value of 5](h
 
 ```python
 problem = GymNE(
-    env_name="Humanoid-v4",
+    env="Humanoid-v4",
     network=CustomPolicy,
     decrease_rewards_by=5.0,
 )

@@ -97,7 +97,7 @@ from evotorch.logging import StdOutLogger
 
 # Declare the problem to solve
 problem = GymNE(
-    env_name="Humanoid-v4",  # Solve the Humanoid-v4 task
+    env="Humanoid-v4",  # Solve the Humanoid-v4 task
     network="Linear(obs_length, act_length)",  # Linear policy
     observation_normalization=True,  # Normalize the policy inputs
     decrease_rewards_by=5.0,  # Decrease each reward by 5.0

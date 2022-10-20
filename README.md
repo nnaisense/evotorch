@@ -119,12 +119,12 @@ The following example demonstrates how to solve reinforcement learning tasks tha
 
 ```python
 from evotorch.algorithms import PGPE
-from evotorch.logging import StdOutLogger
+from evotorch.logging import StdOutLogger, PicklingLogger
 from evotorch.neuroevolution import GymNE
 
 # Declare the problem to solve
 problem = GymNE(
-    env_name="Humanoid-v4",  # Solve the Humanoid-v4 task
+    env="Humanoid-v4",  # Solve the Humanoid-v4 task
     network="Linear(obs_length, act_length)",  # Linear policy
     observation_normalization=True,  # Normalize the policy inputs
     decrease_rewards_by=5.0,  # Decrease each reward by 5.0
@@ -155,6 +155,10 @@ searcher = PGPE(
 
 # Instantiate a standard output logger
 _ = StdOutLogger(searcher)
+
+# Instantiate a pickling logger that will periodically save
+# the current solution
+_ = PicklingLogger(searcher, interval=10)
 
 # Run the algorithm for the specified amount of generations
 searcher.run(500)

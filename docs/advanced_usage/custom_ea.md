@@ -196,7 +196,7 @@ With our custom EA defined, we're ready to run a simple experiment. For this we 
 from evotorch.neuroevolution import GymNE
 
 prob = GymNE(
-    env_name="CartPole-v1",
+    env="CartPole-v1",
     network="""
     Linear(obs_length, 16)
     >> Tanh()
