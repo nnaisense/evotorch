@@ -21,13 +21,13 @@ where `episodic_return` is the value we wish to maximize, and the `policy` is re
 
 ## [GymNE][evotorch.neuroevolution.gymne.GymNE] and [VecGymNE][evotorch.neuroevolution.vecgymne.VecGymNE]
 
-EvoTorch provides two custom `Problem` classes with very similar arguments for easily applying and scaling up neuroevolution across CPUs and GPUs:
+EvoTorch provides two custom problem classes with very similar arguments for easily applying and scaling up neuroevolution across CPUs and GPUs:
 
 * [GymNE][evotorch.neuroevolution.gymne.GymNE]: This class can be used for any Gym environment. Each problem actor (configured using the `num_actors` argument) maintains an instance of the environment to use for evaluation of each policy network in the population. Thus, this class uses parallelization but not vectorization.
 * [VecGymNE][evotorch.neuroevolution.vecgymne.VecGymNE]: This class is specially designed for use with [_vectorized_ environments](https://www.gymlibrary.dev/content/vectorising/). In addition to potentially exploiting vectorization for environment simulators, **this class further vectorizes policy evaluations using [functorch](https://pytorch.org/functorch/stable/)** making it possible to fully utilize accelerators such as GPUs for neuroevolution. This is the recommended class to use for environments from massively parallel simulators such as [Brax](https://github.com/google/brax) and [IsaacGym](https://github.com/NVIDIA-Omniverse/OmniIsaacGymEnvs).
 
 !!! info "Brax and IsaacGym environments"
-    Brax environments are supported out-of-the-box by `VecGymNE` and can be used to instantiate a problem object by appending `brax::` to an available environment name, such as `brax::humanoid`. For further details regarding Brax environments, see the dedicated example notebook in the repository (`examples/notebooks`). Out-of-the-box support for IsaacGym environments is under development.
+    Brax environments are supported out-of-the-box by [VecGymNE][evotorch.neuroevolution.vecgymne.VecGymNE] and can be used to instantiate a problem object by appending `brax::` to an available environment name, such as `brax::humanoid`. For further details regarding Brax environments, see the dedicated example notebook in the repository (`examples/notebooks`). Out-of-the-box support for IsaacGym environments is under development.
 
 For the simplest cases, you can create a reinforcement learning problem simply by specifying the name of the environment. For example,
 
@@ -46,7 +46,7 @@ problem = GymNE(
 ```
 
 will create a [GymNE][evotorch.neuroevolution.gymne.GymNE] instance for the [`"LunarLanderContinuous-v2"` environment](https://www.gymlibrary.dev/environments/box2d/lunar_lander/) with a `Linear` policy which takes `obs_length` inputs (the number of observations) and returns `act_length` actions (the number of actions).
-You can also tell [GymNE][evotorch.neuroevolution.gymne.GymNE] to use a custom [PyTorch module](https://pytorch.org/docs/stable/generated/torch.nn.Module.html#torch.nn.Module) subclass as the policy. Usage of `GymNE` with a custom policy could look like this:
+You can also tell [GymNE][evotorch.neuroevolution.gymne.GymNE] to use a custom [PyTorch module](https://pytorch.org/docs/stable/generated/torch.nn.Module.html#torch.nn.Module) subclass as the policy. Usage of [GymNE][evotorch.neuroevolution.gymne.GymNE] with a custom policy could look like this:
 
 
 ```python
@@ -74,16 +74,16 @@ problem = GymNE(
 )
 ```
 
-Notice that in the example code above, `CustomPolicy` is decorated via `@pass_info`. Because of this decoration, `GymNE` passes the following keyword arguments:
+Notice that in the example code above, `CustomPolicy` is decorated with @[pass_info][evotorch.decorators.pass_info]. When this decorator is given, [GymNE][evotorch.neuroevolution.gymne.GymNE] passes the following keyword arguments:
 
 - `obs_length`: Length of the observation vector, as an integer.
 - `act_length`: Length of the action vector, as an integer.
 - `obs_shape`: Shape of the observation space, as a tuple of integers.
 - `act_shape`: Shape of the action space, as a tuple of integers.
 - `obs_space`: The observation space, as a [Box](https://www.gymlibrary.dev/api/spaces/#box).
-- `act_space`: The action space, as a [Box](https://www.gymlibrary.dev/api/spaces/#box). Please note that, even if the gym environment's action space is discrete, this will be given as a Box. The reason is that, when using `GymNE` (or `VecGymNE`), the policy network is expected to produce tensors of floating-point numbers (of shape specified by the given Box).
+- `act_space`: The action space, as a [Box](https://www.gymlibrary.dev/api/spaces/#box). Please note that, even if the gym environment's action space is discrete, this will be given as a Box. The reason is that, when using [GymNE][evotorch.neuroevolution.gymne.GymNE] (or [VecGymNE][evotorch.neuroevolution.vecgymne.VecGymNE]), the policy network is expected to produce tensors of floating-point numbers (of shape specified by the given Box).
 
-It is also possible not to use the decorator `@pass_info` for when the policy class does not expect these arguments.
+It is also possible not to use the decorator @[pass_info][evotorch.decorators.pass_info] for when the policy class does not expect these arguments.
 
 You can specify additional arguments to pass to the instantiation of the environment, as you would pass [keyword arguments to `gym.make`](https://www.gymlibrary.dev/environments/box2d/lunar_lander/#arguments), using the `env_config` dictionary. For example:
 
@@ -100,7 +100,7 @@ problem = GymNE(
 will effectively disable `gravity` in the `"LunarLanderContinuous-v2"` environment.
 
 [GymNE][evotorch.neuroevolution.gymne.GymNE] and [VecGymNE][evotorch.neuroevolution.vecgymne.VecGymNE] provide a helper method named `to_policy(...)` to convert a solution (where the solution can be a 1-dimensional tensor or an instance of [Solution][evotorch.core.Solution]) to a policy network. While one could also use the methods `parameterize_net(...)` or `make_net(...)` for similar purposes, it is recommended to use `to_policy(...)`, because `to_policy` will wrap the policy network with observation normalization and action clipping modules to make sure that the inputs to the network are properly processed and the produced actions do not violate the boundaries of the action space.
-Further remarks regarding the differences between `parameterize_net(...)` and `to_policy(...)` are: (i) `parameterize_net(...)` is not available in `VecGymNE`, and (ii) `parameterize_net(...)` can be considered a lower level method and strictly expects PyTorch tensors (not `Solution` objects).
+Further remarks regarding the differences between `parameterize_net(...)` and `to_policy(...)` are: (i) `parameterize_net(...)` is not available in [VecGymNE][evotorch.neuroevolution.vecgymne.VecGymNE], and (ii) `parameterize_net(...)` can be considered a lower level method and strictly expects PyTorch tensors (not [Solution][evotorch.core.Solution] objects).
 
 [GymNE][evotorch.neuroevolution.gymne.GymNE] and [VecGymNE][evotorch.neuroevolution.vecgymne.VecGymNE] have a number of useful arguments that will help you to recreate experiments from neuroevolution literature:
 
