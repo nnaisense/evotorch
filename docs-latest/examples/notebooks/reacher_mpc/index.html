@@ -1001,6 +1001,8 @@
         
           
         
+          
+        
       
       
         
@@ -1205,6 +1207,20 @@
   
   
     <li class="md-nav__item">
+      <a href="../../../reference/evotorch/decorators/" class="md-nav__link">
+        evotorch.decorators
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../../reference/evotorch/distributions/" class="md-nav__link">
         evotorch.distributions
       </a>
@@ -1238,7 +1254,7 @@
     <li class="md-nav__item md-nav__item--section md-nav__item--nested">
       
       
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_6_6" type="checkbox" id="__nav_6_6" >
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_6_7" type="checkbox" id="__nav_6_7" >
       
       
       
@@ -1266,14 +1282,14 @@
         <div class="md-nav__link md-nav__link--index ">
           <a href="../../../reference/evotorch/neuroevolution/">evotorch.neuroevolution</a>
           
-            <label for="__nav_6_6">
+            <label for="__nav_6_7">
               <span class="md-nav__icon md-icon"></span>
             </label>
           
         </div>
       
       <nav class="md-nav" aria-label="evotorch.neuroevolution" data-md-level="2">
-        <label class="md-nav__title" for="__nav_6_6">
+        <label class="md-nav__title" for="__nav_6_7">
           <span class="md-nav__icon md-icon"></span>
           evotorch.neuroevolution
         </label>
@@ -1332,7 +1348,7 @@
     <li class="md-nav__item md-nav__item--nested">
       
       
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_6_6_5" type="checkbox" id="__nav_6_6_5" >
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_6_7_5" type="checkbox" id="__nav_6_7_5" >
       
       
       
@@ -1368,14 +1384,14 @@
         <div class="md-nav__link md-nav__link--index ">
           <a href="../../../reference/evotorch/neuroevolution/net/">net</a>
           
-            <label for="__nav_6_6_5">
+            <label for="__nav_6_7_5">
               <span class="md-nav__icon md-icon"></span>
             </label>
           
         </div>
       
       <nav class="md-nav" aria-label="net" data-md-level="3">
-        <label class="md-nav__title" for="__nav_6_6_5">
+        <label class="md-nav__title" for="__nav_6_7_5">
           <span class="md-nav__icon md-icon"></span>
           net
         </label>
@@ -1576,7 +1592,7 @@
     <li class="md-nav__item md-nav__item--section md-nav__item--nested">
       
       
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_6_7" type="checkbox" id="__nav_6_7" >
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_6_8" type="checkbox" id="__nav_6_8" >
       
       
       
@@ -1598,14 +1614,14 @@
         <div class="md-nav__link md-nav__link--index ">
           <a href="../../../reference/evotorch/operators/">evotorch.operators</a>
           
-            <label for="__nav_6_7">
+            <label for="__nav_6_8">
               <span class="md-nav__icon md-icon"></span>
             </label>
           
         </div>
       
       <nav class="md-nav" aria-label="evotorch.operators" data-md-level="2">
-        <label class="md-nav__title" for="__nav_6_7">
+        <label class="md-nav__title" for="__nav_6_8">
           <span class="md-nav__icon md-icon"></span>
           evotorch.operators
         </label>
@@ -1701,15 +1717,13 @@
     <li class="md-nav__item md-nav__item--section md-nav__item--nested">
       
       
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_6_10" type="checkbox" id="__nav_6_10" >
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_6_11" type="checkbox" id="__nav_6_11" >
       
       
       
         
           
             
-          
-        
           
         
           
@@ -1737,14 +1751,14 @@
         <div class="md-nav__link md-nav__link--index ">
           <a href="../../../reference/evotorch/tools/">evotorch.tools</a>
           
-            <label for="__nav_6_10">
+            <label for="__nav_6_11">
               <span class="md-nav__icon md-icon"></span>
             </label>
           
         </div>
       
       <nav class="md-nav" aria-label="evotorch.tools" data-md-level="2">
-        <label class="md-nav__title" for="__nav_6_10">
+        <label class="md-nav__title" for="__nav_6_11">
           <span class="md-nav__icon md-icon"></span>
           evotorch.tools
         </label>
@@ -1872,20 +1886,6 @@
     <li class="md-nav__item">
       <a href="../../../reference/evotorch/tools/tensormaker/" class="md-nav__link">
         tensormaker
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../../reference/evotorch/tools/versionchecking/" class="md-nav__link">
-        versionchecking
       </a>
     </li>
   
@@ -2152,21 +2152,20 @@ We pose the generation of plans as an optimization problem, summarized as follow
 <h2 id="main-mpc-loop">Main MPC Loop<a class="headerlink" href="#main-mpc-loop" title="Permanent link">&para;</a></h2>
 <p>Using the tools defined above, we are now ready to implement the main parts of our MPC.
 We begin by instantiating the RL environment for <code>Reacher-v4</code>.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="kn">from</span> <span class="nn">evotorch.tools.versionchecking</span> <span class="kn">import</span> <span class="n">check_version</span>
-<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="n">gym_version</span> <span class="o">=</span> <span class="n">check_version</span><span class="p">(</span><span class="n">gym</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
-<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="n">old_render_api</span> <span class="o">=</span> <span class="p">((</span><span class="n">gym_version</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">gym_version</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">&lt;</span> <span class="mi">26</span><span class="p">))</span>
-<a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a>
-<a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a><span class="k">if</span> <span class="n">old_render_api</span><span class="p">:</span>
-<a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a>    <span class="c1"># For gym versions older than 0.26, we do not have to specify additional</span>
-<a id="__codelineno-8-7" name="__codelineno-8-7" href="#__codelineno-8-7"></a>    <span class="c1"># keyword arguments for human-mode rendering.</span>
-<a id="__codelineno-8-8" name="__codelineno-8-8" href="#__codelineno-8-8"></a>    <span class="n">env</span> <span class="o">=</span> <span class="n">gym</span><span class="o">.</span><span class="n">make</span><span class="p">(</span><span class="s2">&quot;Reacher-v4&quot;</span><span class="p">)</span>
-<a id="__codelineno-8-9" name="__codelineno-8-9" href="#__codelineno-8-9"></a><span class="k">else</span><span class="p">:</span>
-<a id="__codelineno-8-10" name="__codelineno-8-10" href="#__codelineno-8-10"></a>    <span class="c1"># For gym versions beginning with 0.26, we have to explicitly specify</span>
-<a id="__codelineno-8-11" name="__codelineno-8-11" href="#__codelineno-8-11"></a>    <span class="c1"># that the rendering mode is &quot;human&quot; if we wish to do the rendering on</span>
-<a id="__codelineno-8-12" name="__codelineno-8-12" href="#__codelineno-8-12"></a>    <span class="c1"># the screen.</span>
-<a id="__codelineno-8-13" name="__codelineno-8-13" href="#__codelineno-8-13"></a>    <span class="n">env</span> <span class="o">=</span> <span class="n">gym</span><span class="o">.</span><span class="n">make</span><span class="p">(</span><span class="s2">&quot;Reacher-v4&quot;</span><span class="p">,</span> <span class="n">render_mode</span><span class="o">=</span><span class="s2">&quot;human&quot;</span><span class="p">)</span>
-<a id="__codelineno-8-14" name="__codelineno-8-14" href="#__codelineno-8-14"></a>
-<a id="__codelineno-8-15" name="__codelineno-8-15" href="#__codelineno-8-15"></a><span class="n">env</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="kn">from</span> <span class="nn">packaging.version</span> <span class="kn">import</span> <span class="n">Version</span>
+<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="n">old_render_api</span> <span class="o">=</span> <span class="n">Version</span><span class="p">(</span><span class="n">gym</span><span class="o">.</span><span class="n">__version__</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">Version</span><span class="p">(</span><span class="s2">&quot;0.26&quot;</span><span class="p">)</span>
+<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a>
+<a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a><span class="k">if</span> <span class="n">old_render_api</span><span class="p">:</span>
+<a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a>    <span class="c1"># For gym versions older than 0.26, we do not have to specify additional</span>
+<a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a>    <span class="c1"># keyword arguments for human-mode rendering.</span>
+<a id="__codelineno-8-7" name="__codelineno-8-7" href="#__codelineno-8-7"></a>    <span class="n">env</span> <span class="o">=</span> <span class="n">gym</span><span class="o">.</span><span class="n">make</span><span class="p">(</span><span class="s2">&quot;Reacher-v4&quot;</span><span class="p">)</span>
+<a id="__codelineno-8-8" name="__codelineno-8-8" href="#__codelineno-8-8"></a><span class="k">else</span><span class="p">:</span>
+<a id="__codelineno-8-9" name="__codelineno-8-9" href="#__codelineno-8-9"></a>    <span class="c1"># For gym versions beginning with 0.26, we have to explicitly specify</span>
+<a id="__codelineno-8-10" name="__codelineno-8-10" href="#__codelineno-8-10"></a>    <span class="c1"># that the rendering mode is &quot;human&quot; if we wish to do the rendering on</span>
+<a id="__codelineno-8-11" name="__codelineno-8-11" href="#__codelineno-8-11"></a>    <span class="c1"># the screen.</span>
+<a id="__codelineno-8-12" name="__codelineno-8-12" href="#__codelineno-8-12"></a>    <span class="n">env</span> <span class="o">=</span> <span class="n">gym</span><span class="o">.</span><span class="n">make</span><span class="p">(</span><span class="s2">&quot;Reacher-v4&quot;</span><span class="p">,</span> <span class="n">render_mode</span><span class="o">=</span><span class="s2">&quot;human&quot;</span><span class="p">)</span>
+<a id="__codelineno-8-13" name="__codelineno-8-13" href="#__codelineno-8-13"></a>
+<a id="__codelineno-8-14" name="__codelineno-8-14" href="#__codelineno-8-14"></a><span class="n">env</span>
 </code></pre></div>
 <p>The following function defines the main loop of MPC for a single episode of the RL environment.
 For each timestep of the environment, a plan is made and the first action of the plan is applied on the environment.</p>
