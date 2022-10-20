@@ -14,21 +14,41 @@
 
 """Top-level package for evotorch."""
 
+# flake8: noqa
+# isort: off
+
+import os
+import importlib
+
+_top_imports = (i.strip() for i in os.getenv("EVOTORCH_TOP_IMPORTS", "").split(","))
+for _top_import in _top_imports:
+    if len(_top_import) > 0:
+        importlib.import_module(_top_import)
+
+from . import tools
+from . import core
+from .core import Problem, Solution, SolutionBatch
+
+# isort: on
+
+from . import algorithms, decorators, distributions, logging, neuroevolution, optimizers, testing
+
 __all__ = (
     "__version__",
     "__author__",
     "__email__",
     "Problem",
-    "SolutionBatch",
     "Solution",
+    "SolutionBatch",
     "algorithms",
     "core",
+    "decorators",
     "distributions",
     "logging",
-    "tools",
+    "neuroevolution",
     "optimizers",
     "testing",
-    "neuroevolution",
+    "tools",
 )
 __author__ = "Nihat Engin Toklu, Timothy Atkinson, Vojtech Micka, Rupesh Kumar Srivastava"
 __email__ = "engin@nnaisense.com, timothy@nnaisense.com, vojtech@nnaisense.com, rupesh@nnaisense.com"
@@ -42,23 +62,3 @@ except ImportError:
         "Please install the package to ensure correct behavior.\nFrom root folder:\n\tpip install -e .", file=sys.stderr
     )
     __version__ = "undefined"
-
-# flake8: noqa
-
-import os  # isort: skip
-
-_top_imports = os.getenv("EVOTORCH_TOP_IMPORTS")
-if _top_imports is not None:
-    import importlib  # isort: skip
-
-    _top_imports = _top_imports.split(",")
-    for _top_import in _top_imports:
-        _top_import_stripped = _top_import.strip()
-        if len(_top_import_stripped) > 0:
-            importlib.import_module(_top_import)
-
-from . import tools  # isort: skip
-from . import core  # isort: skip
-from .core import Problem, Solution, SolutionBatch  # isort: skip
-
-from . import algorithms, distributions, logging, neuroevolution, optimizers, testing

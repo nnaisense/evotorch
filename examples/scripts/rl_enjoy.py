@@ -23,18 +23,11 @@ from typing import Optional, Union
 import gym
 import numpy as np
 import torch
+from packaging.version import Version
 
 from evotorch.neuroevolution.net.rl import reset_env, take_step_in_env
-from evotorch.tools.versionchecking import check_version
 
-new_render_api = True
-
-gym_ver = check_version(gym, 2)
-
-if gym_ver is not None:
-    a, b = gym_ver
-    if (a == 0) and (b < 26):
-        new_render_api = False
+new_render_api = Version(gym.__version__) >= Version("0.26")
 
 
 def make_env_for_rendering(*args, **kwargs):

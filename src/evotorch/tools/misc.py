@@ -14,12 +14,12 @@
 
 """Miscellaneous utility functions"""
 
-import contextlib
+import functools
 import inspect
 import math
 from collections.abc import Mapping
 from numbers import Integral, Number, Real
-from typing import Any, Callable, Iterable, NamedTuple, Optional, Type, Union
+from typing import Any, Callable, Dict, Iterable, NamedTuple, Optional, Type, Union
 
 import numpy as np
 import torch
@@ -1891,83 +1891,33 @@ def device_of(x: Any) -> Device:
         return x.device
 
 
-def inject(f: Callable, keyword_arguments: Mapping, forgiving: bool = True) -> Callable:
+def pass_info_if_needed(f: Callable, info: Dict[str, Any]) -> Callable:
     """
-    Inject values for the specified keyword arguments of a function.
-    The return value is a new callable object where the specified
-    keyword arguments have their new default values.
-
-    As an example, consider the following function:
-
-    ```python
-    def f(apple, orange, banana, strawberry) -> dict:
-        return {
-            "apple": apple,
-            "orange": orange,
-            "banana": banana,
-            "strawberry": strawberry,
-        }
-    ```
-
-    Now let us apply `inject` on `f` as follows:
-
-    ```python
-    injected = inject(f, {"orange": 4, "banana": 5, "grape": 7})
-    ```
-
-    At this point, we have a new callable object stored by the
-    variable `injected`. We can call it like this:
-
-    ```python
-    injected(apple=1, strawberry=10)
-    ```
-
-    The resulting dictionary is:
-
-    ```
-    {"apple": 1, "orange": 4, "banana": 5, "strawberry": 10}
-    ```
-
-    We observe the following important things:
-
-    - `apple` and `strawberry` are 1 and 10, as specified while calling
-      `injected`.
-    - `orange` and `banana` are 4 and 5, as specified via the `inject`
-      function.
-    - Even though the `inject` function received a default value for an
-      argument named `grape`, this argument was not injected because
-      `f` does not expect an argument named `grape`.
+    Pass additional arguments into a callable, the info dictionary is unpacked
+    and passed as additional keyword arguments only if the policy is decorated
+    with the [pass_info][evotorch.decorators.pass_info] decorator.
 
     Args:
-        f: The callable object to which the specified arguments will be
-            injected.
-        keyword_arguments: A dictionary-like object mapping from keyword
-            argument names (as strings) to argument values.
-        forgiving: If `forgiving` is given as True, then the `inject`
-            function will continue to work even when the signature
-            of `f` cannot be received successfully.
-            If `forgiving` is False and the signature of `f` cannot be
-            received, an error will be raised.
+        f (Callable): The callable to be called.
+        info (Dict[str, Any]): The info to be passed to the callable.
     Returns:
-        A new callable object where the specified arguments have their new
-        defaults.
+        Callable: The callable with extra arguments
+    Raises:
+        TypeError: If the callable is decorated with the [pass_info][evotorch.decorators.pass_info] decorator,
+            but its signature does not match the expected signature.
     """
-    signature = None
+    if hasattr(f, "__evotorch_pass_info__"):
+        try:
+            sig = inspect.signature(f)
+            sig.bind_partial(**info)
+        except TypeError:
+            raise TypeError(
+                "Callable {f} is decorated with @pass_info, but it doesn't expect some of the extra arguments "
+                f"({', '.join(info.keys())}). Hint: maybe you forgot to add **kwargs to the function signature?"
+            )
+        except Exception:
+            pass
 
-    context = contextlib.suppress(Exception) if forgiving else contextlib.nullcontext()
-    with context:
-        signature = inspect.signature(f)
-
-    if signature is None:
-        return f
+        return functools.partial(f, **info)
     else:
-        to_inject = {}
-        parameters = signature.parameters
-        for parameter_name in parameters.keys():
-            if parameter_name in keyword_arguments:
-                to_inject[parameter_name] = keyword_arguments[parameter_name]
-
-        def with_injections(*args, **kwargs):
-            return f(*args, **{**to_inject, **kwargs})
-
-        return with_injections
+        return f

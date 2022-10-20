@@ -14,6 +14,7 @@ extend-exclude = '''
 '''
 
 [tool.isort]
+profile = "black"
 line_length = 120
 multi_line_output = 3
 include_trailing_comma = true

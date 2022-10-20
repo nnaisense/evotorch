@@ -26,7 +26,7 @@ from gym.spaces import Box
 from torch import nn
 
 from ..core import Solution, SolutionBatch
-from ..tools import Device, ReadOnlyTensor, inject, split_workload
+from ..tools import Device, ReadOnlyTensor, pass_info_if_needed, split_workload
 from .baseneproblem import BaseNEProblem
 from .net import str_to_net
 from .net.rl import ActClipWrapperModule, ObsNormWrapperModule
@@ -154,10 +154,9 @@ class VecGymNE(BaseNEProblem):
                 network and returns an additional value for its next state,
                 then the policy is treated as a recurrent one.
                 When the network is given as a callable object (e.g.
-                a subclass of `nn.Module` or a function), then the expected
-                arguments of this object will be inspected. Depending on the
-                explicitly listed argument names of the object, the following
-                keyword arguments will be passed:
+                a subclass of `nn.Module` or a function) and this callable
+                object is decorated via `evotorch.decorators.pass_info`,
+                the following keyword arguments will be passed:
                 (i) `obs_length` (the length of the observation vector),
                 (ii) `act_length` (the length of the action vector),
                 (iii) `obs_shape` (the shape tuple of the observation space),
@@ -167,9 +166,9 @@ class VecGymNE(BaseNEProblem):
                 (vi) `act_space` (the Box object specifying the action
                 space). Note that `act_space` will always be given as a
                 `gym.spaces.Box` instance, even when the actual gym
-                environment has a discrete action space. This because the
-                neural network is always expected to return a tensor of real
-                numbers.
+                environment has a discrete action space. This because
+                `VecGymNE` always expects the neural network to return
+                a tensor of floating-point numbers.
             env_config: Keyword arguments to pass to the environment while
                 it is being created.
             max_num_envs: Maximum number of environments to be instantiated.
@@ -344,7 +343,7 @@ class VecGymNE(BaseNEProblem):
         elif isinstance(network, nn.Module):
             instantiated_net = network
         else:
-            instantiated_net = inject(network, env_constants)(**network_args)
+            instantiated_net = pass_info_if_needed(network, env_constants)(**network_args)
         self._policy = Policy(instantiated_net)
 
         # Store the boolean which indicates whether or not there will be observation normalization.

@@ -19,6 +19,7 @@ import pytest
 import torch
 from torch import FloatTensor
 
+from evotorch.decorators import pass_info
 from evotorch.testing import assert_allclose, assert_dtype_matches
 from evotorch.tools import misc
 from evotorch.tools.objectarray import ObjectArray
@@ -795,17 +796,38 @@ def test_numpy_copy(x):
         assert_dtype_matches(copied, type_)
 
 
-def test_inject():
-    def f(a, b):
-        return f"{a}{b}"
+def test_pass_info_if_needed_undecorated():
+    def f(a):
+        return f"{a}"
 
-    assert misc.inject(f, {"b": "bb"})(a="aa") == "aabb"
-    assert misc.inject(f, {"a": "aa", "c": "cc"})(b="bb") == "aabb"
+    assert misc.pass_info_if_needed(f, {})(a="aa") == "aa"
+    assert misc.pass_info_if_needed(f, {"b": "bb"})(a="aa") == "aa"
+    assert misc.pass_info_if_needed(f, {"b": "bb", "c": "cc"})(a="aa") == "aa"
 
 
-def test_inject_with_star():
-    def f(*, a, b):
-        return f"{a}{b}"
+def test_pass_info_if_needed_decorated():
+    @pass_info
+    def g(a, b, c="c"):
+        return f"{a}{b}{c}"
 
-    assert misc.inject(f, {"b": "bb"})(a="aa") == "aabb"
-    assert misc.inject(f, {"a": "aa", "c": "cc"})(b="bb") == "aabb"
+    assert misc.pass_info_if_needed(g, {"b": "bb"})(a="aa") == "aabbc"
+    assert misc.pass_info_if_needed(g, {"b": "bb", "c": "cc"})(a="aa") == "aabbcc"
+    assert misc.pass_info_if_needed(g, {"b": "bb", "c": "cc"})(a="aa", c="ccc") == "aabbccc"
+
+    with pytest.raises(TypeError):
+        misc.pass_info_if_needed(g, {})(a="aa")
+
+
+def test_pass_info_if_needed_signature_error():
+    @pass_info
+    def g(a, b, c="c"):
+        return f"{a}{b}{c}"
+
+    with pytest.raises(TypeError):
+        misc.pass_info_if_needed(g, {"d": "dd"})(a="aa")
+
+    with pytest.raises(TypeError):
+        misc.pass_info_if_needed(g, {"b": "bb", "d": "dd"})(a="aa")
+
+    with pytest.raises(TypeError):
+        misc.pass_info_if_needed(g, {"b": "bb", "c": "cc", "d": "dd"})(a="aa")

@@ -24,6 +24,7 @@ from typing import Any, Callable, Iterable, List, Optional, Union
 import gym
 import numpy as np
 import torch
+from packaging.version import Version
 from torch import nn
 
 from ..core import BoundsPairLike, Solution, SolutionBatch
@@ -40,26 +41,10 @@ from .net.rl import (
 )
 from .net.statefulmodule import ensure_stateful
 
-_gym_older_than_0_26 = False
-
-
-def _check_gym_version():
-    # Determine the gym version without failing when __version__ has an unexpected value.
-    # Perhaps such unexpected values could be encountered when using a custom/modified version
-    # of gym, and we do not wish this module to fail in those scenarios.
-    from ..tools.versionchecking import check_version
-
-    global _gym_older_than_0_26
-
-    gym_ver = check_version(gym, 2)
-
-    if gym_ver is not None:
-        a, b = gym_ver
-        if (a == 0) and (b < 26):
-            _gym_older_than_0_26 = True
-
-
-_check_gym_version()
+# Determine the gym version without failing when __version__ has an unexpected value.
+# Perhaps such unexpected values could be encountered when using a custom/modified version
+# of gym, and we do not wish this module to fail in those scenarios.
+_gym_older_than_0_26 = Version(gym.__version__) < Version("0.26")
 
 
 def ensure_space_types(env: gym.Env) -> None:
@@ -133,10 +118,9 @@ class GymNE(NEProblem):
                 network and returns an additional value for its next state,
                 then the policy is treated as a recurrent one.
                 When the network is given as a callable object (e.g.
-                a subclass of `nn.Module` or a function), then the expected
-                arguments of this object will be inspected. Depending on the
-                explicitly listed argument names of the object, the following
-                keyword arguments will be passed:
+                a subclass of `nn.Module` or a function) and this callable
+                object is decorated via `evotorch.decorators.pass_info`,
+                the following keyword arguments will be passed:
                 (i) `obs_length` (the length of the observation vector),
                 (ii) `act_length` (the length of the action vector),
                 (iii) `obs_shape` (the shape tuple of the observation space),
@@ -146,9 +130,9 @@ class GymNE(NEProblem):
                 (vi) `act_space` (the Box object specifying the action
                 space). Note that `act_space` will always be given as a
                 `gym.spaces.Box` instance, even when the actual gym
-                environment has a discrete action space. This because the
-                neural network is always expected to return a tensor of real
-                numbers.
+                environment has a discrete action space. This because `GymNE`
+                always expects the neural network to return a tensor of
+                floating-point numbers.
             env_name: Deprecated alias for the keyword argument `env`.
                 It is recommended to use the argument `env` instead.
             network_args: Optionally a dict-like object, storing keyword

@@ -23,7 +23,7 @@ import torch
 from torch import nn
 
 from ..core import BoundsPairLike, DType, ObjectiveSense, Solution
-from ..tools.misc import Device, inject, is_sequence
+from ..tools.misc import Device, is_sequence, pass_info_if_needed
 from .baseneproblem import BaseNEProblem
 from .net.misc import count_parameters, fill_parameters
 from .net.parser import str_to_net
@@ -306,7 +306,7 @@ class NEProblem(BaseNEProblem):
             instantiated_network = network
         else:
             # Passed argument was callable yielding network
-            instantiated_network = inject(network, self._network_constants)(**self._network_args)
+            instantiated_network = pass_info_if_needed(network, self._network_constants)(**self._network_args)
 
         # Map to device
         device = self.network_device if device is None else device
