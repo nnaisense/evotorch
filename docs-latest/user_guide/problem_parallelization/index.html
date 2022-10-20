@@ -11,7 +11,7 @@
       
       
       <link rel="icon" href="../../assets/favicon.ico">
-      <meta name="generator" content="mkdocs-1.4.0, mkdocs-material-8.5.6">
+      <meta name="generator" content="mkdocs-1.4.1, mkdocs-material-8.5.6">
     
     
       
@@ -2090,7 +2090,7 @@ When working with a custom <a class="autorefs autorefs-internal" href="../../ref
 <a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a>        <span class="n">fs</span> <span class="o">=</span> <span class="n">vectorised_sphere</span><span class="p">(</span><span class="n">xs</span><span class="p">)</span>
 <a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a>        <span class="n">solutions</span><span class="o">.</span><span class="n">set_evals</span><span class="p">(</span><span class="n">fs</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">solutions</span><span class="o">.</span><span class="n">device</span><span class="p">))</span>
 </code></pre></div>
-<p>when a <code>SolutionBatch</code> is passed to a <code>VecSphere</code> instance's <code>_evaluate_batch</code> method, its <code>values</code> property is moved to the local <code>aux_device</code> for evaluation. Once the decision values have been evaluated (using the <code>vectorised_sphere</code> function in this case),  then their fitnesses are moved back to the original device of <code>solutions</code> and assigned as the fitness evaluations.</p>
+<p>when a <a class="autorefs autorefs-internal" href="../../reference/evotorch/core/#evotorch.core.SolutionBatch">SolutionBatch</a> is passed to a <code>VecSphere</code> instance's <code>_evaluate_batch</code> method, its <code>values</code> property is moved to the local <code>aux_device</code> for evaluation. Once the decision values have been evaluated (using the <code>vectorised_sphere</code> function in this case),  then their fitnesses are moved back to the original device of <code>solutions</code> and assigned as the fitness evaluations.</p>
 <p>To use the GPU within Ray actors, simply use the <code>num_gpus_per_actor</code> keyword argument to specify how many GPUs will be allocated to each actor. For example, if you have 2 GPUs, you can do:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="n">problem</span> <span class="o">=</span> <span class="n">VecSphere</span><span class="p">(</span>
 <a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>    <span class="n">objective_sense</span><span class="o">=</span><span class="s2">&quot;min&quot;</span><span class="p">,</span>
