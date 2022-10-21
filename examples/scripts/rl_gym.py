@@ -40,8 +40,16 @@ searcher = PGPE(
     num_interactions=150000,
     popsize_max=3200,
 )
+
+# Instantiate a logger that will print the progress to the standard output
 logger = StdOutLogger(searcher)
-pickler = PicklingLogger(searcher, interval=10)  # save the current solution at every 10 generations
+
+# Optional:
+# Instantiate a logger that will, at every 10 generations, pickle and save the results (where the results will include
+# the center of the search distribution since we are using PGPE which is a distribution-based search algorithm).
+pickler = PicklingLogger(searcher, interval=10)
+
+# Run the search algorithm
 searcher.run(500)
 
 # Create a policy to test using the final center of the optimized distribution and visualize its behavior

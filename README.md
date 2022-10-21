@@ -156,8 +156,9 @@ searcher = PGPE(
 # Instantiate a standard output logger
 _ = StdOutLogger(searcher)
 
-# Instantiate a pickling logger that will periodically save
-# the current solution
+# Optional: Instantiate a logger to pickle and save the results periodically.
+# In this example, among the saved results will be the center of the search
+# distribution, since we are using PGPE which is distribution-based.
 _ = PicklingLogger(searcher, interval=10)
 
 # Run the algorithm for the specified amount of generations
