@@ -1981,8 +1981,8 @@ After a successful installation of JAX, Brax can be installed via:</p>
 </code></pre></div>
 <p>Below, we instantiate our <code>VecGymNE</code> problem.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="n">problem</span> <span class="o">=</span> <span class="n">VecGymNE</span><span class="p">(</span>
-<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>    <span class="s2">&quot;brax::humanoid&quot;</span><span class="p">,</span>  <span class="c1"># solve the brax task named &quot;humanoid&quot;</span>
-<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>    <span class="n">policy</span><span class="p">,</span>
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>    <span class="n">env</span><span class="o">=</span><span class="s2">&quot;brax::humanoid&quot;</span><span class="p">,</span>  <span class="c1"># solve the brax task named &quot;humanoid&quot;</span>
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>    <span class="n">network</span><span class="o">=</span><span class="n">policy</span><span class="p">,</span>
 <a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>    <span class="c1">#</span>
 <a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a>    <span class="c1"># Collect observation stats, and use those stats to normalize incoming observations</span>
 <a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a>    <span class="n">observation_normalization</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
