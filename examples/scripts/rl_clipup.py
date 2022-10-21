@@ -225,7 +225,7 @@ def main(_config: dict):
 
     # Instantiate the problem class
     problem = GymNE(
-        env_name=env_name,
+        env=env_name,
         network=_config["policy"],
         observation_normalization=_config["observation_normalization"],
         decrease_rewards_by=none_if_nan(_config["decrease_rewards_by"]),
@@ -268,7 +268,7 @@ def main(_config: dict):
         # Create a test problem instance -- note the difference in configuration
 
         test_problem = GymNE(
-            env_name=actual_env_name,  # Using the actual environment name, rather than a modified version
+            env=actual_env_name,  # Using the actual environment name, rather than a modified version
             network=_config["policy"],
             observation_normalization=_config["observation_normalization"],
             decrease_rewards_by=0.0,  # Not changing the rewards
