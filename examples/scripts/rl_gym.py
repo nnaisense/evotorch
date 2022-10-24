@@ -13,12 +13,12 @@
 # limitations under the License.
 
 from evotorch.algorithms import PGPE
-from evotorch.logging import StdOutLogger
+from evotorch.logging import PicklingLogger, StdOutLogger
 from evotorch.neuroevolution import GymNE
 
 # Specialized Problem class for Gym environments
 problem = GymNE(
-    env_name="Humanoid-v4",
+    env="Humanoid-v4",
     # Linear policy defined using special string syntax supported by EvoTorch
     network="Linear(obs_length, act_length)",
     observation_normalization=True,
@@ -40,7 +40,16 @@ searcher = PGPE(
     num_interactions=150000,
     popsize_max=3200,
 )
+
+# Instantiate a logger that will print the progress to the standard output
 logger = StdOutLogger(searcher)
+
+# Optional:
+# Instantiate a logger that will, at every 10 generations, pickle and save the results (where the results will include
+# the center of the search distribution since we are using PGPE which is a distribution-based search algorithm).
+pickler = PicklingLogger(searcher, interval=10)
+
+# Run the search algorithm
 searcher.run(500)
 
 # Create a policy to test using the final center of the optimized distribution and visualize its behavior
