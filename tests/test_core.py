@@ -482,6 +482,11 @@ def test_multiobj():
 
     assert torch.all(pareto.ranks == torch.LongTensor([2, 0, 0, 1, 1]))
 
+    ranks, crowdsort_ranks = batch.compute_pareto_ranks(crowdsort=True)
+
+    assert torch.all(ranks == torch.LongTensor([2, 0, 0, 1, 1]))
+    assert torch.all(crowdsort_ranks == torch.LongTensor([0, 0, 1, 0, 1]))
+
     for ranking_method in (None, "centered"):
         utils = batch.utils(ranking_method=ranking_method)
 
