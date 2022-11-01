@@ -2750,7 +2750,7 @@ def _crowding_distance_assignment(pareto_set_utilities: torch.Tensor) -> torch.T
         # Get the solutions 2 ... num_samples
         obj_sorted_utilities_high = obj_sorted_utilities[2:]
 
-        # Add the distance, for sorted solution i, (obj[i + 1] - obj[i]) / denominator
+        # Add the distance, for sorted solution i, (obj[i + 1] - obj[i - 1]) / denominator
         crowding_distances[obj_argsorted_utilities[1:-1]] += (
             obj_sorted_utilities_high - obj_sorted_utilities_low
         ) / denominator
