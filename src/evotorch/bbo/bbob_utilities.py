@@ -208,7 +208,7 @@ def T_beta_asy(values: torch.Tensor, beta: float) -> torch.Tensor:
 def T_osz(values: torch.Tensor, epsilon: float = 1e-7) -> torch.Tensor:
     """The T_osz function
     Args:
-        values (torch.Tensor): The vaues to apply the T_osz function to, of shape [num_samples, dimension,]
+        values (torch.Tensor): The values to apply the T_osz function to, of shape [num_samples, dimension,]
         epsilon (float): Error threshold for assuming a value is zero. The paper states that xhat and sign(x) have specific behavior at x = 0
                 Here, we assume that when |x| < epsilon, that rule should apply.
     Returns:
@@ -247,49 +247,3 @@ def apply_orthogonal_matrix(values: torch.Tensor, orthogonal_matrix: torch.Tenso
         transformed_values (torch.Tensor):
     """
     return torch.matmul(orthogonal_matrix, values.T).T
-
-
-if __name__ == "__main__":
-
-    x1 = torch.tensor([[0.0, 0.0], [0.0, 7.0]])
-    print(f_pen(x1))
-
-    for x in x1:
-        penalty = 0.0
-        for v in x:
-            c1 = v - 5
-            c2 = -5 - v
-            if c1 > 0.0:
-                penalty += c1 * c1
-            elif c2 > 0:
-                penalty += c2 * c2
-        print(x, "->", penalty)
-    print(torch.clamp(torch.abs(x1) - 5, min=0.0, max=None))
-    # import matplotlib.pyplot as plt
-    # import numpy as np
-
-    # d = 10
-    # v = torch.zeros((2, d))
-    # betas = [0.1, 0.2, 0.5]
-
-    # lims = [6, 1, 0.1, 0.01]
-
-    # print(random_binary_vector(d))
-
-    # for lim in lims:
-    #     lim_low = -lim
-    #     lim_high = lim
-    #     xs = np.linspace(lim_low, lim_high, 1000)
-    #     ys_osy = []
-    #     ys_beta = {str(beta): [] for beta in betas}
-    #     for x in xs:
-    #         v[0, -1] = x
-    #         ozy = T_osz(v)[0,-1]
-    #         ys_osy.append(ozy)
-    #         for beta in betas:
-    #             asy = T_beta_asy(v, beta)[0,-1]
-    #             ys_beta[str(beta)].append(asy)
-    #     plt.plot(xs, ys_osy)
-    #     for beta in betas:
-    #         plt.plot(xs, ys_beta[str(beta)])
-    #     plt.show()

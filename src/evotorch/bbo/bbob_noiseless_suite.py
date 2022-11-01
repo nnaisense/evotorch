@@ -397,8 +397,8 @@ class SchaffersF7IllConditioned(BBOBProblem):
         self.R = self.make_random_orthogonal_matrix()
 
     def map_x_to_z(self, x: torch.Tensor) -> torch.Tensor:
-        # Lambda^10 Q T^0.5_asy ( (R(x - x_opt) )
-        return self.lambda_10 * bbob_utilities.apply_orthogonal_matrix(
+        # Lambda^1000 Q T^0.5_asy ( (R(x - x_opt) )
+        return self.lambda_1000 * bbob_utilities.apply_orthogonal_matrix(
             bbob_utilities.T_beta_asy(
                 values=bbob_utilities.apply_orthogonal_matrix(
                     x - self._x_opt.unsqueeze(0),
@@ -417,6 +417,63 @@ class SchaffersF7IllConditioned(BBOBProblem):
             (1 / (self.solution_length - 1))
             * torch.sum(torch.sqrt(s) + torch.sqrt(s) * torch.sin(50 * s.pow(0.2)).pow(2.0), dim=-1)
         ).pow(2.0) + 10 * bbob_utilities.f_pen(x)
+
+
+class CompositeGriewankRosenbrock(BBOBProblem):
+    def make_x_opt(self) -> torch.Tensor:
+        # GriewankRosenbrock has special global optimum R^T (ones) / (2 z_coeff)
+        return (
+            bbob_utilities.apply_orthogonal_matrix(self.make_ones(self.solution_length).unsqueeze(0), self.R.T)
+            / (2 * self.z_coeff)
+        )[0]
+
+    def initialize_meta_variables(self):
+        # x_opt must set manually for this task (note that this is hidden in the source code of COCO)
+        # see: https://github.com/numbbo/coco/blob/master/code-experiments/src/f_griewank_rosenbrock.c#L186
+        # so we actually override initialize_meta_variables, rather than _initialize_meta_variables, so that x_opt can be set after R is initialized
+        self.z_coeff = max(1, np.sqrt(self.solution_length) / 8)
+        self.R = self.make_random_orthogonal_matrix()
+        self._x_opt = self.make_x_opt()
+        self._f_opt = self.make_f_opt()
+
+    def map_x_to_z(self, x: torch.Tensor) -> torch.Tensor:
+        # max(1, sqrt(d)/8) R x + 1/2
+        return 1 / 2 + self.z_coeff * bbob_utilities.apply_orthogonal_matrix(x, self.R)
+
+    def _apply_function(self, z: torch.Tensor, x: torch.Tensor) -> torch.Tensor:
+        z_starts_at_0 = z[:, : self.solution_length - 1]
+        z_starts_at_1 = z[:, 1:]
+        # Compute rosenbrock values
+        rosenbrock_rotated = 100 * (z_starts_at_0.pow(2.0) - z_starts_at_1).pow(2.0) + (z_starts_at_0 - 1).pow(2.0)
+        return (10 / (self.solution_length - 1)) * torch.sum(
+            rosenbrock_rotated / 4000 - torch.cos(rosenbrock_rotated), dim=-1
+        ) + 10
+
+
+class Schwefel(BBOBProblem):
+    def make_x_opt(self) -> torch.Tensor:
+        return 4.2096874633 * self.random_binary[0] / 2
+
+    def initialize_meta_variables(self):
+        # x_opt must set manually for this task
+        self.lambda_10 = self.make_lambda_alpha(10, diagonal_only=True).unsqueeze(0)
+        self.random_binary = self.make_random_binary_vector().unsqueeze(0)
+        self._x_opt = self.make_x_opt()
+        self._f_opt = self.make_f_opt()
+
+    def map_x_to_z(self, x: torch.Tensor) -> torch.Tensor:
+        x_hat = 2 * self.random_binary * x
+        z_hat = x_hat
+        z_hat[:, 1:] = z_hat[:, 1:] + 0.25 * (x_hat[:, :-1] - 2 * torch.abs(self._x_opt[:-1]).unsqueeze(0))
+        z = 100 * (
+            self.lambda_10 * (z_hat - 2 * torch.abs(self._x_opt).unsqueeze(0)) + 2 * torch.abs(self._x_opt).unsqueeze(0)
+        )
+        return z
+
+    def _apply_function(self, z: torch.Tensor, x: torch.Tensor) -> torch.Tensor:
+        return (-1 / (100 * self.solution_length)) * torch.sum(z * torch.sin(torch.sqrt(torch.abs(z))), dim=-1) + (
+            4.189828872724339 + 100 * bbob_utilities.f_pen(z / 100)
+        )
 
 
 # Array of functions in ordered form e.g. so that they can be accessed like 'F1' rather than by name
@@ -439,6 +496,8 @@ _functions = [
     Weierstrass,
     SchaffersF7,
     SchaffersF7IllConditioned,
+    CompositeGriewankRosenbrock,
+    Schwefel,
 ]
 
 
@@ -453,16 +512,3 @@ def get_function_i(i: int) -> BBOBProblem:
         raise ValueError("The BBOB Noiseless suite defines only functions F1 ... F24")
     function_i = _functions[i - 1]
     return function_i
-
-
-if __name__ == "__main__":
-
-    for i in range(len(_functions)):
-        func = get_function_i(i + 1)
-        print("Function", func)
-        obj = func(10)
-        batch = obj.generate_batch(5)
-        batch[0].set_values(obj._x_opt)
-        print(batch)
-        obj.evaluate(batch)
-        print(batch.evals - obj._f_opt)
