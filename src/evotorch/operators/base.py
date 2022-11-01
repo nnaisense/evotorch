@@ -270,15 +270,16 @@ class CrossOver(CopyingOperator):
             # then we do a multi-objective-specific cross-over
 
             # At first, pareto-sort the solutions
-            fronts, ranks = batch.arg_pareto_sort()
+            ranks, _ = batch.compute_pareto_ranks(crowdsort=False)
+            n_fronts = torch.amax(ranks) + 1
 
             # In NSGA-II-inspired pareto-sorting, smallest rank means the best front.
             # Right now, we want the opposite: we want the solutions in the best front
             # to have rank values which are numerically highest.
             # The following line re-arranges the rank values such that the solutions
-            # in the best front have their ranks equal to len(fronts), and the ones
+            # in the best front have their ranks equal to n_fronts, and the ones
             # in the worst front have their ranks equal to 1.
-            ranks = torch.as_tensor(len(fronts) - ranks, dtype=self._problem.eval_dtype, device=batch.device)
+            ranks = (n_fronts - ranks).to(torch.float)
 
             # Because the ranks are computed front the fronts indices, we expect many
             # solutions to end up with the same rank values.

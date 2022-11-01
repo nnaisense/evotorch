@@ -2716,199 +2716,144 @@ def _opt_bool(x: Optional[bool], default: bool) -> bool:
     return result
 
 
-@njit
-def _dominates(i: int, j: int, utils: np.ndarray) -> bool:
-    return np.all(utils[i, :] >= utils[j, :]) and np.any(utils[i, :] > utils[j, :])
+def _crowding_distance_assignment(pareto_set_utilities: torch.Tensor) -> torch.Tensor:
+    """Compute the crowding distance metric as described in:
+        Deb, Kalyanmoy, et al.
+        "A fast and elitist multiobjective genetic algorithm: NSGA-II."
+        IEEE transactions on evolutionary computation 6.2 (2002): 182-197.
+    Args:
+        pareto_set_utilities (torch.Tensor): The utilities values (or fitnesses) of shape [num_samples, num_objectives] from the pareto set.
+    Returns:
+        crowding_distances (torch.Tensor): The computed crowding distances of the pareto_set_utilities.
+    """
+    # Arg sort each objective
+    argsorted_utilities = torch.argsort(pareto_set_utilities, dim=0)
+    # Initialize distances to zero
+    crowding_distances = torch.zeros_like(pareto_set_utilities[:, 0])
+
+    # Solutions at the limits are assigned infinite distance
+    crowding_distances[argsorted_utilities[0]] = torch.inf
+    crowding_distances[argsorted_utilities[-1]] = torch.inf
+
+    # Enumerate objectives (TODO can this be vectorized also?)
+    for obj_index in range(pareto_set_utilities.shape[-1]):
+        # Get the sorting and utility values for this objective
+        obj_utilities = pareto_set_utilities[:, obj_index]
+        obj_argsorted_utilities = argsorted_utilities[:, obj_index]
+        obj_sorted_utilities = obj_utilities[obj_argsorted_utilities]
+
+        # Compute the denominator (f_max - f_min)
+        denominator = torch.amax(obj_utilities) - torch.amin(obj_utilities)
+
+        # Get the solutions 0 ... num_samples -2
+        obj_sorted_utilities_low = obj_sorted_utilities[:-2]
+        # Get the solutions 2 ... num_samples
+        obj_sorted_utilities_high = obj_sorted_utilities[2:]
+
+        # Add the distance, for sorted solution i, (obj[i + 1] - obj[i]) / denominator
+        crowding_distances[obj_argsorted_utilities[1:-1]] += (
+            obj_sorted_utilities_high - obj_sorted_utilities_low
+        ) / denominator
+
+    return crowding_distances
 
 
-# TODO: test _crowding_distance_assignment(...)
-@njit
-def _crowding_distance_assignment(pareto_set: np.ndarray, utils: np.ndarray) -> np.ndarray:
-    l = len(pareto_set)
-    distances = np.zeros(l, dtype="float32")
-    for m in range(utils.shape[1]):
-        # U = utils[pareto_set][:, m]
-        U = utils[pareto_set, m]
-        I = np.argsort(U)[::-1]
+def _compute_pareto_ranks(utils: torch.Tensor, crowdsort: bool) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
+    """GPU-friendly + Vectorized pareto ranking based on:
+        Deb, Kalyanmoy, et al.
+        "A fast and elitist multiobjective genetic algorithm: NSGA-II."
+        IEEE transactions on evolutionary computation 6.2 (2002): 182-197.
+    Args:
+        utils (torch.Tensor): The utilities (or fitnesses) to rank of shape [num_samples, num_objectives]
+        crowdsort (bool): Whether to apply crowd sorting, see: the above paper.
+                        If crowd sorting is applied, then an additional tensor is returned containing crowd-sort ranks.
+    Returns:
+        ranks (torch.Tensor): The computed pareto ranks, of shape [num_samples,]
+                              Ranks are encoded in the form 'lowest is best'. So solutions in the pareto front will be assigned rank 0,
+                              solutions in the next non-dominated set (excluding the pareto front) will be assigned rank 1, and so on.
+        crowdsort_ranks (Optional[torch.Tensor]): The computed crowd sort ranks, only returned if crowdsort=True. Otherwise, None is returned.
+                              Solutions within a front are assigned a crowding score, as described in the above paper.
+                              Then, the solution with the best crowding score within a front of size K is assigned rank 0, and the solution with the
+                              worst crowding score within a front is assigned rank K-1.
+    """
+    # TODO, this is only needed while there are issues with ReadOnlyTensor
+    utils = utils.clone()
+    # Construct dense matrix of domination. Assumes maximization for all objectives
+    # For element i,j we have True iff solution j dominates solution i, False otherwise
+    dominated_matrix = (utils.unsqueeze(1) < utils.unsqueeze(0)).all(dim=-1)
+    # Calculate how many samples are dominated
+    n_dominations = torch.sum(dominated_matrix, dim=-1)
 
-        # e.g. pareto_set = [1,   7,  3]
-        # e.g.          U = [20, 14, 15]
+    # Initialize all ranks to zero
+    ranks = torch.zeros_like(utils[:, 0], dtype=torch.long)
+    # Boolean flag as to whether each sample is currently unranked
+    unranked = torch.ones_like(utils[:, 0], dtype=torch.bool)
+    # Current rank that we will next assign to solutions
+    current_rank = 0
 
-        # I = [0, 2, 1]
-
-        distances[I[0]] = np.inf
-        distances[I[-1]] = np.inf
-
-        fmax = np.max(U)
-        fmin = np.min(U)
-
-        for i in range(1, l - 1):
-            denom = fmax - fmin
-            if denom < 1e-8:
-                denom = 1e-8
-            distances[I[i]] += (U[I[i - 1]] - U[I[i + 1]]) / denom
-
-    return distances
-
-
-@njit
-def _pareto_sort_np(utils: np.ndarray, crowdsort: bool, crowdsort_upto: int) -> Tuple[List[np.ndarray], np.ndarray]:
-    count: int = 0
-
-    n = int(len(utils))
-    dominated_by: List[List[int]] = [[0 for __ in range(0)] for _ in range(n)]
-    domination_counter: List[int] = [0 for _ in range(n)]
-    rank = np.zeros(n, dtype="int64")
-    fronts: List[np.ndarray] = [np.array([0], dtype="int64") for _ in range(0)]
-
-    first_front: List[int] = []
-    for p in range(n):
-        for q in range(n):
-            if _dominates(p, q, utils):
-                dominated_by[p].append(q)
-            elif _dominates(q, p, utils):
-                domination_counter[p] += 1
-        if domination_counter[p] == 0:
-            rank[p] = 0
-            # fronts[0].append(p)
-            first_front.append(p)
-
-    first_front_array = np.array(first_front, "int64")
-    if not crowdsort:
-        fronts.append(first_front_array)
+    # Only initialize crowdsort_ranks if crowdsort is True
+    if crowdsort:
+        crowdsort_ranks = torch.zeros_like(ranks)
     else:
-        fronts.append(first_front_array[_crowding_distance_assignment(first_front_array, utils).argsort()[::-1]])
-    count += len(fronts[-1])
+        crowdsort_ranks = None
 
-    i = 0
-    while True:
-        next_front: List[int] = []
-        for p in fronts[-1]:
-            for q in dominated_by[p]:
-                domination_counter[q] -= 1
-                if domination_counter[q] == 0:
-                    rank[q] = i + 1
-                    next_front.append(q)
-        i += 1
+    # Keep going while any solution is not ranked
+    while unranked.any():
+        # Get non-dominated solutions where the number of dominations is 0
+        non_dominated = n_dominations == 0
+        # Filter out previously non-dominated solutions
+        new_non_dominated = non_dominated & unranked
 
-        if len(next_front) == 0:
-            break
-        else:
-            next_front_array = np.array(next_front, "int64")
-            if (not crowdsort) or (count > crowdsort_upto):
-                fronts.append(next_front_array)
-            else:
-                fronts.append(next_front_array[_crowding_distance_assignment(next_front_array, utils).argsort()[::-1]])
-            count += len(fronts[-1])
+        # Store the rank of the new non-dominated solutions
+        ranks[new_non_dominated] = current_rank
+        # Keep track of which solutions have been sorted
+        unranked[new_non_dominated] = False
 
-    return fronts, rank
+        # If crowd sorting, get the crowdsort distances, convert them to ranks and fill in the crowdsort_ranks elements
+        if crowdsort:
+            crowdsort_distances = _crowding_distance_assignment(utils[new_non_dominated])
+            # Note the descending sort -- we want to maximize distances
+            crowdsort_ranks[new_non_dominated] = torch.argsort(crowdsort_distances, descending=True)
+
+        # Update the number of dominations for remaining solutions by removing any domination counts introduce by the solutions we just sorted
+        n_dominations += -dominated_matrix[:, new_non_dominated].sum(dim=-1)
+        # Increase the rank for the next iteration
+        current_rank += 1
+
+    return ranks, crowdsort_ranks
 
 
-def _pareto_sort(utils: torch.Tensor, crowdsort: bool, crowdsort_upto: int) -> Tuple[List[torch.Tensor], torch.Tensor]:
-    device = utils.device
-    utils = torch.as_tensor(utils, device="cpu").numpy()
-    fronts, ranks = _pareto_sort_np(utils, crowdsort, crowdsort_upto)
+def _pareto_sort(utils: torch.Tensor, crowdsort: bool) -> Tuple[List[torch.Tensor], torch.Tensor]:
+    """Pareto sort a given set of utilities, in a GPU-friendly + Vectorized manner
+    Args:
+        utils (torch.Tensor): The utilities (or fitnesses) to rank of shape [num_samples, num_objectives]
+        crowdsort (bool): Whether to apply crowd sorting
+                        If crowd sorting is applied, then an additional tensor is returned containing crowd-sort ranks.
+    Returns:
+        fronts (torch.Tensor): The computed pareto fronts, a list of tensors. Each tensor is the indices of that front,
+                              with fronts[0] being the best-ranked front (with rank 0) and fronts[-1] being the worst-ranked front
+                              (with rank as the highest). If crowdsort == True, then each front is internally sorted by the crowding distance metric.
+        ranks (torch.Tensor): The computed pareto ranks, of shape [num_samples,]
+                              Ranks are encoded in the form 'lowest is best'. So solutions in the pareto front will be assigned rank 0,
+                              solutions in the next non-dominated set (excluding the pareto front) will be assigned rank 1, and so on.
+    """
+    # Compute ranks (and crowdsort_ranks if crowdsort = True)
+    ranks, crowdsort_ranks = _compute_pareto_ranks(utils, crowdsort)
 
-    for i in range(len(fronts)):
-        fronts[i] = torch.as_tensor(torch.from_numpy(fronts[i]), device=device)
+    # Get the number of fronts
+    n_fronts = torch.amax(ranks) + 1
+    fronts = []
+    # Enumerate fronts
+    for front_idx in range(n_fronts):
+        # Get the referenced front
+        front = torch.argwhere(ranks == front_idx).flatten()
+        # Sort according to crowdsort_ranks if crowdsort
+        if crowdsort:
+            front_crowdsort_ranks = crowdsort_ranks[front]
+            front = front[torch.argsort(front_crowdsort_ranks)]
 
-    ranks = torch.as_tensor(torch.from_numpy(ranks), device=device)
-
+        fronts.append(front)
     return fronts, ranks
-
-
-# @torch.jit.script
-# def _dominates(i: int, j: int, utils: torch.Tensor) -> bool:
-#     return torch.all(utils[i, :] >= utils[j, :]) and torch.any(utils[i, :] > utils[j, :])
-
-
-# @torch.jit.script
-# def _crowding_distance_assignment(pareto_set: torch.Tensor, utils: torch.Tensor) -> torch.Tensor:
-#     l = len(pareto_set)
-#     distances = torch.zeros(l, dtype=torch.float32, device=utils.device)
-#     for m in range(utils.shape[1]):
-#         # U = utils[pareto_set][:, m]
-#         U = utils[pareto_set, m]
-#         I = torch.argsort(U, descending=True)
-#
-#         # e.g. pareto_set = [1,   7,  3]
-#         # e.g.          U = [20, 14, 15]
-#
-#         # I = [0, 2, 1]
-#
-#         distances[I[0]] = float("inf")
-#         distances[I[-1]] = float("inf")
-#
-#         fmax = torch.max(U)
-#         fmin = torch.min(U)
-#
-#         for i in range(1, l - 1):
-#             denom = fmax - fmin
-#             if denom < 1e-8:
-#                 denom = 1e-8
-#             distances[I[i]] += (U[I[i - 1]] - U[I[i + 1]]) / denom
-#             # distances[I[i]] += (U[I[i - 1]] - U[I[i + 1]]) / (fmax - fmin)
-#
-#     return distances
-
-
-# @torch.jit.script
-# def _pareto_sort(utils: torch.Tensor, crowdsort: bool, crowdsort_upto: int) -> Tuple[List[torch.Tensor], torch.Tensor]:
-#
-#     count: int = 0
-#
-#     n = int(len(utils))
-#     dominated_by: List[List[int]] = [torch.jit.annotate(List[int], []) for _ in range(n)]
-#     domination_counter: List[int] = [0 for _ in range(n)]
-#     rank = torch.zeros(n, dtype=torch.int64, device=utils.device)
-#     # fronts: List[List[int]] = [torch.jit.annotate(List[int], [])]
-#     fronts: List[torch.Tensor] = []
-#
-#     first_front: List[int] = []
-#     for p in range(n):
-#         for q in range(n):
-#             if _dominates(p, q, utils):
-#                 dominated_by[p].append(q)
-#             elif _dominates(q, p, utils):
-#                 domination_counter[p] += 1
-#         if domination_counter[p] == 0:
-#             rank[p] = 0
-#             # fronts[0].append(p)
-#             first_front.append(p)
-#
-#     first_front_tensor = torch.tensor(first_front, dtype=torch.int64, device=utils.device)
-#     if not crowdsort:
-#         fronts.append(first_front_tensor)
-#     else:
-#         fronts.append(
-#             first_front_tensor[_crowding_distance_assignment(first_front_tensor, utils).argsort(descending=True)]
-#         )
-#     count += len(fronts[-1])
-#
-#     i = 0
-#     while True:
-#         next_front: List[int] = []
-#         for p in fronts[-1]:
-#             for q in dominated_by[p]:
-#                 domination_counter[q] -= 1
-#                 if domination_counter[q] == 0:
-#                     rank[q] = i + 1
-#                     next_front.append(q)
-#         i += 1
-#
-#         if len(next_front) == 0:
-#             break
-#         else:
-#             next_front_tensor = torch.tensor(next_front, dtype=torch.int64, device=utils.device)
-#             if (not crowdsort) or (count > crowdsort_upto):
-#                 fronts.append(next_front_tensor)
-#             else:
-#                 fronts.append(
-#                     next_front_tensor[_crowding_distance_assignment(next_front_tensor, utils).argsort(descending=True)]
-#                 )
-#             count += len(fronts[-1])
-#
-#     return fronts, rank
 
 
 ParetoInfo = NamedTuple("ParetoInfo", fronts=list, ranks=torch.Tensor)
@@ -3171,7 +3116,31 @@ class SolutionBatch(Serializable):
         return torch.argsort(ev_col, descending=descending)
 
     @torch.no_grad()
-    def arg_pareto_sort(self, crowdsort: bool = True, crowdsort_upto: Optional[int] = None) -> ParetoInfo:
+    def compute_pareto_ranks(self, crowdsort: bool = True) -> Tuple[torch.Tensor, torch.Tensor]:
+        """
+        Compute the pareto-ranks of the solutions in the batch.
+        Args:
+            crowdsort: If given as True, each front in itself
+                will be sorted from the least crowding solution
+                to the most crowding solution.
+                If given as False, there will be no crowd-sorting.
+        Returns:
+            ranks (torch.Tensor): The computed pareto ranks, of shape [num_samples,]
+                                Ranks are encoded in the form 'lowest is best'. So solutions in the pareto front will be assigned rank 0,
+                                solutions in the next non-dominated set (excluding the pareto front) will be assigned rank 1, and so on.
+            crowdsort_ranks (Optional[torch.Tensor]): The computed crowd sort ranks, only returned if crowdsort=True. Otherwise, None is returned.
+                                Solutions within a front are assigned a crowding score, as described in the above paper.
+                                Then, the solution with the best crowding score within a front of size K is assigned rank 0, and the solution with the
+                                worst crowding score within a front is assigned rank K-1.
+        """
+        utils = self.utils()
+
+        ranks, crowdsort_ranks = _compute_pareto_ranks(utils, crowdsort)
+
+        return ranks, crowdsort_ranks
+
+    @torch.no_grad()
+    def arg_pareto_sort(self, crowdsort: bool = True) -> ParetoInfo:
         """
         Pareto-sort the solutions in the batch.
 
@@ -3202,33 +3171,13 @@ class SolutionBatch(Serializable):
                 will be sorted from the least crowding solution
                 to the most crowding solution.
                 If given as False, there will be no crowd-sorting.
-            crowdsort_upto: To be used with `crowdsort=True`.
-                If given as an integer n, crowd-sorting will be done
-                only in the fronts containing the first n solutions
-                of the population.
-                If given as None (and if `crowdsort=True`),
-                crowd-sorting will be done for each front.
         Returns:
             A ParetoInfo instance
         """
-        if not NumbaLib.is_found:
-            NumbaLib.warn("arg_pareto_sort")
 
         utils = self.utils()
 
-        if not crowdsort:
-            if crowdsort_upto is not None:
-                raise ValueError(
-                    "With the argument `crowdsort` provided as False,"
-                    " the argument `crowdsort_upto` was expected as None."
-                    " However, `crowdsort_upto` was found to be something"
-                    " other than None."
-                )
-            fronts, ranks = _pareto_sort(utils, False, 0)
-        else:
-            if crowdsort_upto is None:
-                crowdsort_upto = len(utils)
-            fronts, ranks = _pareto_sort(utils, crowdsort, crowdsort_upto)
+        fronts, ranks = _pareto_sort(utils, crowdsort)
 
         return ParetoInfo(fronts=fronts, ranks=ranks)
 
@@ -3740,8 +3689,10 @@ class SolutionBatch(Serializable):
             The new SolutionBatch.
         """
         if obj_index is None and self._num_objs >= 2:
-            fronts, _ = self.arg_pareto_sort(crowdsort=True, crowdsort_upto=n)
-            indices = torch.cat(fronts)[:n]
+            ranks, crowdsort_ranks = self.compute_pareto_ranks(crowdsort=True)
+            # Combine the ranks, such that solutions with a better crowdsort rank are weighted above solutions with the same pareto rank **only**
+            combined_ranks = ranks.to(torch.float) + 0.1 * crowdsort_ranks.to(torch.float) / len(self)
+            indices = torch.argsort(combined_ranks)[:n]
         else:
             indices = self.argsort(obj_index)[:n]
         return type(self)(slice_of=(self, indices))
