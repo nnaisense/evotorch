@@ -1,3 +1,18 @@
+# Copyright 2022 NNAISENSE SA
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+
 """ Implementation of the Real-Parameter Black-Box Optimization Benchmarking 2009 functions
 """
 
@@ -308,6 +323,102 @@ class NonSeparableRastrigin(BBOBProblem):
         )
 
 
+class Weierstrass(BBOBProblem):
+    def _initialize_meta_variables(self):
+        self.lambda_hundredth = self.make_lambda_alpha(1 / 100, diagonal_only=True).unsqueeze(0)
+        self.Q = self.make_random_orthogonal_matrix()
+        self.R = self.make_random_orthogonal_matrix()
+        self.f0 = sum([(0.5**k) * np.cos(2 * np.pi * (3**k) / 2) for k in range(12)])
+        self.half_pow_k = torch.pow(0.5, torch.arange(12, dtype=self.dtype, device=self.device)).reshape(1, 1, -1)
+        self.three_pow_k = torch.pow(3, torch.arange(12, dtype=self.dtype, device=self.device)).reshape(1, 1, -1)
+
+    def map_x_to_z(self, x: torch.Tensor) -> torch.Tensor:
+        # R Lambda^1/100 Q  T_osz (R(x - x_opt))
+        return bbob_utilities.apply_orthogonal_matrix(
+            self.lambda_hundredth
+            * bbob_utilities.apply_orthogonal_matrix(
+                bbob_utilities.T_osz(
+                    values=bbob_utilities.apply_orthogonal_matrix(
+                        x - self._x_opt.unsqueeze(0),
+                        self.R,
+                    )
+                ),
+                self.Q,
+            ),
+            self.R,
+        )
+
+    def _apply_function(self, z: torch.Tensor, x: torch.Tensor) -> torch.Tensor:
+        return (10 / self.solution_length) * (
+            torch.sum(
+                torch.sum(
+                    self.half_pow_k * torch.cos(2 * np.pi * self.three_pow_k * (z.unsqueeze(-1) + 1 / 2)),
+                    dim=-1,
+                )
+                - self.f0,
+                dim=-1,
+            )
+        ).pow(3.0) + (10 / self.solution_length) * bbob_utilities.f_pen(x)
+
+
+class SchaffersF7(BBOBProblem):
+    def _initialize_meta_variables(self):
+        self.lambda_10 = self.make_lambda_alpha(10, diagonal_only=True).unsqueeze(0)
+        self.Q = self.make_random_orthogonal_matrix()
+        self.R = self.make_random_orthogonal_matrix()
+
+    def map_x_to_z(self, x: torch.Tensor) -> torch.Tensor:
+        # Lambda^10 Q T^0.5_asy ( (R(x - x_opt) )
+        return self.lambda_10 * bbob_utilities.apply_orthogonal_matrix(
+            bbob_utilities.T_beta_asy(
+                values=bbob_utilities.apply_orthogonal_matrix(
+                    x - self._x_opt.unsqueeze(0),
+                    self.R,
+                ),
+                beta=0.5,
+            ),
+            self.Q,
+        )
+
+    def _apply_function(self, z: torch.Tensor, x: torch.Tensor) -> torch.Tensor:
+        z_starts_at_0 = z[:, : self.solution_length - 1]
+        z_starts_at_1 = z[:, 1:]
+        s = torch.sqrt(z_starts_at_0.pow(2.0) + z_starts_at_1.pow(2.0))
+        return (
+            (1 / (self.solution_length - 1))
+            * torch.sum(torch.sqrt(s) + torch.sqrt(s) * torch.sin(50 * s.pow(0.2)).pow(2.0), dim=-1)
+        ).pow(2.0) + 10 * bbob_utilities.f_pen(x)
+
+
+class SchaffersF7IllConditioned(BBOBProblem):
+    def _initialize_meta_variables(self):
+        self.lambda_1000 = self.make_lambda_alpha(1000, diagonal_only=True).unsqueeze(0)
+        self.Q = self.make_random_orthogonal_matrix()
+        self.R = self.make_random_orthogonal_matrix()
+
+    def map_x_to_z(self, x: torch.Tensor) -> torch.Tensor:
+        # Lambda^10 Q T^0.5_asy ( (R(x - x_opt) )
+        return self.lambda_10 * bbob_utilities.apply_orthogonal_matrix(
+            bbob_utilities.T_beta_asy(
+                values=bbob_utilities.apply_orthogonal_matrix(
+                    x - self._x_opt.unsqueeze(0),
+                    self.R,
+                ),
+                beta=0.5,
+            ),
+            self.Q,
+        )
+
+    def _apply_function(self, z: torch.Tensor, x: torch.Tensor) -> torch.Tensor:
+        z_starts_at_0 = z[:, : self.solution_length - 1]
+        z_starts_at_1 = z[:, 1:]
+        s = torch.sqrt(z_starts_at_0.pow(2.0) + z_starts_at_1.pow(2.0))
+        return (
+            (1 / (self.solution_length - 1))
+            * torch.sum(torch.sqrt(s) + torch.sqrt(s) * torch.sin(50 * s.pow(0.2)).pow(2.0), dim=-1)
+        ).pow(2.0) + 10 * bbob_utilities.f_pen(x)
+
+
 # Array of functions in ordered form e.g. so that they can be accessed like 'F1' rather than by name
 _functions = [
     Sphere,
@@ -325,6 +436,9 @@ _functions = [
     SharpRidge,
     DifferentPowers,
     NonSeparableRastrigin,
+    Weierstrass,
+    SchaffersF7,
+    SchaffersF7IllConditioned,
 ]
 
 
