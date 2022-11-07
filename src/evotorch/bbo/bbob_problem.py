@@ -56,6 +56,7 @@ class BBOBProblem(Problem):
 
         # Initialize meta variables
         self.initialize_meta_variables()
+        self._log_closest = 1e6
 
     """ Extra BBOB-specific generator functions that ensure compliant dtype, device and generator
     """
@@ -164,6 +165,15 @@ class BBOBProblem(Problem):
         f_z = self._apply_function(z, x) + self._f_opt
         return f_z
 
+    @property
+    def log_closest(self) -> torch.Tensor:
+        """The logarithm of the best discovered solution so far"""
+        return self._log_closest
+
+    @log_closest.setter
+    def log_closest(self, new_log_closest):
+        self._log_closest = new_log_closest
+
     def _evaluate_batch(self, batch: SolutionBatch) -> None:
         # Get x from batch
         x = batch.values.clone()
@@ -171,5 +181,9 @@ class BBOBProblem(Problem):
         z = self.map_x_to_z(x)
         # Get f(x) from function application to z
         f_x = self.apply_function(z, x)
+        # Compute log distance from f_opt
+        log_f_x = torch.log(f_x - self._f_opt)
+        if torch.amin(log_f_x) < self.log_closest:
+            self.log_closest = torch.amin(log_f_x)
         # Assign fitnesses to batch
         batch.set_evals(f_x)
