@@ -111,7 +111,7 @@ class VecGymNE(BaseNEProblem):
         action_noise_stdev: Optional[float] = None,
         num_episodes: int = 1,
         device: Optional[Device] = None,
-        num_actors: Optional[Union[int, str]] = "num_devices",
+        num_actors: Optional[Union[int, str]] = None,
         num_gpus_per_actor: Optional[int] = None,
         num_subbatches: Optional[int] = None,
         subbatch_size: Optional[int] = None,
@@ -231,25 +231,27 @@ class VecGymNE(BaseNEProblem):
                 so that the main population will be kept on the cpu
                 and the remote actors will perform their evaluations on
                 the GPUs that are assigned to them.
-            num_actors: Number of actors.
-                This is, by default, "num_devices" which creates multiple
-                actors in such a way that each actor will be assigned
-                an entire GPU.
-                This default setting considers the multi-GPU scenario
-                (and requires multiple GPUs to work correctly).
-                If you wish to perform the entire evolution on a single
-                GPU, we recommend to set `num_actors` as 0 (so that there
-                will be no remote actors) and set `device` as "cuda"
-                (or "cuda:0", or "cuda:1", etc., the device in which the
-                simulator will be instantiated).
-                If you do not have any GPUs the special value "num_devices"
-                will allocate n actors, n being the number of CPUs.
-                You can also set `num_actors` as an integer to determine
-                the exact number of subprocesses which will evaluate the
-                solutions in parallel. Note that, however, when you set
-                `num_actors` as an integer, you will also have to explicitly
-                specify the number of GPUs each actor will be assigned
-                via the argument `num_gpus_per_actor`.
+            num_actors: Number of actors to create for parallelized
+                evaluation of the solutions.
+                Certain string values are also accepted.
+                When given as "max" or as "num_cpus", the number of actors
+                will be equal to the number of all available CPUs in the ray
+                cluster.
+                When given as "num_gpus", the number of actors will be
+                equal to the number of all available GPUs in the ray
+                cluster, and each actor will be assigned a GPU.
+                When given as "num_devices", the number of actors will be
+                equal to the minimum among the number of CPUs and the number
+                of GPUs available in the cluster (or will be equal to the
+                number of CPUs if there is no GPU), and each actor will be
+                assigned a GPU (if available).
+                If `num_actors` is given as "num_gpus" or "num_devices",
+                the argument `num_gpus_per_actor` must not be used,
+                and the `actor_config` dictionary must not contain the
+                key "num_gpus".
+                If `num_actors` is given as something other than "num_gpus"
+                or "num_devices", and if you wish to assign GPUs to each
+                actor, then please see the argument `num_gpus_per_actor`.
             num_gpus_per_actor: Number of GPUs to be assigned to each
                 actor. This can be an integer or a float (for when you
                 wish to assign fractional amounts of GPUs to actors).

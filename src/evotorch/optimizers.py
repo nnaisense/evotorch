@@ -17,13 +17,12 @@ Optimizers (like Adam or ClipUp) to be used with distribution-based
 search algorithms.
 """
 
-import math
 from typing import Callable, Optional, Type
 
 import torch
-import torch.nn.utils as nnu
 
-from .tools.misc import Device, DType, RealOrVector, ensure_tensor_length_and_dtype, to_torch_dtype
+from ._main_logger import logger as _evolog
+from .tools.misc import Device, DType, RealOrVector, ensure_tensor_length_and_dtype, message_from, to_torch_dtype
 
 
 class TorchOptimizer:
@@ -264,6 +263,15 @@ class ClipUp:
         momentum = float(momentum)
         if max_speed is None:
             max_speed = stepsize * 2.0
+            _evolog.info(
+                message_from(
+                    self,
+                    (
+                        f"The maximum speed for the ClipUp optimizer is set as {max_speed}"
+                        f" which is two times the given step size."
+                    ),
+                )
+            )
         else:
             max_speed = float(max_speed)
         solution_length = int(solution_length)

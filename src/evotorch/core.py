@@ -32,6 +32,8 @@ import numpy as np
 import ray
 import torch
 
+from ._main_logger import logger as _evolog
+
 try:
     from numba import njit
 
@@ -65,9 +67,7 @@ except ImportError:
                         f" Install numba to make this procedure run faster."
                     )
 
-                import warnings
-
-                warnings.warn(msg)
+                _evolog.warning(msg)
 
 
 from ray.util import ActorPool
@@ -85,6 +85,7 @@ from .tools import (
     is_dtype_object,
     is_real,
     is_sequence,
+    message_from,
     modify_tensor,
     multiply_rows_by_scalars,
     rank,
@@ -362,47 +363,342 @@ class Problem(TensorMakerMixin, Serializable):
     """
     Representation of a problem to be optimized.
 
-    A problem can be defined via inheritance.
+    The simplest way to use this class is to instantiate it with an
+    external fitness function.
 
-    For example, let us consider a problem of minimizing the L2 norm
-    of a vector of length 10.
+    Let us imagine that we have the following fitness function:
 
-    This problem can be defined as follows:
+    ```
+    import torch
 
-        from evotorch import Problem, SolutionBatch
+    def f(solution: torch.Tensor) -> torch.Tensor:
+        return torch.linalg.norm(solution)
+    ```
 
-        class MinNorm(Problem):
-            def __init__(self):
+    A problem definition can be made around this fitness function as follows:
 
-                # Main characteristics of the problem are specified
-                # with the help of the `__init__` method of the Problem
-                # class
-                super().__init__(
-                    # This is a minimization problem
-                    objective_sense="min",
+    ```
+    from evotorch import Problem
 
-                    # Length of a solution is 10
-                    solution_length=10,
+    problem = Problem(
+        "min", f,  # Goal is to minimize f (would be "max" for maximization)
+        solution_length=10,  # Length of a solution is 10
+        initial_bounds=(-5.0, 5.0),  # Bounds for sampling a new solution
+        dtype=torch.float32,  # dtype of a solution
+    )
+    ```
 
-                    # Each element of a new solution is to be initialized
-                    # between -10.0 and 10.0
-                    initial_bounds=(-10.0, 10.0)
-                )
+    **Vectorized problem definitions.**
+    To boost the runtime performance, one might want to define a vectorized
+    fitness function where the fitnesses of multiple solutions are computed
+    in a batched manner using the vectorization capabilities of PyTorch.
+    A vectorized problem definition can be made as follows:
 
-            def _evaluate_batch(batch: SolutionBatch):
-                # We override _evaluate_batch(...) to define how a solution
-                # is evaluated.
+    ```
+    from evotorch.decorators import vectorized
 
-                # Get the decision values as a ReadOnlyTensor
-                values = batch.values
+    @vectorized
+    def vf(solutions: torch.Tensor) -> torch.Tensor:
+        return torch.linalg.norm(solutions ** 2, dim=-1)
 
-                # Compute the costs of the solutions, which, in the case of
-                # this example, is the L2 norm
-                costs = torch.linalg.norm(values, dim=-1)
+    problem = Problem(
+        "min", vf,  # Goal is to minimize vf (would be "max" for maximization)
+        solution_length=10,  # Length of a solution is 10
+        initial_bounds=(-5.0, 5.0),  # Bounds for sampling a new solution
+        dtype=torch.float32,  # dtype of a solution
+    )
+    ```
 
-                # Register the computed costs as the evaluation results of
-                # the solutions
-                batch.set_evals(costs)
+    **Parallelization across multiple CPUs.**
+    An optimization problem can be configured to parallelize its evaluation
+    operations across multiple CPUs as follows:
+
+    ```python
+    problem = Problem("min", f, ..., num_actors=4)  # will use 4 actors
+    ```
+
+    **Exploiting hardware accelerators.**
+    As an alternative to CPU-based parallelization, one might prefer to use
+    the parallelized computation capabilities of a hardware accelerator such
+    as CUDA. To load the problem onto a cuda device (for example, onto
+    "cuda:0"), one can do:
+
+    ```python
+    problem = Problem("min", f, ..., device="cuda:0")
+    ```
+
+    **Defining problems via inheritance.**
+    A problem can also be defined via inheritance.
+    Using inheritance, one can define problems which carry their own additional
+    data, and/or update their states as more solutions are evaluated,
+    and/or have custom procedures for sampling new solutions, etc.
+
+    As a first example, let us define a parameterized problem. In this example
+    problem, the goal is to minimize `x^(2q)`, `q` being a parameter of the
+    problem. The definition of such a problem can be as follows:
+
+    ```python
+    from evotorch import Problem, Solution
+
+
+    class MyProblem(Problem):
+        def __init__(self, q: float):
+            self.q = float(q)
+
+            super().__init__(
+                objective_sense="min",  # the goal is to minimize
+                solution_length=10,  # a solution has the length 10
+                initial_bounds=(-5.0, 5.0),  # sample new solutions from within [-5, 5]
+                dtype=torch.float32,  # the dtype of a solution is float32
+                # num_actors=...,  # if parallelization via multiple actors is desired
+            )
+
+        def _evaluate(self, solution: Solution):
+            # This is where we declare the procedure of evaluating a solution
+
+            # Get the decision values of the solution as a PyTorch tensor
+            x = solution.values
+
+            # Compute the fitness
+            fitness = torch.sum(x ** (2 * self.q))
+
+            # Register the fitness into the Solution object
+            solution.set_evaluation(fitness)
+    ```
+
+    This parameterized problem can be instantiated as follows (let's say with q=3):
+
+    ```python
+    problem = MyProblem(q=3)
+    ```
+
+    **Defining vectorized problems via inheritance.**
+    Vectorization can be used with inheritance-based problem definitions as well.
+    Please see the following example where the method `_evaluate_batch`
+    is used instead of `_evaluate` for vectorization:
+
+    ```python
+    from evotorch import Problem, SolutionBatch
+
+
+    class MyVectorizedProblem(Problem):
+        def __init__(self, q: float):
+            self.q = float(q)
+
+            super().__init__(
+                objective_sense="min",  # the goal is to minimize
+                solution_length=10,  # a solution has the length 10
+                initial_bounds=(-5.0, 5.0),  # sample new solutions from within [-5, 5]
+                dtype=torch.float32,  # the dtype of a solution is float32
+                # num_actors=...,  # if parallelization via multiple actors is desired
+                # device="cuda:0",  # if hardware acceleration is desired
+            )
+
+        def _evaluate_batch(self, solutions: SolutionBatch):
+            # Get the decision values of all the solutions in a 2D PyTorch tensor:
+            xs = solutions.values
+
+            # Compute the fitnesses
+            fitnesses = torch.sum(x ** (2 * self.q), dim=-1)
+
+            # Register the fitness into the Solution object
+            solutions.set_evals(fitnesses)
+    ```
+
+    **Customizing how initial solutions are sampled.**
+    Instead of sampling solutions from within an interval, one might wish to
+    define a special procedure for generating new solutions. This can be
+    achieved by overriding the `_fill(...)` method of the Problem class.
+    Please see the example below.
+
+    ```python
+    class MyProblemWithCustomizedFilling(Problem):
+        def __init__(self):
+            super().__init__(
+                objective_sense="min",
+                solution_length=10,
+                dtype=torch.float32,
+                # we do not set initial_bounds because we have a manual procedure
+                # for initializing solutions
+            )
+
+        def _evaluate_batch(self, solutions: SolutionBatch):
+            ...  # code to compute and fill the fitnesses goes here
+
+        def _fill(self, values: torch.Tensor):
+            # `values` is an empty tensor of shape (n, m) where n is the number
+            # of solutions and m is the solution length.
+            # The responsibility of this method is to fill this tensor.
+            # In the case of this example, let us say that we wish the new
+            # solutions to have values sampled from a standard normal distribution.
+            values.normal_()
+    ```
+
+    **Defining manually-structured optimization problems.**
+    The `dtype` of an optimization problem can be set as `object`.
+    When the `dtype` is set as an `object`, it means that a solution's
+    value can be a PyTorch tensor, or a numpy array, or a Python list,
+    or a Python dictionary, or a string, or a scalar, or `None`.
+    This gives the user enough flexibility to express non-numeric
+    optimization problems and/or problems where each solution has its
+    own length, or even its own structure.
+
+    In the example below, we define an optimization problem where a
+    solution is represented by a Python list and where each solution can
+    have its own length. For simplicity, we define the fitness function
+    as the sum of the values of a solution.
+
+    ```python
+    from evotorch import Problem, SolutionBatch
+    from evotorch.tools import ObjectArray
+    import random
+    import torch
+
+
+    class MyCustomStructuredProblem(Problem):
+        def __init__(self):
+            super().__init__(
+                objective_sense="min",
+                dtype=object,
+            )
+
+        def _evaluate_batch(self, solutions: SolutionBatch):
+            # Get the number of solutions
+            n = len(solutions)
+
+            # Allocate a PyTorch tensor that will store the fitnesses
+            fitnesses = torch.empty(n, dtype=torch.float32)
+
+            # Fitness is computed as the sum of numeric values stored
+            # by a solution.
+            for i in range(n):
+                # Get the values stored by a solution (which, in the case of
+                # this example, is a Python list, because we initialize them
+                # so in the _fill method).
+                sln_values = solutions[i].values
+                fitnesses[i] = sum(sln_values)
+
+            # Set the fitnesses
+            solutions.set_evals(fitnesses)
+
+        def _fill(self, values: ObjectArray):
+            # At this point, we have an ObjectArray of length `n`.
+            # This means, we need to fill the values of `n` solutions.
+            # `values[i]` represents the values of the i-th solution.
+            # Initially, `values[i]` is None.
+            # It is up to us how `values[i]` will be filled.
+            # Let us make each solution be initialized as a list of
+            # random length, containing random real numbers.
+
+            for i in range(len(values)):
+                ith_solution_length = random.randint(1, 10)
+                ith_solution_values = [random.random() for _ in range(ith_solution_length)]
+                values[i] = ith_solution_values
+    ```
+
+    **Multi-objective optimization.**
+    A multi-objective optimization problem can be expressed by using multiple
+    objective senses. As an example, let us consider an optimization problem
+    where the first objective sense is minimization and the second objective
+    sense is maximization. When working with an external fitness function,
+    the code to express such an optimization problem would look like this:
+
+    ```python
+    from evotorch import Problem
+    from evotorch.decorators import vectorized
+    import torch
+
+
+    @vectorized
+    def f(x: torch.Tensor) -> torch.Tensor:
+        # (Note that if dtype is object, x will be of type ObjectArray,
+        # and not a PyTorch tensor)
+
+        # Code to compute the fitnesses goes here.
+        # Our resulting tensor `fitnesses` is expected to have a shape (n, m)
+        # where n is the number of solutions and m is the number of objectives
+        # (which is 2 in the case of this example).
+        # `fitnesses[i, k]` is expected to store the fitness value belonging
+        # to the i-th solution according to the k-th objective.
+        fitnesses: torch.Tensor = ...
+        return fitnesses
+
+
+    problem = Problem(["min", "max"], f, ...)
+    ```
+
+    A multi-objective problem defined via class inheritance would look like this:
+
+    ```python
+    from evotorch import Problem, SolutionBatch
+
+
+    class MyMultiObjectiveProblem(Problem):
+        def __init__(self):
+            super().__init__(objective_sense=["min", "max"], ...)
+
+        def _evaluate_batch(self, solutions: SolutionBatch):
+            # Code to compute the fitnesses goes here.
+            # `fitnesses[i, k]` is expected to store the fitness value belonging
+            # to the i-th solution according to the k-th objective.
+            fitnesses: torch.Tensor = ...
+
+            # Set the fitnesses
+            solutions.set_evals(fitnesses)
+    ```
+
+    **How to solve a problem.**
+    If the optimization problem is single-objective and its dtype is a float
+    (e.g. torch.float32, torch.float64, etc.), then it can be solved using
+    any search algorithm implemented in EvoTorch. Let us assume that we have
+    such an optimization problem stored by the variable `prob`. We could use
+    the [cross entropy method][evotorch.algorithms.distributed.gaussian.CEM])
+    to solve it:
+
+    ```python
+    from evotorch import Problem
+    from evotorch.algorithms import CEM
+    from evotorch.logging import StdOutLogger
+
+
+    def f(x: torch.Tensor) -> torch.Tensor:
+        ...
+
+
+    prob = Problem("min", f, solution_length=..., dtype=torch.float32)
+
+    searcher = CEM(
+        problem,
+        # The keyword arguments below refer to hyperparameters specific to the
+        # cross entropy method algorithm. It is recommended to tune these
+        # hyperparameters according to the problem at hand.
+        popsize=100,  # population size
+        parenthood_ratio=0.5,  # 0.5 means better half of solutions become parents
+        stdev_init=10.0,  # initial standard deviation of the search distribution
+    )
+
+    _ = StdOutLogger(searcher)  # to report the progress onto the screen
+    searcher.run(50)  # run for 50 generations
+
+    print("Center of the search distribution:", searcher.status["center"])
+    print("Solution with best fitness ever:", searcher.status["best"])
+    ```
+
+    See the namespace [evotorch.algorithms][evotorch.algorithms] to see the
+    algorithms implemented within EvoTorch.
+
+    If the optimization problem at hand has an integer dtype (e.g. torch.int64),
+    or has the `object` dtype, or has multiple objectives, then distribution-based
+    search algorithms such as CEM cannot be used (since those algorithms were
+    implemented with continuous decision variables and with single-objective
+    problems in mind). In such cases, one can use the algorithm named
+    [SteadyState][evotorch.algorithms.ga.SteadyStateGA].
+    Please also note that, while using
+    [SteadyStateGA][evotorch.algorithms.ga.SteadyStateGA] on a problem with an
+    integer dtype or with the `object` dtype, one will have to define manual
+    cross-over and mutation operators specialized to the solution structure
+    of the problem at hand. Please see the documentation of
+    [SteadyStateGA][evotorch.algorithms.ga.SteadyStateGA] for details.
     """
 
     def __init__(
@@ -424,7 +720,7 @@ class Problem(TensorMakerMixin, Serializable):
         num_subbatches: Optional[int] = None,
         subbatch_size: Optional[int] = None,
         store_solution_stats: Optional[bool] = None,
-        vectorized: bool = False,
+        vectorized: Optional[bool] = None,
     ):
         """
         `__init__(...)`: Initialize the Problem object.
@@ -435,9 +731,10 @@ class Problem(TensorMakerMixin, Serializable):
                 ("min" or "max", for minimization or maximization)
                 is enough.
                 For a problem with `n` objectives, a sequence
-                of strings, of length `n`, is required, each string
-                in the sequence being "min" or "max".
-                This argument specifies the goal of the optimization.
+                of strings (e.g. a list of strings) of length `n` is
+                required, each string in the sequence being "min" or
+                "max". This argument specifies the goal of the
+                optimization.
             initial_bounds: In which interval will the values of a
                 new solution will be initialized.
                 Expected as a tuple, each element being either a
@@ -602,6 +899,8 @@ class Problem(TensorMakerMixin, Serializable):
                 transfer between the cpu and a foreign computation device
                 (like the gpu) just for the sake of keeping the best and
                 the worst solutions.
+            vectorized: Set this to True if the provided fitness function
+                is vectorized but is not decorated via `@vectorized`.
         """
 
         # Set the dtype for the decision variables of the Problem
@@ -611,6 +910,8 @@ class Problem(TensorMakerMixin, Serializable):
             self._dtype = object
         else:
             self._dtype = to_torch_dtype(dtype)
+
+        _evolog.info(message_from(self, f"The `dtype` for the problem's decision variables is set as {self._dtype}"))
 
         # Set the dtype for the solution evaluations (i.e. fitnesses and evaluation data)
         if eval_dtype is not None:
@@ -627,8 +928,15 @@ class Problem(TensorMakerMixin, Serializable):
                 # For any other `dtype`, we use float32 as our `_eval_dtype`.
                 self._eval_dtype = torch.float32
 
+            _evolog.info(
+                message_from(
+                    self, f"`eval_dtype` (the dtype of the fitnesses and evaluation data) is set as {self._eval_dtype}"
+                )
+            )
+
         # Set the main device of the Problem object
         self._device = torch.device("cpu") if device is None else torch.device(device)
+        _evolog.info(message_from(self, f"The `device` of the problem is set as {self._device}"))
 
         # Declare the internal variable that might store the random number generator
         self._generator: Optional[torch.Generator] = None
@@ -798,8 +1106,63 @@ class Problem(TensorMakerMixin, Serializable):
         # Store the provided objective function (which can be None)
         self._objective_func: Optional[Callable] = objective_func
 
+        # Declare the instance variable that will store whether or not the external fitness function is
+        # vectorized, if such an external fitness function is given.
+        self._vectorized: Optional[bool]
+
         # Store the information which indicates whether or not the given objective function is vectorized
-        self._vectorized: bool = bool(vectorized)
+        if self._objective_func is None:
+            # This is the case where an external fitness function is not given.
+            # In this case, we expect the keyword argument `vectorized` to be left as None.
+
+            if vectorized is not None:
+                # If the keyword argument `vectorized` is something other than None, then we raise an error
+                # to let the user know.
+                raise ValueError(
+                    f"This problem object received no external fitness function."
+                    f" When not using an external fitness function, the keyword argument `vectorized`"
+                    f" is expected to be left as None."
+                    f" However, the value of the keyword argument `vectorized` is {vectorized}."
+                )
+
+            # At this point, we know that we do not have an external fitness function.
+            # The variable which is supposed to tell us whether or not the external fitness function is vectorized
+            # is therefore irrelevant. We just set it as None.
+            self._vectorized = None
+        else:
+            # This is the case where an external fitness function is given.
+
+            if (
+                hasattr(self._objective_func, "__evotorch_vectorized__")
+                and self._objective_func.__evotorch_vectorized__
+            ):
+                # If the external fitness function has an attribute `__evotorch_vectorized__`, and the value of this
+                # attribute evaluates to True, then this is an indication that the fitness function was decorated
+                # with `@vectorized`.
+
+                if vectorized is not None:
+                    # At this point, we know (or at least have the assumption) that the fitness function was decorated
+                    # with `@vectorized`. Any boolean value given via the keyword argument `vectorized` would therefore
+                    # be either redundant or conflicting.
+                    # Therefore, in this case, if the keyword argument `vectorized` is anything other than None, we
+                    # raise an error to inform the user.
+
+                    raise ValueError(
+                        f"Received a fitness function that was decorated via @vectorized."
+                        f" When using such a fitness function, the keyword argument `vectorized`"
+                        f" is expected to be left as None."
+                        f" However, the value of the keyword argument `vectorized` is {vectorized}."
+                    )
+
+                # Since we know that our fitness function declares itself as vectorized, we set the instance variable
+                # _vectorized as True.
+                self._vectorized = True
+            else:
+                # This is the case in which the fitness function does not appear to be decorated via `@vectorized`.
+                # In this case, if the keyword argument `vectorized` has a value that is equivalent to True,
+                # then the value of `_vectorized` becomes True. On the other hand, if the keyword argument `vectorized`
+                # was left as None or if it has a value that is equivalent to False, `_vectorized` becomes False.
+                self._vectorized = bool(vectorized)
 
         # If the evaluation data length is explicitly stated, then convert it to an integer and store it.
         # Otherwise, store the evaluation data length as 0.
@@ -988,6 +1351,16 @@ class Problem(TensorMakerMixin, Serializable):
             self._num_actors = int(num_actors)
 
         if self._num_actors == 1:
+            _evolog.info(
+                message_from(
+                    self,
+                    (
+                        "The number of actors that will be allocated for parallelized evaluation was encountered as 1."
+                        " This number is automatically dropped to 0,"
+                        " because having only 1 actor does not bring any benefit in terms of parallelization."
+                    ),
+                )
+            )
             # Creating a single actor does not bring any benefit of parallelization.
             # Therefore, at the end of all the computations above regarding the number of actors, if it turns out
             # that the target number of actors is 1, we reduce it to 0 (meaning that no actor will be initialized).
@@ -996,6 +1369,12 @@ class Problem(TensorMakerMixin, Serializable):
             # Since we are to allocate no actor, the value of the argument `num_gpus_per_actor` is meaningless.
             # We therefore overwrite the value of that argument with None.
             num_gpus_per_actor = None
+
+        _evolog.info(
+            message_from(
+                self, f"The number of actors that will be allocated for parallelized evaluation is {self._num_actors}"
+            )
+        )
 
         # Annotate the variable which will determine how many GPUs are to be assigned to each actor.
         self._num_gpus_per_actor: Optional[Union[str, int, float]]
@@ -1054,6 +1433,11 @@ class Problem(TensorMakerMixin, Serializable):
             # the code above overrides the value for the argument `num_gpus_per_actor`, which means,
             # this is the case that is activated when `num_actors` is "num_gpus" or "num_devices".
             self._num_gpus_per_actor = float(num_gpus_per_actor)
+
+        if self._num_actors > 0:
+            _evolog.info(
+                message_from(self, f"Number of GPUs that will be allocated per actor is {self._num_gpus_per_actor}")
+            )
 
         # Initialize the Hook instances (and the related status dictionary for the `_after_eval_hook`)
         self._before_eval_hook: Hook = Hook()
@@ -1948,6 +2332,36 @@ class Problem(TensorMakerMixin, Serializable):
     def _shared_attribs(self) -> List[str]:
         return []
 
+    def _device_of_fitness_function(self) -> Optional[Device]:
+        def device_of_fn(fn: Optional[Callable]) -> Optional[Device]:
+            if fn is None:
+                return None
+            else:
+                if hasattr(fn, "__evotorch_on_aux_device__") and fn.__evotorch_on_aux_device__:
+                    return self.aux_device
+                elif hasattr(fn, "device"):
+                    return fn.device
+                else:
+                    return None
+
+        for candidate_fn in (self._objective_func, self._evaluate_all, self._evaluate_batch, self._evaluate):
+            device = device_of_fn(candidate_fn)
+            if device is not None:
+                if candidate_fn is self._evaluate_all:
+                    raise RuntimeError(
+                        "It seems that the `_evaluate_all(...)` method of this Problem object is either decorated"
+                        " by @on_aux_device or by @on_device, or it is specifying a target device via a `device`"
+                        " attribute. However, these decorators (or the `device` attribute) are not supported in the"
+                        " case of `_evaluate_all(...)`."
+                        " The reason is that the checking of the target device and the operations of moving the batch"
+                        " onto the target device are handled by the default implementation of `_evaluate_all` itself."
+                        " To specify a target device, consider decorating `_evaluate_batch(...)` or `_evaluate(...)`"
+                        " instead."
+                    )
+                return device
+
+        return None
+
     def evaluate(self, x: Union["SolutionBatch", "Solution"]):
         """
         Evaluate the given Solution or SolutionBatch.
@@ -1991,7 +2405,14 @@ class Problem(TensorMakerMixin, Serializable):
 
     def _evaluate_all(self, batch: "SolutionBatch"):
         if self._actors is None:
-            self._evaluate_batch(batch)
+            fitness_device = self._device_of_fitness_function()
+            if fitness_device is None:
+                self._evaluate_batch(batch)
+            else:
+                original_device = batch.device
+                moved_batch = batch.to(fitness_device)
+                self._evaluate_batch(moved_batch)
+                batch.set_evals(moved_batch.evals.to(original_device))
         else:
             if self._num_subbatches is not None:
                 pieces = batch.split(self._num_subbatches)
@@ -2547,10 +2968,23 @@ class Problem(TensorMakerMixin, Serializable):
         `_sample_and_compute_grad(...)` is overriden, this property might not
         be called at all.
 
-        This is the not-yet-overriden implementation in the Problem class,
-        and returns the main device.
+        This is the default (i.e. not-yet-overriden) implementation in the
+        Problem class, and performs the following operations to decide the
+        device:
+        (i) if the Problem object was given an external fitness function that
+        is decorated by @[on_device][evotorch.decorators.on_device],
+        or by @[on_aux_device][evotorch.decorators.on_aux_device],
+        or has a `device` attribute, then return the device requested by that
+        function; otherwise
+        (ii) if either one of the methods `_evaluate_batch`, and `_evaluate`
+        was decorated by @[on_device][evotorch.decorators.on_device]
+        or by @[on_aux_device][evotorch.decorators.on_aux_device],
+        or has a `device` attribute, then return the device requested by that
+        method; otherwise
+        (iii) return the main device of the Problem object.
         """
-        return self.device
+        fitness_device = self._device_of_fitness_function()
+        return self.device if fitness_device is None else fitness_device
 
     def _sample_and_compute_gradients(
         self,
@@ -3362,7 +3796,11 @@ class SolutionBatch(Serializable):
                     f" the `evals` tensor has {ncols} columns."
                 )
             if evals.shape[0] != eval_data.shape[0]:
-                raise ValueError(f"The provided `evals` and `eval_data` tensors have incompatible shapes.")
+                raise ValueError(
+                    f"The provided `evals` and `eval_data` tensors have incompatible shapes."
+                    f" Shape of `evals`: {evals.shape},"
+                    f" shape of `eval_data`: {eval_data.shape}."
+                )
             self._evdata[solutions, :] = torch.hstack([evals, eval_data])
         else:
             if ncols == num_objs:

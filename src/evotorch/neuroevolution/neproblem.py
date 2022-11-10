@@ -74,7 +74,7 @@ class NEProblem(BaseNEProblem):
         eval_dtype: Optional[DType] = None,
         eval_data_length: int = 0,
         seed: Optional[int] = None,
-        num_actors: Optional[Union[int, str]] = "num_devices",
+        num_actors: Optional[Union[int, str]] = None,
         actor_config: Optional[dict] = None,
         num_gpus_per_actor: Optional[Union[int, float, str]] = None,
         num_subbatches: Optional[int] = None,

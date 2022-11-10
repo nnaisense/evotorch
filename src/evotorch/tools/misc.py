@@ -16,6 +16,7 @@
 
 import functools
 import inspect
+import logging
 import math
 from collections.abc import Mapping
 from numbers import Integral, Number, Real
@@ -1921,3 +1922,106 @@ def pass_info_if_needed(f: Callable, info: Dict[str, Any]) -> Callable:
         return functools.partial(f, **info)
     else:
         return f
+
+
+def get_evotorch_logger() -> logging.Logger:
+    """
+    Get the main logger used by the EvoTorch package.
+
+    This main logger is used by the EvoTorch library itself to report to the
+    user various information about the current configuration (e.g. what device
+    and which dtype are to be used by a computation that is about to happen).
+
+    Please note: by "logger" what is meant here is a standard Python logger,
+    i.e. a `logging.Logger` instance (where the namespace `logging` refers to
+    the logging library available in the standard Python library). The logger
+    mentioned here is not to be confused with the loggers found in the namespace
+    [evotorch.logging][evotorch.logging] (which defines various subclasses of
+    [evotorch.logging.Logger][evotorch.logging.Logger] whose API are different,
+    and whose tasks are to periodically report the progress of an evolutionary
+    search).
+
+    You might want to obtain the main logger of EvoTorch for two main reasons.
+    The first reason is that perhaps you wish to modify the default settings
+    of the logs produced by EvoTorch. For example, let us assume that we have
+    obtained the main logger of EvoTorch and stored it using a variable named
+    `evolog`:
+
+    ```python
+    import logging
+    from evotorch import get_evotorch_logger
+
+    evolog = get_evotorch_logger()  # evolog to store a logging.Logger object
+    ```
+
+    We can now change the default level of the logger such that it does not
+    report regular information messages anymore while still reporting events
+    whose importance levels are at least WARNING:
+
+    ```python
+    evolog.setLevel(logging.WARNING)
+    ```
+
+    You could also modify the handlers, output formats, etc. We recommend the
+    official documentation of Python regarding `logging` for further details
+    on how to configure a `logging.Logger` object.
+
+    The second reason is that perhaps you wish to insert your own log entries
+    into the logs produced by EvoTorch. Imagine, for example, that you wish
+    to produce a log entry from within your fitness function once the fitness
+    values become negative. This can be done as follows:
+
+    ```python
+    def f(x: torch.Tensor) -> torch.Tensor:
+        fitness = ...  # compute the fitnesses from x somehow
+        if x < 0:  # alternatively, if f is vectorized: if torch.any(x < 0)
+            evolog.info("Encountered negative fitness!")
+    ```
+
+    Returns:
+        The default logger of EvoTorch, as a `logging.Logger` instance.
+    """
+    from .._main_logger import logger
+
+    return logger
+
+
+def message_from(sender: object, message: Any) -> str:
+    """
+    Prepend the sender object's name and id to a string message.
+
+    Let us imagine that we have a class named `Example`:
+
+    ```python
+    from evotorch.tools import message_from
+
+
+    class Example:
+        def say_hello(self):
+            print(message_from(self, "Hello!"))
+    ```
+
+    Let us now instantiate this class and use its `say_hello` method:
+
+    ```python
+    ex = Example()
+    ex.say_hello()
+    ```
+
+    The output becomes something like this:
+
+    ```
+    Instance of `Example` (id:...) -- Hello!
+    ```
+
+    Args:
+        sender: The object which produces the message
+        message: The message, as something that can be converted to string
+    Returns:
+        The new message string, with the details regarding the sender object
+        inserted to the beginning.
+    """
+    sender_type = type(sender).__name__
+    sender_id = id(sender)
+
+    return f"Instance of `{sender_type}` (id:{sender_id}) -- {message}"

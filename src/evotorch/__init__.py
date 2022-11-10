@@ -17,6 +17,7 @@
 # flake8: noqa
 # isort: off
 
+# Import the top-import requests, if any
 import os
 import importlib
 
@@ -25,6 +26,7 @@ for _top_import in _top_imports:
     if len(_top_import) > 0:
         importlib.import_module(_top_import)
 
+# Import the subpackages of EvoTorch
 from . import tools
 from . import core
 from .core import Problem, Solution, SolutionBatch
