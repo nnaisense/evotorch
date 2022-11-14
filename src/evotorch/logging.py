@@ -691,7 +691,7 @@ if wandb is not None:
             interval: int = 1,
             after_first_step: bool = False,
             group: Optional[str] = None,
-            **wandb_args
+            **wandb_args,
         ):
             """`__init__(...)`: Initialize the WandbLogger.
 
@@ -723,12 +723,13 @@ if wandb is not None:
             """
             super().__init__(searcher, interval=interval, after_first_step=after_first_step)
             self._group = group
-            if init: wandb.init(**wandb_args)
+            if init:
+                wandb.init(**wandb_args)
 
         def _log(self, status: dict):
             log_status = dict()
             for k, v in status.items():
                 target_key = k if self._group is None else self._group + "/" + k
                 log_status[target_key] = v
-            
+
             wandb.log(log_status)
