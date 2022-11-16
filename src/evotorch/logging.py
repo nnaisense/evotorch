@@ -54,6 +54,12 @@ except ImportError:
     neptune = None
 
 
+try:
+    import wandb
+except ImportError:
+    wandb = None
+
+
 class Logger:
     """Base class for all logging classes."""
 
@@ -670,3 +676,60 @@ if neptune is not None:
             for k, v in status.items():
                 target_key = k if self._group is None else self._group + "/" + k
                 self._run[target_key].log(v)
+
+
+if wandb is not None:
+
+    class WandbLogger(ScalarLogger):
+        """A logger which stores the status via wandb."""
+
+        def __init__(
+            self,
+            searcher: SearchAlgorithm,
+            init: Optional[bool] = True,
+            *,
+            interval: int = 1,
+            after_first_step: bool = False,
+            group: Optional[str] = None,
+            **wandb_args,
+        ):
+            """`__init__(...)`: Initialize the WandbLogger.
+
+            Args:
+                searcher: The evolutionary algorithm instance whose progress
+                    is to be logged.
+                init: Run `wandb.init()` in the logger initialization
+                interval: Expected as an integer n.
+                    Logging is to be done at every n iterations.
+                after_first_step: Expected as a boolean.
+                    Meaningful only if interval is set as an integer greater
+                    than 1. Let us suppose that interval is set as 10.
+                    If after_first_step is False (which is the default),
+                    then the logging will be done at steps 10, 20, 30, and so on.
+                    On the other hand, if after_first_step is True,
+                    then the logging will be done at steps 1, 11, 21, 31, and so
+                    on.
+                group: Into which group will the metrics be stored.
+                    For example, if the status keys to be logged are "score" and
+                    "elapsed", and `group` is set as "training", then the metrics
+                    will be sent to neptune with the keys "training/score" and
+                    "training/elapsed". `group` can also be left as None,
+                    in which case the status will be sent to neptune with the
+                    key names unchanged.
+                **wandb_args: If `init` is `True` any additional keyword argument
+                    will be passed to `wandb.init()`.
+                    For example, WandbLogger(searcher, project=my-project, entity=my-organization)
+                    will result in calling `wandb.init(project=my-project, entity=my-organization)`
+            """
+            super().__init__(searcher, interval=interval, after_first_step=after_first_step)
+            self._group = group
+            if init:
+                wandb.init(**wandb_args)
+
+        def _log(self, status: dict):
+            log_status = dict()
+            for k, v in status.items():
+                target_key = k if self._group is None else self._group + "/" + k
+                log_status[target_key] = v
+
+            wandb.log(log_status)
