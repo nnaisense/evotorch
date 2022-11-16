@@ -11,7 +11,7 @@
       
       
       <link rel="icon" href="../../assets/favicon.ico">
-      <meta name="generator" content="mkdocs-1.4.1, mkdocs-material-8.5.6">
+      <meta name="generator" content="mkdocs-1.4.2, mkdocs-material-8.5.10">
     
     
       
@@ -19,10 +19,10 @@
       
     
     
-      <link rel="stylesheet" href="../../assets/stylesheets/main.20d9efc8.min.css">
+      <link rel="stylesheet" href="../../assets/stylesheets/main.472b142f.min.css">
       
         
-        <link rel="stylesheet" href="../../assets/stylesheets/palette.cbb835fc.min.css">
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.08040f6c.min.css">
         
       
       
@@ -38,8 +38,6 @@
         <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
       
     
-    
-      <link rel="stylesheet" href="../../assets/_mkdocstrings.css">
     
     <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce((e,_)=>(e<<5)-e+_.charCodeAt(0),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
@@ -132,6 +130,7 @@
         
           
           
+          
           <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="orange" data-md-color-accent="orange"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_1">
           
             <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_2" hidden>
@@ -139,6 +138,7 @@
             </label>
           
         
+          
           
           
           <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="deep-orange" data-md-color-accent="deep-orange"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_2">
@@ -798,36 +798,8 @@
   
   
     <li class="md-nav__item">
-      <a href="../../examples/notebooks/Brax_Experiments_with_PGPE/" class="md-nav__link">
-        Solving a Brax environment using EvoTorch
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
       <a href="../../examples/notebooks/Gym_Experiments_with_PGPE_and_CoSyNE/" class="md-nav__link">
         Gym Experiments with PGPE and CoSyNE
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../examples/notebooks/Minimizing_Lennard-Jones_Atom_Cluster_Potentials/" class="md-nav__link">
-        Minimising Lennard-Jones Atom Cluster Potentials with Evolution
       </a>
     </li>
   
@@ -856,6 +828,34 @@
     <li class="md-nav__item">
       <a href="../../examples/notebooks/Variational_Quantum_Eigensolvers_with_SNES/" class="md-nav__link">
         Variational Quantum Eigensolvers with SNES
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../examples/notebooks/Brax_Experiments_with_PGPE/" class="md-nav__link">
+        Solving a Brax environment using EvoTorch
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../examples/notebooks/Minimizing_Lennard-Jones_Atom_Cluster_Potentials/" class="md-nav__link">
+        Minimising Lennard-Jones Atom Cluster Potentials with Evolution
       </a>
     </li>
   
@@ -1872,9 +1872,9 @@
 <h1 id="general-usage">General Usage<a class="headerlink" href="#general-usage" title="Permanent link">&para;</a></h1>
 <p>In EvoTorch, code typically consists of 3 modular components:</p>
 <ul>
-<li>The searcher, a <a class="autorefs autorefs-internal" href="../../reference/evotorch/algorithms/searchalgorithm/#evotorch.algorithms.searchalgorithm.SearchAlgorithm">SearchAlgorithm</a> instance which will iteratively generate populations of candidate solutions, evaluate those populations using the fitness function, and then update its own internal variables to attempt to produce higher-quality solutions in the subsequent iterations.</li>
-<li>The problem, a <a class="autorefs autorefs-internal" href="../../reference/evotorch/core/#evotorch.core.Problem">Problem</a> instance which will receive populations from the searcher and update the populations' individual solutions with computed fitness values. The <a class="autorefs autorefs-internal" href="../../reference/evotorch/core/#evotorch.core.Problem">Problem</a> class supports various approaches to vectorisation and/or parallelisation using <code>ray</code> actor pools, meaning that the problem can be implemented in a highly efficient manner with little effort.</li>
-<li>Any number of loggers, each an instance of <a class="autorefs autorefs-internal" href="../../reference/evotorch/logging/#evotorch.logging.Logger">Logger</a>, which observe the status of the searcher and process that status in various useful ways, such as printing the searcher status to the standard output or storing statistics about the evolutionary run in a remote logging system such as <a href="https://sacred.readthedocs.io/en/stable/quickstart.html">Sacred</a> or <a href="https://mlflow.org/">MLFlow</a>.</li>
+<li>The searcher, a [SearchAlgorithm][evotorch.algorithms.searchalgorithm.SearchAlgorithm] instance which will iteratively generate populations of candidate solutions, evaluate those populations using the fitness function, and then update its own internal variables to attempt to produce higher-quality solutions in the subsequent iterations.</li>
+<li>The problem, a [Problem][evotorch.core.Problem] instance which will receive populations from the searcher and update the populations' individual solutions with computed fitness values. The [Problem][evotorch.core.Problem] class supports various approaches to vectorisation and/or parallelisation using <code>ray</code> actor pools, meaning that the problem can be implemented in a highly efficient manner with little effort.</li>
+<li>Any number of loggers, each an instance of [Logger][evotorch.logging.Logger], which observe the status of the searcher and process that status in various useful ways, such as printing the searcher status to the standard output or storing statistics about the evolutionary run in a remote logging system such as <a href="https://sacred.readthedocs.io/en/stable/quickstart.html">Sacred</a> or <a href="https://mlflow.org/">MLFlow</a>.</li>
 </ul>
 <p>The relationship between these three components is outlined below:</p>
 <p><img alt="evotorch" src="../../evotorch_architecture.svg" /></p>
@@ -1990,10 +1990,10 @@
       <div class="md-dialog__inner md-typeset"></div>
     </div>
     
-    <script id="__config" type="application/json">{"base": "../..", "features": ["content.code.annotate", "navigation.indexes", "navigation.sections", "navigation.tabs", "navigation.tabs.sticky", "navigation.top", "navigation.tracking", "search.highlight", "search.share", "search.suggest"], "search": "../../assets/javascripts/workers/search.5bf1dace.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version.title": "Select version"}, "version": {"provider": "mike"}}</script>
+    <script id="__config" type="application/json">{"base": "../..", "features": ["content.code.annotate", "navigation.indexes", "navigation.sections", "navigation.tabs", "navigation.tabs.sticky", "navigation.top", "navigation.tracking", "search.highlight", "search.share", "search.suggest"], "search": "../../assets/javascripts/workers/search.16e2a7d4.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version.title": "Select version"}, "version": {"provider": "mike"}}</script>
     
     
-      <script src="../../assets/javascripts/bundle.078830c0.min.js"></script>
+      <script src="../../assets/javascripts/bundle.d6c3db9e.min.js"></script>
       
         <script src="../../javascripts/mathjax.js"></script>
       

@@ -11,7 +11,7 @@
       
       
       <link rel="icon" href="../../assets/favicon.ico">
-      <meta name="generator" content="mkdocs-1.4.1, mkdocs-material-8.5.6">
+      <meta name="generator" content="mkdocs-1.4.2, mkdocs-material-8.5.10">
     
     
       
@@ -19,10 +19,10 @@
       
     
     
-      <link rel="stylesheet" href="../../assets/stylesheets/main.20d9efc8.min.css">
+      <link rel="stylesheet" href="../../assets/stylesheets/main.472b142f.min.css">
       
         
-        <link rel="stylesheet" href="../../assets/stylesheets/palette.cbb835fc.min.css">
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.08040f6c.min.css">
         
       
       
@@ -38,8 +38,6 @@
         <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
       
     
-    
-      <link rel="stylesheet" href="../../assets/_mkdocstrings.css">
     
     <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce((e,_)=>(e<<5)-e+_.charCodeAt(0),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
@@ -132,6 +130,7 @@
         
           
           
+          
           <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="orange" data-md-color-accent="orange"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_1">
           
             <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_2" hidden>
@@ -139,6 +138,7 @@
             </label>
           
         
+          
           
           
           <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="deep-orange" data-md-color-accent="deep-orange"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_2">
@@ -857,36 +857,8 @@
   
   
     <li class="md-nav__item">
-      <a href="../../examples/notebooks/Brax_Experiments_with_PGPE/" class="md-nav__link">
-        Solving a Brax environment using EvoTorch
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
       <a href="../../examples/notebooks/Gym_Experiments_with_PGPE_and_CoSyNE/" class="md-nav__link">
         Gym Experiments with PGPE and CoSyNE
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../examples/notebooks/Minimizing_Lennard-Jones_Atom_Cluster_Potentials/" class="md-nav__link">
-        Minimising Lennard-Jones Atom Cluster Potentials with Evolution
       </a>
     </li>
   
@@ -915,6 +887,34 @@
     <li class="md-nav__item">
       <a href="../../examples/notebooks/Variational_Quantum_Eigensolvers_with_SNES/" class="md-nav__link">
         Variational Quantum Eigensolvers with SNES
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../examples/notebooks/Brax_Experiments_with_PGPE/" class="md-nav__link">
+        Solving a Brax environment using EvoTorch
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../examples/notebooks/Minimizing_Lennard-Jones_Atom_Cluster_Potentials/" class="md-nav__link">
+        Minimising Lennard-Jones Atom Cluster Potentials with Evolution
       </a>
     </li>
   
@@ -1973,7 +1973,7 @@
 
 <h1 id="defining-problems">Defining Problems<a class="headerlink" href="#defining-problems" title="Permanent link">&para;</a></h1>
 <h2 id="basic-usage">Basic Usage<a class="headerlink" href="#basic-usage" title="Permanent link">&para;</a></h2>
-<p>One of the most important components of EvoTorch is the definition of problems. To define problems, we use the <a class="autorefs autorefs-internal" href="../../reference/evotorch/core/#evotorch.core.Problem">Problem</a> class, which provides various advanced functionality, including vectorisation, GPU usage, <a href="https://www.ray.io/">Ray</a> parallelisation and variable population sizes, out of the box. The most basic usage of the <a class="autorefs autorefs-internal" href="../../reference/evotorch/core/#evotorch.core.Problem">Problem</a> class is simply to pass to it a function to minimize or maximize. In the following documentation, we will focus on minimization of the Sphere function</p>
+<p>One of the most important components of EvoTorch is the definition of problems. To define problems, we use the [Problem][evotorch.core.Problem] class, which provides various advanced functionality, including vectorisation, GPU usage, <a href="https://www.ray.io/">Ray</a> parallelisation and variable population sizes, out of the box. The most basic usage of the [Problem][evotorch.core.Problem] class is simply to pass to it a function to minimize or maximize. In the following documentation, we will focus on minimization of the Sphere function</p>
 <div class="arithmatex">\[
 f(x) = \sum_{i=1}^d x_i^2.
 \]</div>
@@ -1984,7 +1984,7 @@ f(x) = \sum_{i=1}^d x_i^2.
 <a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="k">def</span> <span class="nf">sphere</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
 <a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>    <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">pow</span><span class="p">(</span><span class="mf">2.0</span><span class="p">))</span>
 </code></pre></div>
-<p>With only this function definition, we can create an EvoTorch <a class="autorefs autorefs-internal" href="../../reference/evotorch/core/#evotorch.core.Problem">Problem</a> instance and start learning,</p>
+<p>With only this function definition, we can create an EvoTorch [Problem][evotorch.core.Problem] instance and start learning,</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="kn">from</span> <span class="nn">evotorch</span> <span class="kn">import</span> <span class="n">Problem</span>
 <a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="kn">from</span> <span class="nn">evotorch.algorithms</span> <span class="kn">import</span> <span class="n">SNES</span>
 <a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="kn">from</span> <span class="nn">evotorch.logging</span> <span class="kn">import</span> <span class="n">StdOutLogger</span>
@@ -1995,7 +1995,7 @@ f(x) = \sum_{i=1}^d x_i^2.
 <a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="n">logger</span> <span class="o">=</span> <span class="n">StdOutLogger</span><span class="p">(</span><span class="n">searcher</span><span class="p">)</span>
 <a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a><span class="n">searcher</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>
 </code></pre></div>
-<p>If we instead want to maximize the function, we can instead instantiate the <a class="autorefs autorefs-internal" href="../../reference/evotorch/core/#evotorch.core.Problem">Problem</a> instance,</p>
+<p>If we instead want to maximize the function, we can instead instantiate the [Problem][evotorch.core.Problem] instance,</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="n">problem</span> <span class="o">=</span> <span class="n">Problem</span><span class="p">(</span><span class="s2">&quot;max&quot;</span><span class="p">,</span> <span class="n">sphere</span><span class="p">,</span> <span class="n">solution_length</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">initial_bounds</span><span class="o">=</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
 </code></pre></div>
 <p>and if we want to make the instantiation explicit, we can use the keyword arguments <code>objective_sense</code> and <code>objective_func</code>,</p>
@@ -2014,7 +2014,7 @@ f(x) = \sum_{i=1}^d x_i^2.
 <div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="k">def</span> <span class="nf">vectorised_sphere</span><span class="p">(</span><span class="n">xs</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
 <a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>    <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">xs</span><span class="o">.</span><span class="n">pow</span><span class="p">(</span><span class="mf">2.0</span><span class="p">),</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
 </code></pre></div>
-<p>By specifying that we want to sum across the last dimension, we return an <span class="arithmatex">\(N\)</span> dimensional vector of fitnesses, rather than a single fitness value. Using this new vectorised function is as simple as using the <code>vectorized</code> flag in the instantiation of the <a class="autorefs autorefs-internal" href="../../reference/evotorch/core/#evotorch.core.Problem">Problem</a>.</p>
+<p>By specifying that we want to sum across the last dimension, we return an <span class="arithmatex">\(N\)</span> dimensional vector of fitnesses, rather than a single fitness value. Using this new vectorised function is as simple as using the <code>vectorized</code> flag in the instantiation of the [Problem][evotorch.core.Problem].</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="n">problem</span> <span class="o">=</span> <span class="n">Problem</span><span class="p">(</span>
 <a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>    <span class="n">objective_sense</span><span class="o">=</span><span class="s2">&quot;min&quot;</span><span class="p">,</span>
 <a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>    <span class="n">objective_func</span><span class="o">=</span><span class="n">vectorised_sphere</span><span class="p">,</span>
@@ -2024,7 +2024,7 @@ f(x) = \sum_{i=1}^d x_i^2.
 <a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a><span class="p">)</span>
 </code></pre></div>
 <h2 id="creating-custom-problem-classes">Creating Custom Problem Classes<a class="headerlink" href="#creating-custom-problem-classes" title="Permanent link">&para;</a></h2>
-<p>While many fitness functions can be expressed as a callable function <span class="arithmatex">\(f: \mathbb{R}^d \rightarrow \mathbb{R}\)</span> which can be passed to a <a class="autorefs autorefs-internal" href="../../reference/evotorch/core/#evotorch.core.Problem">Problem</a> instance at instantiation using the <code>objective_func</code> keyword-argument, there are also many cases were we wish to create custom <a class="autorefs autorefs-internal" href="../../reference/evotorch/core/#evotorch.core.Problem">Problem</a> classes which can be stateful and parameterisable. In this case, we can create a new class that inherits from the <a class="autorefs autorefs-internal" href="../../reference/evotorch/core/#evotorch.core.Problem">Problem</a> class.</p>
+<p>While many fitness functions can be expressed as a callable function <span class="arithmatex">\(f: \mathbb{R}^d \rightarrow \mathbb{R}\)</span> which can be passed to a [Problem][evotorch.core.Problem] instance at instantiation using the <code>objective_func</code> keyword-argument, there are also many cases were we wish to create custom [Problem][evotorch.core.Problem] classes which can be stateful and parameterisable. In this case, we can create a new class that inherits from the [Problem][evotorch.core.Problem] class.</p>
 <p>To demonstrate this, we will consider the <span class="arithmatex">\(d\)</span>-dimensional Rastrigin problem, where the center of the function is offset by a randomly chosen vector <span class="arithmatex">\(x'\)</span>,</p>
 <div class="arithmatex">\[
 f(x) = Ad + \sum_{i=1}^d z_i^2 - A \cos (2 \pi z_i).
@@ -2061,7 +2061,7 @@ z = x - x'
 <a id="__codelineno-7-25" name="__codelineno-7-25" href="#__codelineno-7-25"></a>        <span class="p">)</span>
 <a id="__codelineno-7-26" name="__codelineno-7-26" href="#__codelineno-7-26"></a>        <span class="n">solution</span><span class="o">.</span><span class="n">set_evals</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
 </code></pre></div>
-<p>This <a class="autorefs autorefs-internal" href="../../reference/evotorch/core/#evotorch.core.Problem">Problem</a> class can be used just like any other, reparameterising it as needed</p>
+<p>This [Problem][evotorch.core.Problem] class can be used just like any other, reparameterising it as needed</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="kn">from</span> <span class="nn">evotorch.algorithms</span> <span class="kn">import</span> <span class="n">SNES</span>
 <a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="kn">from</span> <span class="nn">evotorch.logging</span> <span class="kn">import</span> <span class="n">StdOutLogger</span>
 <a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a>
@@ -2072,14 +2072,14 @@ z = x - x'
 </code></pre></div>
 <p>Let's break down what is happening in the <code>_evaluate</code> method definition.</p>
 <ol>
-<li>This method receives an instance of <a class="autorefs autorefs-internal" href="../../reference/evotorch/core/#evotorch.core.Solution">Solution</a>, the data type used to store and manipulate individual members of the population in EvoTorch.</li>
-<li>The <a class="autorefs autorefs-internal" href="../../reference/evotorch/core/#evotorch.core.Solution">Solution</a> instance's <code>values</code> method is called, which returns the <span class="arithmatex">\(d\)</span>-dimensional vector <code>x</code> that represents the solution.</li>
+<li>This method receives an instance of [Solution][evotorch.core.Solution], the data type used to store and manipulate individual members of the population in EvoTorch.</li>
+<li>The [Solution][evotorch.core.Solution] instance's <code>values</code> method is called, which returns the <span class="arithmatex">\(d\)</span>-dimensional vector <code>x</code> that represents the solution.</li>
 <li>This vector <code>x</code> is evaluated according to the above formula to give fitness <code>f</code>.</li>
-<li>The <a class="autorefs autorefs-internal" href="../../reference/evotorch/core/#evotorch.core.Solution">Solution</a> instance's <code>set_evals</code> method is called with argument <code>f</code>. This stores the fitness value <code>f</code> within the <a class="autorefs autorefs-internal" href="../../reference/evotorch/core/#evotorch.core.Solution">Solution</a> instance so that it can be used by the <code>searcher</code> in the next iteration.</li>
+<li>The [Solution][evotorch.core.Solution] instance's <code>set_evals</code> method is called with argument <code>f</code>. This stores the fitness value <code>f</code> within the [Solution][evotorch.core.Solution] instance so that it can be used by the <code>searcher</code> in the next iteration.</li>
 </ol>
-<p>For more detail on interacting with <a class="autorefs autorefs-internal" href="../../reference/evotorch/core/#evotorch.core.Solution">Solution</a> instances, please refer to <a href="../../advanced_usage/solution_batch/">the relevant advanced usage guide</a>.</p>
+<p>For more detail on interacting with [Solution][evotorch.core.Solution] instances, please refer to <a href="../../advanced_usage/solution_batch/">the relevant advanced usage guide</a>.</p>
 <h2 id="vectorising-custom-problems">Vectorising Custom Problems<a class="headerlink" href="#vectorising-custom-problems" title="Permanent link">&para;</a></h2>
-<p>Much like the base <a class="autorefs autorefs-internal" href="../../reference/evotorch/core/#evotorch.core.Problem">Problem</a> class, it is straight-forward to introduce fitness vectorisation when creating a custom <a class="autorefs autorefs-internal" href="../../reference/evotorch/core/#evotorch.core.Problem">Problem</a> class. To do this, we simply override the <code>_evaluate_batch</code> method, rather than the <code>_evaluate</code> method.</p>
+<p>Much like the base [Problem][evotorch.core.Problem] class, it is straight-forward to introduce fitness vectorisation when creating a custom [Problem][evotorch.core.Problem] class. To do this, we simply override the <code>_evaluate_batch</code> method, rather than the <code>_evaluate</code> method.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="kn">from</span> <span class="nn">evotorch</span> <span class="kn">import</span> <span class="n">SolutionBatch</span>
 <a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>
 <a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a>
@@ -2105,9 +2105,9 @@ z = x - x'
 <a id="__codelineno-9-23" name="__codelineno-9-23" href="#__codelineno-9-23"></a>        <span class="p">)</span>
 <a id="__codelineno-9-24" name="__codelineno-9-24" href="#__codelineno-9-24"></a>        <span class="n">solutions</span><span class="o">.</span><span class="n">set_evals</span><span class="p">(</span><span class="n">fs</span><span class="p">)</span>
 </code></pre></div>
-<p>All that has changed is that rather than receiving a <a class="autorefs autorefs-internal" href="../../reference/evotorch/core/#evotorch.core.Solution">Solution</a> instance, we are now receiving a <a class="autorefs autorefs-internal" href="../../reference/evotorch/core/#evotorch.core.SolutionBatch">SolutionBatch</a> instance which consists of <span class="arithmatex">\(N\)</span> solutions. The call to <code>values</code> instead yields a <span class="arithmatex">\(N \times d\)</span> tensor <code>xs</code>, and by appropriately rewriting the line that computes <code>fs</code> so that the result is a <span class="arithmatex">\(N\)</span>-dimensional vector, we can straightforwardly set the fitness values of the entire batch of solutions with <code>set_evals</code>.</p>
+<p>All that has changed is that rather than receiving a [Solution][evotorch.core.Solution] instance, we are now receiving a [SolutionBatch][evotorch.core.SolutionBatch] instance which consists of <span class="arithmatex">\(N\)</span> solutions. The call to <code>values</code> instead yields a <span class="arithmatex">\(N \times d\)</span> tensor <code>xs</code>, and by appropriately rewriting the line that computes <code>fs</code> so that the result is a <span class="arithmatex">\(N\)</span>-dimensional vector, we can straightforwardly set the fitness values of the entire batch of solutions with <code>set_evals</code>.</p>
 <h2 id="working-with-data-types-and-devices">Working with Data Types and Devices<a class="headerlink" href="#working-with-data-types-and-devices" title="Permanent link">&para;</a></h2>
-<p>The <a class="autorefs autorefs-internal" href="../../reference/evotorch/core/#evotorch.core.Problem">Problem</a> class supports different <code>torch</code> data types and devices, with the <code>dtype</code> and <code>device</code> keyword arguments, respectively. For example, we can specify that we wish to use 16-bit floating point values on the first available CUDA-capable device in the initialisation of the class.</p>
+<p>The [Problem][evotorch.core.Problem] class supports different <code>torch</code> data types and devices, with the <code>dtype</code> and <code>device</code> keyword arguments, respectively. For example, we can specify that we wish to use 16-bit floating point values on the first available CUDA-capable device in the initialisation of the class.</p>
 <p>One way to accelerate solution evaluation is to use CUDA-capable devices to compute the fitness values. In EvoTorch, this can be done easily using the <code>device</code> flag. By default, the device flag is set to <code>'cpu'</code>, so that the problem (and any searcher attached to it) will run everything on the CPU. Assuming there is at least one CUDA-capable device available, we can instead use,</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="n">problem</span> <span class="o">=</span> <span class="n">Problem</span><span class="p">(</span>
 <a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a>    <span class="n">objective_sense</span><span class="o">=</span><span class="s2">&quot;min&quot;</span><span class="p">,</span>
@@ -2119,8 +2119,8 @@ z = x - x'
 <a id="__codelineno-10-8" name="__codelineno-10-8" href="#__codelineno-10-8"></a>    <span class="n">device</span><span class="o">=</span><span class="s2">&quot;cuda:0&quot;</span><span class="p">,</span>
 <a id="__codelineno-10-9" name="__codelineno-10-9" href="#__codelineno-10-9"></a><span class="p">)</span>
 </code></pre></div>
-<p>When working with different data types and device, EvoTorch searchers will use those data types and devices in their own computations to ensure that everything is compatible when the <a class="autorefs autorefs-internal" href="../../reference/evotorch/core/#evotorch.core.Problem">Problem</a> instance is called. In practice, particularly in high dimensions and with large population sizes, using a CUDA-capable device can yield significant speedups. A particularly important example of this is in the case of neuroevolution.</p>
-<p>Similarly, we can use different data types and devices within custom <a class="autorefs autorefs-internal" href="../../reference/evotorch/core/#evotorch.core.Problem">Problem</a> classes:</p>
+<p>When working with different data types and device, EvoTorch searchers will use those data types and devices in their own computations to ensure that everything is compatible when the [Problem][evotorch.core.Problem] instance is called. In practice, particularly in high dimensions and with large population sizes, using a CUDA-capable device can yield significant speedups. A particularly important example of this is in the case of neuroevolution.</p>
+<p>Similarly, we can use different data types and devices within custom [Problem][evotorch.core.Problem] classes:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="k">class</span> <span class="nc">OffsetRastrigin16</span><span class="p">(</span><span class="n">Problem</span><span class="p">):</span>
 <a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">d</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">25</span><span class="p">,</span> <span class="n">A</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">10</span><span class="p">):</span>
 <a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a>
@@ -2134,7 +2134,7 @@ z = x - x'
 <a id="__codelineno-11-11" name="__codelineno-11-11" href="#__codelineno-11-11"></a>
 <a id="__codelineno-11-12" name="__codelineno-11-12" href="#__codelineno-11-12"></a>        <span class="o">...</span>
 </code></pre></div>
-<p>For a similar reason, when we are creating <code>torch</code> tensors that we will use within the evaluation, it is also important to ensure they share the same data type and device. For this reason, <a class="autorefs autorefs-internal" href="../../reference/evotorch/core/#evotorch.core.Problem">Problem</a> instances support a number of <code>torch.Tensor</code> generation methods out-of-the-box. Earlier, we used the method <code>make_gaussian</code> to generate a random center <span class="arithmatex">\(x'\)</span> for the fitness evaluation to use. This method will generate a sample from a Gaussian distribution with the shape, center and standard deviation specified, but of particular relevance, it will ensure that the generated sample uses the device and data type associated with the <a class="autorefs autorefs-internal" href="../../reference/evotorch/core/#evotorch.core.Problem">Problem</a> instance. There are a number of similar methods available, which can be found detailed in the <a class="autorefs autorefs-internal" href="../../reference/evotorch/#evotorch">API reference</a>.</p>
+<p>For a similar reason, when we are creating <code>torch</code> tensors that we will use within the evaluation, it is also important to ensure they share the same data type and device. For this reason, [Problem][evotorch.core.Problem] instances support a number of <code>torch.Tensor</code> generation methods out-of-the-box. Earlier, we used the method <code>make_gaussian</code> to generate a random center <span class="arithmatex">\(x'\)</span> for the fitness evaluation to use. This method will generate a sample from a Gaussian distribution with the shape, center and standard deviation specified, but of particular relevance, it will ensure that the generated sample uses the device and data type associated with the [Problem][evotorch.core.Problem] instance. There are a number of similar methods available, which can be found detailed in the [API reference][evotorch].</p>
 
 
 
@@ -2217,10 +2217,10 @@ z = x - x'
       <div class="md-dialog__inner md-typeset"></div>
     </div>
     
-    <script id="__config" type="application/json">{"base": "../..", "features": ["content.code.annotate", "navigation.indexes", "navigation.sections", "navigation.tabs", "navigation.tabs.sticky", "navigation.top", "navigation.tracking", "search.highlight", "search.share", "search.suggest"], "search": "../../assets/javascripts/workers/search.5bf1dace.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version.title": "Select version"}, "version": {"provider": "mike"}}</script>
+    <script id="__config" type="application/json">{"base": "../..", "features": ["content.code.annotate", "navigation.indexes", "navigation.sections", "navigation.tabs", "navigation.tabs.sticky", "navigation.top", "navigation.tracking", "search.highlight", "search.share", "search.suggest"], "search": "../../assets/javascripts/workers/search.16e2a7d4.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version.title": "Select version"}, "version": {"provider": "mike"}}</script>
     
     
-      <script src="../../assets/javascripts/bundle.078830c0.min.js"></script>
+      <script src="../../assets/javascripts/bundle.d6c3db9e.min.js"></script>
       
         <script src="../../javascripts/mathjax.js"></script>
       

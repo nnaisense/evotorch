@@ -11,7 +11,7 @@
       
       
       <link rel="icon" href="../assets/favicon.ico">
-      <meta name="generator" content="mkdocs-1.4.1, mkdocs-material-8.5.6">
+      <meta name="generator" content="mkdocs-1.4.2, mkdocs-material-8.5.10">
     
     
       
@@ -19,10 +19,10 @@
       
     
     
-      <link rel="stylesheet" href="../assets/stylesheets/main.20d9efc8.min.css">
+      <link rel="stylesheet" href="../assets/stylesheets/main.472b142f.min.css">
       
         
-        <link rel="stylesheet" href="../assets/stylesheets/palette.cbb835fc.min.css">
+        <link rel="stylesheet" href="../assets/stylesheets/palette.08040f6c.min.css">
         
       
       
@@ -38,8 +38,6 @@
         <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
       
     
-    
-      <link rel="stylesheet" href="../assets/_mkdocstrings.css">
     
     <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce((e,_)=>(e<<5)-e+_.charCodeAt(0),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
@@ -132,6 +130,7 @@
         
           
           
+          
           <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="orange" data-md-color-accent="orange"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_1">
           
             <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_2" hidden>
@@ -139,6 +138,7 @@
             </label>
           
         
+          
           
           
           <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="deep-orange" data-md-color-accent="deep-orange"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_2">
@@ -864,36 +864,8 @@
   
   
     <li class="md-nav__item">
-      <a href="../examples/notebooks/Brax_Experiments_with_PGPE/" class="md-nav__link">
-        Solving a Brax environment using EvoTorch
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
       <a href="../examples/notebooks/Gym_Experiments_with_PGPE_and_CoSyNE/" class="md-nav__link">
         Gym Experiments with PGPE and CoSyNE
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../examples/notebooks/Minimizing_Lennard-Jones_Atom_Cluster_Potentials/" class="md-nav__link">
-        Minimising Lennard-Jones Atom Cluster Potentials with Evolution
       </a>
     </li>
   
@@ -922,6 +894,34 @@
     <li class="md-nav__item">
       <a href="../examples/notebooks/Variational_Quantum_Eigensolvers_with_SNES/" class="md-nav__link">
         Variational Quantum Eigensolvers with SNES
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../examples/notebooks/Brax_Experiments_with_PGPE/" class="md-nav__link">
+        Solving a Brax environment using EvoTorch
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../examples/notebooks/Minimizing_Lennard-Jones_Atom_Cluster_Potentials/" class="md-nav__link">
+        Minimising Lennard-Jones Atom Cluster Potentials with Evolution
       </a>
     </li>
   
@@ -2011,7 +2011,7 @@ f(x) = \sum_{i=1}^d x_i^2.
 <div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="k">def</span> <span class="nf">sphere</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
 <a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>    <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">pow</span><span class="p">(</span><span class="mf">2.0</span><span class="p">))</span>
 </code></pre></div>
-<p>To make this function visible to EvoTorch's algorithms, we simply wrap it up as a <a class="autorefs autorefs-internal" href="../reference/evotorch/core/#evotorch.core.Problem">Problem</a> instance. To do this, we will need to specify that we want to minimise (<code>"min"</code>) the function, and the <code>solution_length</code> is <span class="arithmatex">\(d\)</span>, in this case <span class="arithmatex">\(d=10\)</span>. We will also specify that the initial bounds for solutions is in the range <span class="arithmatex">\((-1, 1)\)</span>, so that our algorithm knows roughly where to start.</p>
+<p>To make this function visible to EvoTorch's algorithms, we simply wrap it up as a [Problem][evotorch.core.Problem] instance. To do this, we will need to specify that we want to minimise (<code>"min"</code>) the function, and the <code>solution_length</code> is <span class="arithmatex">\(d\)</span>, in this case <span class="arithmatex">\(d=10\)</span>. We will also specify that the initial bounds for solutions is in the range <span class="arithmatex">\((-1, 1)\)</span>, so that our algorithm knows roughly where to start.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="n">problem</span> <span class="o">=</span> <span class="n">Problem</span><span class="p">(</span><span class="s2">&quot;min&quot;</span><span class="p">,</span> <span class="n">sphere</span><span class="p">,</span> <span class="n">solution_length</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">initial_bounds</span><span class="o">=</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
 </code></pre></div>
 <h2 id="creating-a-searcher">Creating a searcher<a class="headerlink" href="#creating-a-searcher" title="Permanent link">&para;</a></h2>
@@ -2019,7 +2019,7 @@ f(x) = \sum_{i=1}^d x_i^2.
 <div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="n">searcher</span> <span class="o">=</span> <span class="n">SNES</span><span class="p">(</span><span class="n">problem</span><span class="p">,</span> <span class="n">stdev_init</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>
 </code></pre></div>
 <h2 id="attaching-a-logger">Attaching a logger<a class="headerlink" href="#attaching-a-logger" title="Permanent link">&para;</a></h2>
-<p>To keep an eye on what's happening as we run the algorithm, we'll also create a logger. In this case, we'll use the <a class="autorefs autorefs-internal" href="../reference/evotorch/logging/#evotorch.logging.StdOutLogger">StdOutLogger</a> which will print the status of the evolutionary algorithm to the terminal.</p>
+<p>To keep an eye on what's happening as we run the algorithm, we'll also create a logger. In this case, we'll use the [StdOutLogger][evotorch.logging.StdOutLogger] which will print the status of the evolutionary algorithm to the terminal.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="n">logger</span> <span class="o">=</span> <span class="n">StdOutLogger</span><span class="p">(</span><span class="n">searcher</span><span class="p">)</span>
 </code></pre></div>
 <h2 id="running-the-searcher">Running the searcher<a class="headerlink" href="#running-the-searcher" title="Permanent link">&para;</a></h2>
@@ -2176,10 +2176,10 @@ f(x) = \sum_{i=1}^d x_i^2.
       <div class="md-dialog__inner md-typeset"></div>
     </div>
     
-    <script id="__config" type="application/json">{"base": "..", "features": ["content.code.annotate", "navigation.indexes", "navigation.sections", "navigation.tabs", "navigation.tabs.sticky", "navigation.top", "navigation.tracking", "search.highlight", "search.share", "search.suggest"], "search": "../assets/javascripts/workers/search.5bf1dace.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version.title": "Select version"}, "version": {"provider": "mike"}}</script>
+    <script id="__config" type="application/json">{"base": "..", "features": ["content.code.annotate", "navigation.indexes", "navigation.sections", "navigation.tabs", "navigation.tabs.sticky", "navigation.top", "navigation.tracking", "search.highlight", "search.share", "search.suggest"], "search": "../assets/javascripts/workers/search.16e2a7d4.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version.title": "Select version"}, "version": {"provider": "mike"}}</script>
     
     
-      <script src="../assets/javascripts/bundle.078830c0.min.js"></script>
+      <script src="../assets/javascripts/bundle.d6c3db9e.min.js"></script>
       
         <script src="../javascripts/mathjax.js"></script>
       

@@ -11,7 +11,7 @@
       
       
       <link rel="icon" href="../../assets/favicon.ico">
-      <meta name="generator" content="mkdocs-1.4.1, mkdocs-material-8.5.6">
+      <meta name="generator" content="mkdocs-1.4.2, mkdocs-material-8.5.10">
     
     
       
@@ -19,10 +19,10 @@
       
     
     
-      <link rel="stylesheet" href="../../assets/stylesheets/main.20d9efc8.min.css">
+      <link rel="stylesheet" href="../../assets/stylesheets/main.472b142f.min.css">
       
         
-        <link rel="stylesheet" href="../../assets/stylesheets/palette.cbb835fc.min.css">
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.08040f6c.min.css">
         
       
       
@@ -38,8 +38,6 @@
         <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
       
     
-    
-      <link rel="stylesheet" href="../../assets/_mkdocstrings.css">
     
     <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce((e,_)=>(e<<5)-e+_.charCodeAt(0),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
@@ -132,6 +130,7 @@
         
           
           
+          
           <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="orange" data-md-color-accent="orange"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_1">
           
             <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_2" hidden>
@@ -139,6 +138,7 @@
             </label>
           
         
+          
           
           
           <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="deep-orange" data-md-color-accent="deep-orange"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_2">
@@ -843,36 +843,8 @@
   
   
     <li class="md-nav__item">
-      <a href="../../examples/notebooks/Brax_Experiments_with_PGPE/" class="md-nav__link">
-        Solving a Brax environment using EvoTorch
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
       <a href="../../examples/notebooks/Gym_Experiments_with_PGPE_and_CoSyNE/" class="md-nav__link">
         Gym Experiments with PGPE and CoSyNE
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../examples/notebooks/Minimizing_Lennard-Jones_Atom_Cluster_Potentials/" class="md-nav__link">
-        Minimising Lennard-Jones Atom Cluster Potentials with Evolution
       </a>
     </li>
   
@@ -901,6 +873,34 @@
     <li class="md-nav__item">
       <a href="../../examples/notebooks/Variational_Quantum_Eigensolvers_with_SNES/" class="md-nav__link">
         Variational Quantum Eigensolvers with SNES
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../examples/notebooks/Brax_Experiments_with_PGPE/" class="md-nav__link">
+        Solving a Brax environment using EvoTorch
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../examples/notebooks/Minimizing_Lennard-Jones_Atom_Cluster_Potentials/" class="md-nav__link">
+        Minimising Lennard-Jones Atom Cluster Potentials with Evolution
       </a>
     </li>
   
@@ -1944,7 +1944,7 @@
 
 
 <h1 id="manipulating-solutions">Manipulating Solutions<a class="headerlink" href="#manipulating-solutions" title="Permanent link">&para;</a></h1>
-<p>For many advanced use-cases in EvoTorch, it's essential to directly work with populations of solutions. In EvoTorch, solutions are represented through the <a class="autorefs autorefs-internal" href="../../reference/evotorch/core/#evotorch.core.Solution">Solution</a> class, and groups (populations) of solutions are represented through the <a class="autorefs autorefs-internal" href="../../reference/evotorch/core/#evotorch.core.SolutionBatch">SolutionBatch</a> class. This tutorial will demonstrate a variety of features of these classes. To begin, consider the simple sphere problem:</p>
+<p>For many advanced use-cases in EvoTorch, it's essential to directly work with populations of solutions. In EvoTorch, solutions are represented through the [Solution][evotorch.core.Solution] class, and groups (populations) of solutions are represented through the [SolutionBatch][evotorch.core.SolutionBatch] class. This tutorial will demonstrate a variety of features of these classes. To begin, consider the simple sphere problem:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">from</span> <span class="nn">evotorch</span> <span class="kn">import</span> <span class="n">Problem</span><span class="p">,</span> <span class="n">Solution</span><span class="p">,</span> <span class="n">SolutionBatch</span>
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="kn">import</span> <span class="nn">torch</span>
 <a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>
@@ -1956,10 +1956,10 @@
 <a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="n">problem</span> <span class="o">=</span> <span class="n">Problem</span><span class="p">(</span><span class="s2">&quot;min&quot;</span><span class="p">,</span> <span class="n">sphere</span><span class="p">,</span> <span class="n">solution_length</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">initial_bounds</span><span class="o">=</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
 </code></pre></div>
 <h2 id="creating-and-using-solutionbatch-instances">Creating and using SolutionBatch instances<a class="headerlink" href="#creating-and-using-solutionbatch-instances" title="Permanent link">&para;</a></h2>
-<p>A <a class="autorefs autorefs-internal" href="../../reference/evotorch/core/#evotorch.core.SolutionBatch">SolutionBatch</a> instance can be generated directly from the problem itself, with decision values sampled uniformly according to the <code>initial_bounds</code> parameter. Calling</p>
+<p>A [SolutionBatch][evotorch.core.SolutionBatch] instance can be generated directly from the problem itself, with decision values sampled uniformly according to the <code>initial_bounds</code> parameter. Calling</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="n">batch</span> <span class="o">=</span> <span class="n">problem</span><span class="o">.</span><span class="n">generate_batch</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span>
 </code></pre></div>
-<p>will create <code>batch</code>, an instance of <a class="autorefs autorefs-internal" href="../../reference/evotorch/core/#evotorch.core.SolutionBatch">SolutionBatch</a> consisting of 5 <a class="autorefs autorefs-internal" href="../../reference/evotorch/core/#evotorch.core.Solution">Solution</a> instances. These solutions can be viewed in terms of their <span class="arithmatex">\(5 \times 2\)</span> tensor representation using the <code>values</code> attribute:</p>
+<p>will create <code>batch</code>, an instance of [SolutionBatch][evotorch.core.SolutionBatch] consisting of 5 [Solution][evotorch.core.Solution] instances. These solutions can be viewed in terms of their <span class="arithmatex">\(5 \times 2\)</span> tensor representation using the <code>values</code> attribute:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="nb">print</span><span class="p">(</span><span class="n">batch</span><span class="o">.</span><span class="n">values</span><span class="p">)</span>
 </code></pre></div>
 <details class="abstract" open="open">
@@ -2048,7 +2048,7 @@
 <a id="__codelineno-14-7" name="__codelineno-14-7" href="#__codelineno-14-7"></a>)
 </code></pre></div>
 </details>
-<p>The <code>values</code> and <code>evals</code> properties yield read-only tensors that cannot be modified. In some advanced use-cases, you can directly access the underlying tensors using the <code>access_values</code> and <code>access_evals</code> methods. However, care should be taken when using these methods. By default, <a class="autorefs autorefs-internal" href="../../reference/evotorch/core/#evotorch.core.SolutionBatch">SolutionBatch</a> assumes that a call to <code>access_values</code> means that the underlying tensor will be modified, and the fitnesses are therefore cleared and reset to <code>nan</code>,</p>
+<p>The <code>values</code> and <code>evals</code> properties yield read-only tensors that cannot be modified. In some advanced use-cases, you can directly access the underlying tensors using the <code>access_values</code> and <code>access_evals</code> methods. However, care should be taken when using these methods. By default, [SolutionBatch][evotorch.core.SolutionBatch] assumes that a call to <code>access_values</code> means that the underlying tensor will be modified, and the fitnesses are therefore cleared and reset to <code>nan</code>,</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a><span class="n">values</span> <span class="o">=</span> <span class="n">batch</span><span class="o">.</span><span class="n">access_values</span><span class="p">()</span>
 <a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a><span class="nb">print</span><span class="p">(</span><span class="n">batch</span><span class="o">.</span><span class="n">evals</span><span class="p">)</span>
 </code></pre></div>
@@ -2079,15 +2079,15 @@
 <a id="__codelineno-18-7" name="__codelineno-18-7" href="#__codelineno-18-7"></a>)
 </code></pre></div>
 </details>
-<p>If you wish to make an exact copy of a <a class="autorefs autorefs-internal" href="../../reference/evotorch/core/#evotorch.core.SolutionBatch">SolutionBatch</a> instance, you can do so with</p>
+<p>If you wish to make an exact copy of a [SolutionBatch][evotorch.core.SolutionBatch] instance, you can do so with</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a><span class="n">cloned_batch</span> <span class="o">=</span> <span class="n">batch</span><span class="o">.</span><span class="n">clone</span><span class="p">()</span>
 </code></pre></div>
 <p>The new instance <code>cloned_batch</code> will have identical <code>values</code> and <code>evals</code> to <code>batch</code>, but will share no memory locations, and can be freely modified without modifying its parent <code>batch</code>.</p>
 <h2 id="slicing-and-indexing">Slicing and Indexing<a class="headerlink" href="#slicing-and-indexing" title="Permanent link">&para;</a></h2>
-<p><a class="autorefs autorefs-internal" href="../../reference/evotorch/core/#evotorch.core.SolutionBatch">SolutionBatch</a> instances can be arbitrarily sliced and indexed. For example,</p>
+<p>[SolutionBatch][evotorch.core.SolutionBatch] instances can be arbitrarily sliced and indexed. For example,</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a><span class="n">last_3</span> <span class="o">=</span> <span class="n">batch</span><span class="p">[</span><span class="mi">2</span><span class="p">:</span><span class="mi">5</span><span class="p">]</span>
 </code></pre></div>
-<p>will return a <a class="autorefs autorefs-internal" href="../../reference/evotorch/core/#evotorch.core.SolutionBatch">SolutionBatch</a> instance <code>last_3</code> which is a <em>view</em> of <code>batch</code> e.g. memory data locations with it. Thus we can see that the decision values are exactly the decision values of the last 3 solutions of <code>batch</code></p>
+<p>will return a [SolutionBatch][evotorch.core.SolutionBatch] instance <code>last_3</code> which is a <em>view</em> of <code>batch</code> e.g. memory data locations with it. Thus we can see that the decision values are exactly the decision values of the last 3 solutions of <code>batch</code></p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-21-1" name="__codelineno-21-1" href="#__codelineno-21-1"></a><span class="nb">print</span><span class="p">(</span><span class="n">last_3</span><span class="o">.</span><span class="n">values</span><span class="p">)</span>
 </code></pre></div>
 <details class="abstract" open="open">
@@ -2138,7 +2138,7 @@
 <a id="__codelineno-28-7" name="__codelineno-28-7" href="#__codelineno-28-7"></a>)
 </code></pre></div>
 </details>
-<p><a class="autorefs autorefs-internal" href="../../reference/evotorch/core/#evotorch.core.SolutionBatch">SolutionBatch</a> instances of the same <a class="autorefs autorefs-internal" href="../../reference/evotorch/core/#evotorch.core.Problem">Problem</a> class can also be arbitrarily concatenated. For example, if we now create a second <a class="autorefs autorefs-internal" href="../../reference/evotorch/core/#evotorch.core.SolutionBatch">SolutionBatch</a> with 3 instances,</p>
+<p>[SolutionBatch][evotorch.core.SolutionBatch] instances of the same [Problem][evotorch.core.Problem] class can also be arbitrarily concatenated. For example, if we now create a second [SolutionBatch][evotorch.core.SolutionBatch] with 3 instances,</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-29-1" name="__codelineno-29-1" href="#__codelineno-29-1"></a><span class="n">second_batch</span> <span class="o">=</span> <span class="n">problem</span><span class="o">.</span><span class="n">generate_batch</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
 <a id="__codelineno-29-2" name="__codelineno-29-2" href="#__codelineno-29-2"></a><span class="nb">print</span><span class="p">(</span><span class="n">second_batch</span><span class="o">.</span><span class="n">values</span><span class="p">)</span>
 </code></pre></div>
@@ -2167,9 +2167,9 @@
 <a id="__codelineno-32-8" name="__codelineno-32-8" href="#__codelineno-32-8"></a>)
 </code></pre></div>
 </details>
-<p>Creating a new instance of <a class="autorefs autorefs-internal" href="../../reference/evotorch/core/#evotorch.core.SolutionBatch">SolutionBatch</a>, <code>new_batch</code>, in this way is copying, so further modification of <code>new_batch</code> will not modify the parent batches <code>batch</code> and <code>second_batch</code>.</p>
+<p>Creating a new instance of [SolutionBatch][evotorch.core.SolutionBatch], <code>new_batch</code>, in this way is copying, so further modification of <code>new_batch</code> will not modify the parent batches <code>batch</code> and <code>second_batch</code>.</p>
 <h2 id="accessing-and-manipulating-individual-solutions">Accessing and Manipulating individual Solutions<a class="headerlink" href="#accessing-and-manipulating-individual-solutions" title="Permanent link">&para;</a></h2>
-<p>An individual <a class="autorefs autorefs-internal" href="../../reference/evotorch/core/#evotorch.core.Solution">Solution</a> instance can be accessed by indexing into the batch. For example, indexing the first <a class="autorefs autorefs-internal" href="../../reference/evotorch/core/#evotorch.core.Solution">Solution</a> will yield the solution at index 1 of <code>batch</code></p>
+<p>An individual [Solution][evotorch.core.Solution] instance can be accessed by indexing into the batch. For example, indexing the first [Solution][evotorch.core.Solution] will yield the solution at index 1 of <code>batch</code></p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-33-1" name="__codelineno-33-1" href="#__codelineno-33-1"></a><span class="n">solution1</span> <span class="o">=</span> <span class="n">batch</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
 <a id="__codelineno-33-2" name="__codelineno-33-2" href="#__codelineno-33-2"></a><span class="nb">print</span><span class="p">(</span><span class="n">solution1</span><span class="p">)</span>
 </code></pre></div>
@@ -2178,7 +2178,7 @@
 <div class="highlight"><pre><span></span><code><a id="__codelineno-34-1" name="__codelineno-34-1" href="#__codelineno-34-1"></a>&lt;Solution values=tensor([-0.0508, -0.5009]), evals=tensor([0.2806])&gt;
 </code></pre></div>
 </details>
-<p>A <a class="autorefs autorefs-internal" href="../../reference/evotorch/core/#evotorch.core.Solution">Solution</a> instance has the same properties <code>values</code> and <code>evals</code> and methods <code>set_values</code>, <code>set_evals</code>, <code>access_values</code> and <code>access_evals</code> as <a class="autorefs autorefs-internal" href="../../reference/evotorch/core/#evotorch.core.SolutionBatch">SolutionBatch</a>, except that they now work in one dimension, rather than two. For example, accessing the values yields a 1-dimensional read-only tensor of decision values</p>
+<p>A [Solution][evotorch.core.Solution] instance has the same properties <code>values</code> and <code>evals</code> and methods <code>set_values</code>, <code>set_evals</code>, <code>access_values</code> and <code>access_evals</code> as [SolutionBatch][evotorch.core.SolutionBatch], except that they now work in one dimension, rather than two. For example, accessing the values yields a 1-dimensional read-only tensor of decision values</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-35-1" name="__codelineno-35-1" href="#__codelineno-35-1"></a><span class="nb">print</span><span class="p">(</span><span class="n">solution1</span><span class="o">.</span><span class="n">values</span><span class="p">)</span>
 </code></pre></div>
 <details class="abstract" open="open">
@@ -2186,7 +2186,7 @@
 <div class="highlight"><pre><span></span><code><a id="__codelineno-36-1" name="__codelineno-36-1" href="#__codelineno-36-1"></a><span class="n">ReadOnlyTensor</span><span class="p">(</span><span class="n">tensor</span><span class="p">([</span><span class="o">-</span><span class="mf">0.0508</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.5009</span><span class="p">]))</span>
 </code></pre></div>
 </details>
-<p>A <a class="autorefs autorefs-internal" href="../../reference/evotorch/core/#evotorch.core.Solution">Solution</a> instance is a view of its parent <a class="autorefs autorefs-internal" href="../../reference/evotorch/core/#evotorch.core.SolutionBatch">SolutionBatch</a>, so modifying it will not only modify the solution,</p>
+<p>A [Solution][evotorch.core.Solution] instance is a view of its parent [SolutionBatch][evotorch.core.SolutionBatch], so modifying it will not only modify the solution,</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-37-1" name="__codelineno-37-1" href="#__codelineno-37-1"></a><span class="n">solution1</span><span class="o">.</span><span class="n">set_values</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">]))</span>
 <a id="__codelineno-37-2" name="__codelineno-37-2" href="#__codelineno-37-2"></a><span class="n">solution1</span><span class="o">.</span><span class="n">set_evals</span><span class="p">(</span><span class="mf">0.5</span><span class="p">)</span>
 <a id="__codelineno-37-3" name="__codelineno-37-3" href="#__codelineno-37-3"></a><span class="nb">print</span><span class="p">(</span><span class="n">solution1</span><span class="p">)</span>
@@ -2210,10 +2210,10 @@
 <a id="__codelineno-40-7" name="__codelineno-40-7" href="#__codelineno-40-7"></a>)
 </code></pre></div>
 </details>
-<p>A <a class="autorefs autorefs-internal" href="../../reference/evotorch/core/#evotorch.core.Solution">Solution</a> instance can also be cloned with the <code>clone()</code> method e.g.</p>
+<p>A [Solution][evotorch.core.Solution] instance can also be cloned with the <code>clone()</code> method e.g.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-41-1" name="__codelineno-41-1" href="#__codelineno-41-1"></a><span class="n">cloned_sol</span> <span class="o">=</span> <span class="n">solution1</span><span class="o">.</span><span class="n">clone</span><span class="p">()</span>
 </code></pre></div>
-<p>The cloned solution is no longer a view of <code>batch</code> and can be freely modified. To obtain the new, single-solution, <a class="autorefs autorefs-internal" href="../../reference/evotorch/core/#evotorch.core.SolutionBatch">SolutionBatch</a> instance of the cloned solution, you can use <code>cloned_sol.to_batch()</code>.</p>
+<p>The cloned solution is no longer a view of <code>batch</code> and can be freely modified. To obtain the new, single-solution, [SolutionBatch][evotorch.core.SolutionBatch] instance of the cloned solution, you can use <code>cloned_sol.to_batch()</code>.</p>
 
 
 
@@ -2296,10 +2296,10 @@
       <div class="md-dialog__inner md-typeset"></div>
     </div>
     
-    <script id="__config" type="application/json">{"base": "../..", "features": ["content.code.annotate", "navigation.indexes", "navigation.sections", "navigation.tabs", "navigation.tabs.sticky", "navigation.top", "navigation.tracking", "search.highlight", "search.share", "search.suggest"], "search": "../../assets/javascripts/workers/search.5bf1dace.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version.title": "Select version"}, "version": {"provider": "mike"}}</script>
+    <script id="__config" type="application/json">{"base": "../..", "features": ["content.code.annotate", "navigation.indexes", "navigation.sections", "navigation.tabs", "navigation.tabs.sticky", "navigation.top", "navigation.tracking", "search.highlight", "search.share", "search.suggest"], "search": "../../assets/javascripts/workers/search.16e2a7d4.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version.title": "Select version"}, "version": {"provider": "mike"}}</script>
     
     
-      <script src="../../assets/javascripts/bundle.078830c0.min.js"></script>
+      <script src="../../assets/javascripts/bundle.d6c3db9e.min.js"></script>
       
         <script src="../../javascripts/mathjax.js"></script>
       

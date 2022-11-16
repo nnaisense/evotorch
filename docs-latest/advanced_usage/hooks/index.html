@@ -11,7 +11,7 @@
       
       
       <link rel="icon" href="../../assets/favicon.ico">
-      <meta name="generator" content="mkdocs-1.4.1, mkdocs-material-8.5.6">
+      <meta name="generator" content="mkdocs-1.4.2, mkdocs-material-8.5.10">
     
     
       
@@ -19,10 +19,10 @@
       
     
     
-      <link rel="stylesheet" href="../../assets/stylesheets/main.20d9efc8.min.css">
+      <link rel="stylesheet" href="../../assets/stylesheets/main.472b142f.min.css">
       
         
-        <link rel="stylesheet" href="../../assets/stylesheets/palette.cbb835fc.min.css">
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.08040f6c.min.css">
         
       
       
@@ -38,8 +38,6 @@
         <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
       
     
-    
-      <link rel="stylesheet" href="../../assets/_mkdocstrings.css">
     
     <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce((e,_)=>(e<<5)-e+_.charCodeAt(0),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
@@ -132,6 +130,7 @@
         
           
           
+          
           <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="orange" data-md-color-accent="orange"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_1">
           
             <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_2" hidden>
@@ -139,6 +138,7 @@
             </label>
           
         
+          
           
           
           <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="deep-orange" data-md-color-accent="deep-orange"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_2">
@@ -876,36 +876,8 @@
   
   
     <li class="md-nav__item">
-      <a href="../../examples/notebooks/Brax_Experiments_with_PGPE/" class="md-nav__link">
-        Solving a Brax environment using EvoTorch
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
       <a href="../../examples/notebooks/Gym_Experiments_with_PGPE_and_CoSyNE/" class="md-nav__link">
         Gym Experiments with PGPE and CoSyNE
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../examples/notebooks/Minimizing_Lennard-Jones_Atom_Cluster_Potentials/" class="md-nav__link">
-        Minimising Lennard-Jones Atom Cluster Potentials with Evolution
       </a>
     </li>
   
@@ -934,6 +906,34 @@
     <li class="md-nav__item">
       <a href="../../examples/notebooks/Variational_Quantum_Eigensolvers_with_SNES/" class="md-nav__link">
         Variational Quantum Eigensolvers with SNES
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../examples/notebooks/Brax_Experiments_with_PGPE/" class="md-nav__link">
+        Solving a Brax environment using EvoTorch
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../examples/notebooks/Minimizing_Lennard-Jones_Atom_Cluster_Potentials/" class="md-nav__link">
+        Minimising Lennard-Jones Atom Cluster Potentials with Evolution
       </a>
     </li>
   
@@ -2010,10 +2010,10 @@
 
 
 <h1 id="using-hooks">Using Hooks<a class="headerlink" href="#using-hooks" title="Permanent link">&para;</a></h1>
-<p>Hooks are a powerful tool that allow you to inject code into various stages of the evolutionary process. You can add hooks to both <a class="autorefs autorefs-internal" href="../../reference/evotorch/core/#evotorch.core.Problem">Problem</a> instances and <a class="autorefs autorefs-internal" href="../../reference/evotorch/algorithms/searchalgorithm/#evotorch.algorithms.searchalgorithm.SearchAlgorithm">SearchAlgorithm</a> instances. This page will demonstrate how you can use hooks to add additional functionality to your evolutionary pipeline.</p>
+<p>Hooks are a powerful tool that allow you to inject code into various stages of the evolutionary process. You can add hooks to both [Problem][evotorch.core.Problem] instances and [SearchAlgorithm][evotorch.algorithms.searchalgorithm.SearchAlgorithm] instances. This page will demonstrate how you can use hooks to add additional functionality to your evolutionary pipeline.</p>
 <h2 id="problem-hooks">Problem Hooks<a class="headerlink" href="#problem-hooks" title="Permanent link">&para;</a></h2>
 <h3 id="before_eval_hook"><code>before_eval_hook</code><a class="headerlink" href="#before_eval_hook" title="Permanent link">&para;</a></h3>
-<p>You can inject code before the evaluation of a <a class="autorefs autorefs-internal" href="../../reference/evotorch/core/#evotorch.core.SolutionBatch">SolutionBatch</a> using the <code>before_eval_hook</code> property. You can append functions to this property that take, as argument, a <a class="autorefs autorefs-internal" href="../../reference/evotorch/core/#evotorch.core.SolutionBatch">SolutionBatch</a> instance. Let us suppose that you want to catch scenarios where your custom <a class="autorefs autorefs-internal" href="../../reference/evotorch/algorithms/searchalgorithm/#evotorch.algorithms.searchalgorithm.SearchAlgorithm">SearchAlgorithm</a> has produced <code>inf</code> decision values. Let's define this as a function:</p>
+<p>You can inject code before the evaluation of a [SolutionBatch][evotorch.core.SolutionBatch] using the <code>before_eval_hook</code> property. You can append functions to this property that take, as argument, a [SolutionBatch][evotorch.core.SolutionBatch] instance. Let us suppose that you want to catch scenarios where your custom [SearchAlgorithm][evotorch.algorithms.searchalgorithm.SearchAlgorithm] has produced <code>inf</code> decision values. Let's define this as a function:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">from</span> <span class="nn">evotorch</span> <span class="kn">import</span> <span class="n">SolutionBatch</span>
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="kn">import</span> <span class="nn">torch</span>
 <a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>
@@ -2032,10 +2032,10 @@
 <a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a>
 <a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="n">problem</span> <span class="o">=</span> <span class="n">Problem</span><span class="p">(</span><span class="s2">&quot;min&quot;</span><span class="p">,</span> <span class="n">sphere</span><span class="p">,</span> <span class="n">solution_length</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">initial_bounds</span><span class="o">=</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
 </code></pre></div>
-<p>You can add the <code>abort_if_inf</code> function as a hook to execute before a <a class="autorefs autorefs-internal" href="../../reference/evotorch/core/#evotorch.core.SolutionBatch">SolutionBatch</a> is evaluated using:</p>
+<p>You can add the <code>abort_if_inf</code> function as a hook to execute before a [SolutionBatch][evotorch.core.SolutionBatch] is evaluated using:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="n">problem</span><span class="o">.</span><span class="n">before_eval_hook</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">abort_if_inf</span><span class="p">)</span>
 </code></pre></div>
-<p>Checking that the hook is now in use is as simple as attempting to pass a <a class="autorefs autorefs-internal" href="../../reference/evotorch/core/#evotorch.core.SolutionBatch">SolutionBatch</a> to the <code>problem</code> instance which contains at least 1 <code>inf</code> value, which will cause the <code>ValueError</code> we designed earlier to be triggered::</p>
+<p>Checking that the hook is now in use is as simple as attempting to pass a [SolutionBatch][evotorch.core.SolutionBatch] to the <code>problem</code> instance which contains at least 1 <code>inf</code> value, which will cause the <code>ValueError</code> we designed earlier to be triggered::</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="n">dodgy_batch</span> <span class="o">=</span> <span class="n">problem</span><span class="o">.</span><span class="n">generate_batch</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>  <span class="c1"># Generate a SolutionBatch of size 10</span>
 <a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="n">dodgy_batch</span><span class="o">.</span><span class="n">access_values</span><span class="p">()[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s2">&quot;inf&quot;</span><span class="p">)</span>  <span class="c1"># Inject a rogue inf value</span>
 <a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="n">problem</span><span class="o">.</span><span class="n">evaluate</span><span class="p">(</span><span class="n">dodgy_batch</span><span class="p">)</span>  <span class="c1"># Pass the SolutionBatch to the problem to evaluate</span>
@@ -2046,7 +2046,7 @@
 </code></pre></div>
 </details>
 <h3 id="after_eval_hook"><code>after_eval_hook</code><a class="headerlink" href="#after_eval_hook" title="Permanent link">&para;</a></h3>
-<p>Similarly, you can inject code to execute immediately <em>after</em> a <a class="autorefs autorefs-internal" href="../../reference/evotorch/core/#evotorch.core.SolutionBatch">SolutionBatch</a> instance has been evaluated using the <code>after_eval_hook</code> property. This hook works exactly as <code>before_eval_hook</code>, except that it also allows us to return a <code>dict</code> instance which will be added to the <code>status</code> of the <a class="autorefs autorefs-internal" href="../../reference/evotorch/core/#evotorch.core.Problem">Problem</a> and therefore the <code>status</code> of a <a class="autorefs autorefs-internal" href="../../reference/evotorch/algorithms/searchalgorithm/#evotorch.algorithms.searchalgorithm.SearchAlgorithm">SearchAlgorithm</a> instance using that problem. Let's consider the scenario where we wish to track the memory usage on our hardware every time a <a class="autorefs autorefs-internal" href="../../reference/evotorch/core/#evotorch.core.SolutionBatch">SolutionBatch</a> instance is called. We can define a function which returns this information as a <code>dict</code>:</p>
+<p>Similarly, you can inject code to execute immediately <em>after</em> a [SolutionBatch][evotorch.core.SolutionBatch] instance has been evaluated using the <code>after_eval_hook</code> property. This hook works exactly as <code>before_eval_hook</code>, except that it also allows us to return a <code>dict</code> instance which will be added to the <code>status</code> of the [Problem][evotorch.core.Problem] and therefore the <code>status</code> of a [SearchAlgorithm][evotorch.algorithms.searchalgorithm.SearchAlgorithm] instance using that problem. Let's consider the scenario where we wish to track the memory usage on our hardware every time a [SolutionBatch][evotorch.core.SolutionBatch] instance is called. We can define a function which returns this information as a <code>dict</code>:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="kn">import</span> <span class="nn">psutil</span>
 <a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>
 <a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>
@@ -2056,7 +2056,7 @@
 <p>and add it to our <code>problem</code> just as before:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="n">problem</span><span class="o">.</span><span class="n">after_eval_hook</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">report_memory_usage</span><span class="p">)</span>
 </code></pre></div>
-<p>If we now create a <a class="autorefs autorefs-internal" href="../../reference/evotorch/algorithms/searchalgorithm/#evotorch.algorithms.searchalgorithm.SearchAlgorithm">SearchAlgorithm</a> instance and optimize for a few iterations with the <a class="autorefs autorefs-internal" href="../../reference/evotorch/logging/#evotorch.logging.StdOutLogger">StdOutLogger</a> we will observe that <code>"mem_usage"</code>, the memory usage of the machine, is now being reported in the <code>searcher.status</code> and therefore by the <a class="autorefs autorefs-internal" href="../../reference/evotorch/logging/#evotorch.logging.StdOutLogger">StdOutLogger</a>:</p>
+<p>If we now create a [SearchAlgorithm][evotorch.algorithms.searchalgorithm.SearchAlgorithm] instance and optimize for a few iterations with the [StdOutLogger][evotorch.logging.StdOutLogger] we will observe that <code>"mem_usage"</code>, the memory usage of the machine, is now being reported in the <code>searcher.status</code> and therefore by the [StdOutLogger][evotorch.logging.StdOutLogger]:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="kn">from</span> <span class="nn">evotorch.algorithms</span> <span class="kn">import</span> <span class="n">SNES</span>
 <a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="kn">from</span> <span class="nn">evotorch.logging</span> <span class="kn">import</span> <span class="n">StdOutLogger</span>
 <a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>
@@ -2093,7 +2093,7 @@
 </details>
 <h2 id="searchalgorithm-hooks">SearchAlgorithm Hooks<a class="headerlink" href="#searchalgorithm-hooks" title="Permanent link">&para;</a></h2>
 <h3 id="before_step_hook"><code>before_step_hook</code><a class="headerlink" href="#before_step_hook" title="Permanent link">&para;</a></h3>
-<p>Much like <a class="autorefs autorefs-internal" href="../../reference/evotorch/core/#evotorch.core.Problem">Problem</a> allows you to inject hooks before and after evaluation, <a class="autorefs autorefs-internal" href="../../reference/evotorch/algorithms/searchalgorithm/#evotorch.algorithms.searchalgorithm.SearchAlgorithm">SearchAlgorithm</a> allows you to inject hooks before and after the call to <code>_step</code>. You can inject code before <code>_step</code> using the <code>before_step_hook</code> property. This function takes no arguments, but we can easily exploit <code>class</code> definitions or <code>global</code> variables to achieve complex behaviour. Let's suppose that we want to keep track of the variables <span class="arithmatex">\(\mu\)</span> and <span class="arithmatex">\(\sigma\)</span>, corresponding to <code>searcher.status['center']</code> and <code>searcher.status['stdev']</code>, respectively, using global variables <code>mu</code> and <code>sigma</code>:</p>
+<p>Much like [Problem][evotorch.core.Problem] allows you to inject hooks before and after evaluation, [SearchAlgorithm][evotorch.algorithms.searchalgorithm.SearchAlgorithm] allows you to inject hooks before and after the call to <code>_step</code>. You can inject code before <code>_step</code> using the <code>before_step_hook</code> property. This function takes no arguments, but we can easily exploit <code>class</code> definitions or <code>global</code> variables to achieve complex behaviour. Let's suppose that we want to keep track of the variables <span class="arithmatex">\(\mu\)</span> and <span class="arithmatex">\(\sigma\)</span>, corresponding to <code>searcher.status['center']</code> and <code>searcher.status['stdev']</code>, respectively, using global variables <code>mu</code> and <code>sigma</code>:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="n">mu</span> <span class="o">=</span> <span class="kc">None</span>
 <a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a><span class="n">sigma</span> <span class="o">=</span> <span class="kc">None</span>
 <a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a>
@@ -2127,15 +2127,15 @@
 </details>
 <div class="admonition important">
 <p class="admonition-title">Important</p>
-<p><a class="autorefs autorefs-internal" href="../../reference/evotorch/algorithms/distributed/gaussian/#evotorch.algorithms.distributed.gaussian.SNES">SNES</a> will not update the search distribution in its first step as, initially, its population contains unevaluated solutions.</p>
+<p>[SNES][evotorch.algorithms.distributed.gaussian.SNES] will not update the search distribution in its first step as, initially, its population contains unevaluated solutions.</p>
 </div>
 <h3 id="after_step_hook"><code>after_step_hook</code><a class="headerlink" href="#after_step_hook" title="Permanent link">&para;</a></h3>
-<p>You can also inject code after the call to <code>_step</code> using <code>after_step_hook</code>. This works identically to <code>before_step_hook</code> except that, much like <code>after_eval_hook</code> for the <a class="autorefs autorefs-internal" href="../../reference/evotorch/core/#evotorch.core.Problem">Problem</a> class you may also return a <code>dict</code> which will be added to the <code>searcher</code>'s <code>status</code> dictionary. For example, let's use the <code>update_global_distribution_vars</code> as before, but now also add a hook to apply after the step which calculated the euclidean movement in <span class="arithmatex">\(\mu\)</span>:</p>
+<p>You can also inject code after the call to <code>_step</code> using <code>after_step_hook</code>. This works identically to <code>before_step_hook</code> except that, much like <code>after_eval_hook</code> for the [Problem][evotorch.core.Problem] class you may also return a <code>dict</code> which will be added to the <code>searcher</code>'s <code>status</code> dictionary. For example, let's use the <code>update_global_distribution_vars</code> as before, but now also add a hook to apply after the step which calculated the euclidean movement in <span class="arithmatex">\(\mu\)</span>:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="k">def</span> <span class="nf">euclidean_movement</span><span class="p">():</span>
 <a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a>    <span class="k">global</span> <span class="n">searcher</span><span class="p">,</span> <span class="n">mu</span>
 <a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a>    <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;mu_movement&quot;</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">searcher</span><span class="o">.</span><span class="n">status</span><span class="p">[</span><span class="s2">&quot;center&quot;</span><span class="p">]</span> <span class="o">-</span> <span class="n">mu</span><span class="p">)</span><span class="o">.</span><span class="n">item</span><span class="p">()}</span>
 </code></pre></div>
-<p>If we now add this to <code>after_step_hook</code>, add a <a class="autorefs autorefs-internal" href="../../reference/evotorch/logging/#evotorch.logging.StdOutLogger">StdOutLogger</a> instance and run for some iterations we will see that the <code>status</code> dictionary now tracks the euclidean movement in <span class="arithmatex">\(\mu\)</span>:</p>
+<p>If we now add this to <code>after_step_hook</code>, add a [StdOutLogger][evotorch.logging.StdOutLogger] instance and run for some iterations we will see that the <code>status</code> dictionary now tracks the euclidean movement in <span class="arithmatex">\(\mu\)</span>:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a><span class="n">logger</span> <span class="o">=</span> <span class="n">StdOutLogger</span><span class="p">(</span><span class="n">searcher</span><span class="p">)</span>
 <a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a><span class="n">searcher</span><span class="o">.</span><span class="n">after_step_hook</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">euclidean_movement</span><span class="p">)</span>
 <a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a><span class="n">searcher</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
@@ -2252,10 +2252,10 @@
       <div class="md-dialog__inner md-typeset"></div>
     </div>
     
-    <script id="__config" type="application/json">{"base": "../..", "features": ["content.code.annotate", "navigation.indexes", "navigation.sections", "navigation.tabs", "navigation.tabs.sticky", "navigation.top", "navigation.tracking", "search.highlight", "search.share", "search.suggest"], "search": "../../assets/javascripts/workers/search.5bf1dace.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version.title": "Select version"}, "version": {"provider": "mike"}}</script>
+    <script id="__config" type="application/json">{"base": "../..", "features": ["content.code.annotate", "navigation.indexes", "navigation.sections", "navigation.tabs", "navigation.tabs.sticky", "navigation.top", "navigation.tracking", "search.highlight", "search.share", "search.suggest"], "search": "../../assets/javascripts/workers/search.16e2a7d4.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version.title": "Select version"}, "version": {"provider": "mike"}}</script>
     
     
-      <script src="../../assets/javascripts/bundle.078830c0.min.js"></script>
+      <script src="../../assets/javascripts/bundle.d6c3db9e.min.js"></script>
       
         <script src="../../javascripts/mathjax.js"></script>
       
