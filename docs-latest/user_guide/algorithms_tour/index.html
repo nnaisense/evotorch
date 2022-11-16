@@ -39,6 +39,8 @@
       
     
     
+      <link rel="stylesheet" href="../../assets/_mkdocstrings.css">
+    
     <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce((e,_)=>(e<<5)-e+_.charCodeAt(0),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
       
@@ -1948,12 +1950,12 @@
 </thead>
 <tbody>
 <tr>
-<td>[SteadyStateGA][evotorch.algorithms.ga.SteadyStateGA]</td>
+<td><a class="autorefs autorefs-internal" href="../../reference/evotorch/algorithms/ga/#evotorch.algorithms.ga.SteadyStateGA">SteadyStateGA</a></td>
 <td>A steady-state Genetic Algorithm which can be reparameterised with mutation/crossover operators. If used on a multi-objective problem, this algorithm will behave similarly to NSGA-II.</td>
 <td><a href="http://cs.gmu.edu/~sean/book/metaheuristics/">Essentials of Metaheuristics</a> <a href="https://ieeexplore.ieee.org/abstract/document/996017">NSGA II</a></td>
 </tr>
 <tr>
-<td>[CoSyNE][evotorch.algorithms.ga.Cosyne]</td>
+<td><a class="autorefs autorefs-internal" href="../../reference/evotorch/algorithms/ga/#evotorch.algorithms.ga.Cosyne">CoSyNE</a></td>
 <td>The neuroevolution-specialised Genetic Algorithm 'Cooperative Synapse Neuroevolution'. This algorithm maintains subpopulations of individual weights which are cooperatively co-evolved.</td>
 <td><a href="https://jmlr.org/beta/papers/v9/gomez08a.html">Accelerated Neural Evolution through Cooperatively Coevolved Synapses</a></td>
 </tr>
@@ -1981,27 +1983,27 @@
 </thead>
 <tbody>
 <tr>
-<td>[XNES][evotorch.algorithms.distributed.gaussian.XNES]</td>
+<td><a class="autorefs autorefs-internal" href="../../reference/evotorch/algorithms/distributed/gaussian/#evotorch.algorithms.distributed.gaussian.XNES">XNES</a></td>
 <td>Exponential Natural Evolution Strategies.</td>
 <td><a href="https://dl.acm.org/doi/10.1145/1830483.1830557">Exponential Natural Evolution Strategies</a></td>
 </tr>
 <tr>
-<td>[SNES][evotorch.algorithms.distributed.gaussian.SNES]</td>
+<td><a class="autorefs autorefs-internal" href="../../reference/evotorch/algorithms/distributed/gaussian/#evotorch.algorithms.distributed.gaussian.SNES">SNES</a></td>
 <td>Separable Natural Evolution Strategies, the separable variant of Exponential Natural Evolution Strategies.</td>
 <td><a href="https://dl.acm.org/doi/10.1145/2001576.2001692">High dimensions and Heavy Tails for Natural Evolution Strategies</a></td>
 </tr>
 <tr>
-<td>[PGPE][evotorch.algorithms.distributed.gaussian.PGPE]</td>
+<td><a class="autorefs autorefs-internal" href="../../reference/evotorch/algorithms/distributed/gaussian/#evotorch.algorithms.distributed.gaussian.PGPE">PGPE</a></td>
 <td>Policy-Gradient Parameter Exploration, a variant of Natural Evolution Strategies which was derived specifically for reinforcement learning tasks. It differs from SNES by the exponential parameterisation that SNES inherits from Exponential Natural Evolution Strategies</td>
 <td><a href="https://www.sciencedirect.com/science/article/pii/S0893608009003220">Parameter-exploring policy gradients</a></td>
 </tr>
 <tr>
-<td>[CEM][evotorch.algorithms.distributed.gaussian.CEM]</td>
+<td><a class="autorefs autorefs-internal" href="../../reference/evotorch/algorithms/distributed/gaussian/#evotorch.algorithms.distributed.gaussian.CEM">CEM</a></td>
 <td>The Cross-Entropy Method. This CEM implementation is focused on continuous optimization, and follows the variant explained in Duan et al. (2016).</td>
 <td><a href="https://proceedings.mlr.press/v48/duan16.html">Benchmarking Deep Reinforcement Learning for Continuous Control</a></td>
 </tr>
 <tr>
-<td>[CMA-ES][evotorch.algorithms.cmaes.CMAES]</td>
+<td><a class="autorefs autorefs-internal" href="../../reference/evotorch/algorithms/cmaes/#evotorch.algorithms.cmaes.CMAES">CMA-ES</a></td>
 <td>The Covariance Matrix Adaptation Evolution Strategy. Due to the complexity and implementation-specific nature of this algorithm, we have opted to create an interface to the popular <a href="https://github.com/CMA-ES/pycma">pycma</a> library which is created and maintained by the authors of the algorithm. As of writing this documentation, pycma generates its populations as regular lists of separate numpy arrays. Therefore, when using this algorithm with large population sizes, you might notice slow-downs. Also, since it is built on numpy, pycma is CPU-bound.</td>
 <td><a href="https://ieeexplore.ieee.org/document/6790628">Completely Derandomized Self-Adaptation in Evolution Strategies</a></td>
 </tr>

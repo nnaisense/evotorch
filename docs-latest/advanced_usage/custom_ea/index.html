@@ -39,6 +39,8 @@
       
     
     
+      <link rel="stylesheet" href="../../assets/_mkdocstrings.css">
+    
     <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce((e,_)=>(e<<5)-e+_.charCodeAt(0),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
       
@@ -1939,9 +1941,9 @@
 
   <h1>Custom Searchers</h1>
 
-<p>While EvoTorch's internally provided [SearchAlgorithm][evotorch.algorithms.searchalgorithm.SearchAlgorithm] classes are effective, we understand that its often desirable to define your own search algorithms, with particular optimisations for your given problem at hand. This tutorial will walk you through the steps to do this.</p>
+<p>While EvoTorch's internally provided <a class="autorefs autorefs-internal" href="../../reference/evotorch/algorithms/searchalgorithm/#evotorch.algorithms.searchalgorithm.SearchAlgorithm">SearchAlgorithm</a> classes are effective, we understand that its often desirable to define your own search algorithms, with particular optimisations for your given problem at hand. This tutorial will walk you through the steps to do this.</p>
 <h2 id="general-structure">General Structure<a class="headerlink" href="#general-structure" title="Permanent link">&para;</a></h2>
-<p>A [SearchAlgorithm][evotorch.algorithms.searchalgorithm.SearchAlgorithm] object has quite a simple structure: it requires only an <code>__init__</code> method that accepts a [Problem][evotorch.core.Problem] instance, and a <code>_step</code> method to iteratively update the state of the algorithm.</p>
+<p>A <a class="autorefs autorefs-internal" href="../../reference/evotorch/algorithms/searchalgorithm/#evotorch.algorithms.searchalgorithm.SearchAlgorithm">SearchAlgorithm</a> object has quite a simple structure: it requires only an <code>__init__</code> method that accepts a <a class="autorefs autorefs-internal" href="../../reference/evotorch/core/#evotorch.core.Problem">Problem</a> instance, and a <code>_step</code> method to iteratively update the state of the algorithm.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">from</span> <span class="nn">evotorch</span> <span class="kn">import</span> <span class="n">Problem</span>
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="kn">from</span> <span class="nn">evotorch.algorithms</span> <span class="kn">import</span> <span class="n">SearchAlgorithm</span>
 <a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>
@@ -1963,7 +1965,7 @@
 <a id="__codelineno-0-19" name="__codelineno-0-19" href="#__codelineno-0-19"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">problem</span><span class="o">.</span><span class="n">evaluate</span><span class="p">(</span><span class="n">new_population</span><span class="p">)</span>
 <a id="__codelineno-0-20" name="__codelineno-0-20" href="#__codelineno-0-20"></a>        <span class="o">...</span>
 </code></pre></div>
-<p>From only these two methods, the [SearchAlgorithm][evotorch.algorithms.searchalgorithm.SearchAlgorithm] instance will work for any [Problem][evotorch.core.Problem] class and any [Logger][evotorch.logging.Logger] instances.</p>
+<p>From only these two methods, the <a class="autorefs autorefs-internal" href="../../reference/evotorch/algorithms/searchalgorithm/#evotorch.algorithms.searchalgorithm.SearchAlgorithm">SearchAlgorithm</a> instance will work for any <a class="autorefs autorefs-internal" href="../../reference/evotorch/core/#evotorch.core.Problem">Problem</a> class and any <a class="autorefs autorefs-internal" href="../../reference/evotorch/logging/#evotorch.logging.Logger">Logger</a> instances.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="kn">from</span> <span class="nn">evotorch.logging</span> <span class="kn">import</span> <span class="n">PandasLogger</span>
 <a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>
 <a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="n">searcher</span> <span class="o">=</span> <span class="n">MySearcher</span><span class="p">(</span><span class="n">Problem</span><span class="p">)</span>
@@ -2118,7 +2120,7 @@
 <a id="__codelineno-8-13" name="__codelineno-8-13" href="#__codelineno-8-13"></a>    <span class="n">num_actors</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
 <a id="__codelineno-8-14" name="__codelineno-8-14" href="#__codelineno-8-14"></a><span class="p">)</span>
 </code></pre></div>
-<p>We can instantiate our searcher as we would any other EvoTorch [SearchAlgorithm][evotorch.algorithms.searchalgorithm.SearchAlgorithm] instance,</p>
+<p>We can instantiate our searcher as we would any other EvoTorch <a class="autorefs autorefs-internal" href="../../reference/evotorch/algorithms/searchalgorithm/#evotorch.algorithms.searchalgorithm.SearchAlgorithm">SearchAlgorithm</a> instance,</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="kn">from</span> <span class="nn">evotorch.logging</span> <span class="kn">import</span> <span class="n">PandasLogger</span><span class="p">,</span> <span class="n">StdOutLogger</span>
 <a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>
 <a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a><span class="n">ga</span> <span class="o">=</span> <span class="n">SimpleGA</span><span class="p">(</span><span class="n">prob</span><span class="p">,</span> <span class="n">popsize</span><span class="o">=</span><span class="mi">40</span><span class="p">,</span> <span class="n">num_elites</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">num_parents</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">mutation_power</span><span class="o">=</span><span class="mf">0.02</span><span class="p">)</span>

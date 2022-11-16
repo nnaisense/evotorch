@@ -39,6 +39,8 @@
       
     
     
+      <link rel="stylesheet" href="../../assets/_mkdocstrings.css">
+    
     <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce((e,_)=>(e<<5)-e+_.charCodeAt(0),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
       
@@ -1872,9 +1874,9 @@
 <h1 id="general-usage">General Usage<a class="headerlink" href="#general-usage" title="Permanent link">&para;</a></h1>
 <p>In EvoTorch, code typically consists of 3 modular components:</p>
 <ul>
-<li>The searcher, a [SearchAlgorithm][evotorch.algorithms.searchalgorithm.SearchAlgorithm] instance which will iteratively generate populations of candidate solutions, evaluate those populations using the fitness function, and then update its own internal variables to attempt to produce higher-quality solutions in the subsequent iterations.</li>
-<li>The problem, a [Problem][evotorch.core.Problem] instance which will receive populations from the searcher and update the populations' individual solutions with computed fitness values. The [Problem][evotorch.core.Problem] class supports various approaches to vectorisation and/or parallelisation using <code>ray</code> actor pools, meaning that the problem can be implemented in a highly efficient manner with little effort.</li>
-<li>Any number of loggers, each an instance of [Logger][evotorch.logging.Logger], which observe the status of the searcher and process that status in various useful ways, such as printing the searcher status to the standard output or storing statistics about the evolutionary run in a remote logging system such as <a href="https://sacred.readthedocs.io/en/stable/quickstart.html">Sacred</a> or <a href="https://mlflow.org/">MLFlow</a>.</li>
+<li>The searcher, a <a class="autorefs autorefs-internal" href="../../reference/evotorch/algorithms/searchalgorithm/#evotorch.algorithms.searchalgorithm.SearchAlgorithm">SearchAlgorithm</a> instance which will iteratively generate populations of candidate solutions, evaluate those populations using the fitness function, and then update its own internal variables to attempt to produce higher-quality solutions in the subsequent iterations.</li>
+<li>The problem, a <a class="autorefs autorefs-internal" href="../../reference/evotorch/core/#evotorch.core.Problem">Problem</a> instance which will receive populations from the searcher and update the populations' individual solutions with computed fitness values. The <a class="autorefs autorefs-internal" href="../../reference/evotorch/core/#evotorch.core.Problem">Problem</a> class supports various approaches to vectorisation and/or parallelisation using <code>ray</code> actor pools, meaning that the problem can be implemented in a highly efficient manner with little effort.</li>
+<li>Any number of loggers, each an instance of <a class="autorefs autorefs-internal" href="../../reference/evotorch/logging/#evotorch.logging.Logger">Logger</a>, which observe the status of the searcher and process that status in various useful ways, such as printing the searcher status to the standard output or storing statistics about the evolutionary run in a remote logging system such as <a href="https://sacred.readthedocs.io/en/stable/quickstart.html">Sacred</a> or <a href="https://mlflow.org/">MLFlow</a>.</li>
 </ul>
 <p>The relationship between these three components is outlined below:</p>
 <p><img alt="evotorch" src="../../evotorch_architecture.svg" /></p>

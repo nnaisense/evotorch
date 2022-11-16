@@ -39,6 +39,8 @@
       
     
     
+      <link rel="stylesheet" href="../../assets/_mkdocstrings.css">
+    
     <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce((e,_)=>(e<<5)-e+_.charCodeAt(0),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
       
@@ -570,8 +572,8 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#gymneevotorchneuroevolutiongymnegymne-and-vecgymneevotorchneuroevolutionvecgymnevecgymne" class="md-nav__link">
-    [GymNE][evotorch.neuroevolution.gymne.GymNE] and [VecGymNE][evotorch.neuroevolution.vecgymne.VecGymNE]
+  <a href="#gymne-and-vecgymne" class="md-nav__link">
+    GymNE and VecGymNE
   </a>
   
 </li>
@@ -1910,8 +1912,8 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#gymneevotorchneuroevolutiongymnegymne-and-vecgymneevotorchneuroevolutionvecgymnevecgymne" class="md-nav__link">
-    [GymNE][evotorch.neuroevolution.gymne.GymNE] and [VecGymNE][evotorch.neuroevolution.vecgymne.VecGymNE]
+  <a href="#gymne-and-vecgymne" class="md-nav__link">
+    GymNE and VecGymNE
   </a>
   
 </li>
@@ -1974,15 +1976,15 @@ In this API, the evaluation of the <code>policy</code> for a given <code>environ
 <p class="admonition-title">Old vs New Gym API</p>
 <p>Gym's long-used API changed in Sept 2022 with the release of <a href="https://github.com/openai/gym/releases/tag/0.26.0">v0.26.0</a>. EvoTorch supports environments defined using both new and old APIs.</p>
 </div>
-<h2 id="gymneevotorchneuroevolutiongymnegymne-and-vecgymneevotorchneuroevolutionvecgymnevecgymne">[GymNE][evotorch.neuroevolution.gymne.GymNE] and [VecGymNE][evotorch.neuroevolution.vecgymne.VecGymNE]<a class="headerlink" href="#gymneevotorchneuroevolutiongymnegymne-and-vecgymneevotorchneuroevolutionvecgymnevecgymne" title="Permanent link">&para;</a></h2>
+<h2 id="gymne-and-vecgymne"><a class="autorefs autorefs-internal" href="../../reference/evotorch/neuroevolution/gymne/#evotorch.neuroevolution.gymne.GymNE">GymNE</a> and <a class="autorefs autorefs-internal" href="../../reference/evotorch/neuroevolution/vecgymne/#evotorch.neuroevolution.vecgymne.VecGymNE">VecGymNE</a><a class="headerlink" href="#gymne-and-vecgymne" title="Permanent link">&para;</a></h2>
 <p>EvoTorch provides two custom problem classes with very similar arguments for easily applying and scaling up neuroevolution across CPUs and GPUs:</p>
 <ul>
-<li>[GymNE][evotorch.neuroevolution.gymne.GymNE]: This class can be used for any Gym environment. Each problem actor (configured using the <code>num_actors</code> argument) maintains an instance of the environment to use for evaluation of each policy network in the population. Thus, this class uses parallelization but not vectorization.</li>
-<li>[VecGymNE][evotorch.neuroevolution.vecgymne.VecGymNE]: This class is specially designed for use with <a href="https://www.gymlibrary.dev/content/vectorising/"><em>vectorized</em> environments</a>. In addition to potentially exploiting vectorization for environment simulators, <strong>this class further vectorizes policy evaluations using <a href="https://pytorch.org/functorch/stable/">functorch</a></strong> making it possible to fully utilize accelerators such as GPUs for neuroevolution. This is the recommended class to use for environments from massively parallel simulators such as <a href="https://github.com/google/brax">Brax</a> and <a href="https://github.com/NVIDIA-Omniverse/OmniIsaacGymEnvs">IsaacGym</a>.</li>
+<li><a class="autorefs autorefs-internal" href="../../reference/evotorch/neuroevolution/gymne/#evotorch.neuroevolution.gymne.GymNE">GymNE</a>: This class can be used for any Gym environment. Each problem actor (configured using the <code>num_actors</code> argument) maintains an instance of the environment to use for evaluation of each policy network in the population. Thus, this class uses parallelization but not vectorization.</li>
+<li><a class="autorefs autorefs-internal" href="../../reference/evotorch/neuroevolution/vecgymne/#evotorch.neuroevolution.vecgymne.VecGymNE">VecGymNE</a>: This class is specially designed for use with <a href="https://www.gymlibrary.dev/content/vectorising/"><em>vectorized</em> environments</a>. In addition to potentially exploiting vectorization for environment simulators, <strong>this class further vectorizes policy evaluations using <a href="https://pytorch.org/functorch/stable/">functorch</a></strong> making it possible to fully utilize accelerators such as GPUs for neuroevolution. This is the recommended class to use for environments from massively parallel simulators such as <a href="https://github.com/google/brax">Brax</a> and <a href="https://github.com/NVIDIA-Omniverse/OmniIsaacGymEnvs">IsaacGym</a>.</li>
 </ul>
 <div class="admonition info">
 <p class="admonition-title">Brax and IsaacGym environments</p>
-<p>Brax environments are supported out-of-the-box by [VecGymNE][evotorch.neuroevolution.vecgymne.VecGymNE] and can be used to instantiate a problem object by appending <code>brax::</code> to an available environment name, such as <code>brax::humanoid</code>. For further details regarding Brax environments, see the dedicated example notebook in the repository (<code>examples/notebooks</code>). Out-of-the-box support for IsaacGym environments is under development.</p>
+<p>Brax environments are supported out-of-the-box by <a class="autorefs autorefs-internal" href="../../reference/evotorch/neuroevolution/vecgymne/#evotorch.neuroevolution.vecgymne.VecGymNE">VecGymNE</a> and can be used to instantiate a problem object by appending <code>brax::</code> to an available environment name, such as <code>brax::humanoid</code>. For further details regarding Brax environments, see the dedicated example notebook in the repository (<code>examples/notebooks</code>). Out-of-the-box support for IsaacGym environments is under development.</p>
 </div>
 <p>For the simplest cases, you can create a reinforcement learning problem simply by specifying the name of the environment. For example,</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="kn">from</span> <span class="nn">evotorch.neuroevolution</span> <span class="kn">import</span> <span class="n">GymNE</span>
@@ -1997,8 +1999,8 @@ In this API, the evaluation of the <code>policy</code> for a given <code>environ
 <a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a>    <span class="n">num_actors</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span>
 <a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a><span class="p">)</span>
 </code></pre></div>
-<p>will create a [GymNE][evotorch.neuroevolution.gymne.GymNE] instance for the <a href="https://www.gymlibrary.dev/environments/box2d/lunar_lander/"><code>"LunarLanderContinuous-v2"</code> environment</a> with a <code>Linear</code> policy which takes <code>obs_length</code> inputs (the number of observations) and returns <code>act_length</code> actions (the number of actions).
-You can also tell [GymNE][evotorch.neuroevolution.gymne.GymNE] to use a custom <a href="https://pytorch.org/docs/stable/generated/torch.nn.Module.html#torch.nn.Module">PyTorch module</a> subclass as the policy. Usage of [GymNE][evotorch.neuroevolution.gymne.GymNE] with a custom policy could look like this:</p>
+<p>will create a <a class="autorefs autorefs-internal" href="../../reference/evotorch/neuroevolution/gymne/#evotorch.neuroevolution.gymne.GymNE">GymNE</a> instance for the <a href="https://www.gymlibrary.dev/environments/box2d/lunar_lander/"><code>"LunarLanderContinuous-v2"</code> environment</a> with a <code>Linear</code> policy which takes <code>obs_length</code> inputs (the number of observations) and returns <code>act_length</code> actions (the number of actions).
+You can also tell <a class="autorefs autorefs-internal" href="../../reference/evotorch/neuroevolution/gymne/#evotorch.neuroevolution.gymne.GymNE">GymNE</a> to use a custom <a href="https://pytorch.org/docs/stable/generated/torch.nn.Module.html#torch.nn.Module">PyTorch module</a> subclass as the policy. Usage of <a class="autorefs autorefs-internal" href="../../reference/evotorch/neuroevolution/gymne/#evotorch.neuroevolution.gymne.GymNE">GymNE</a> with a custom policy could look like this:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="kn">import</span> <span class="nn">torch</span>
 <a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>
 <a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="kn">from</span> <span class="nn">evotorch.decorators</span> <span class="kn">import</span> <span class="n">pass_info</span>
@@ -2022,16 +2024,16 @@ You can also tell [GymNE][evotorch.neuroevolution.gymne.GymNE] to use a custom <
 <a id="__codelineno-2-21" name="__codelineno-2-21" href="#__codelineno-2-21"></a>    <span class="n">num_actors</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span>
 <a id="__codelineno-2-22" name="__codelineno-2-22" href="#__codelineno-2-22"></a><span class="p">)</span>
 </code></pre></div>
-<p>Notice that in the example code above, <code>CustomPolicy</code> is decorated with @[pass_info][evotorch.decorators.pass_info]. When this decorator is given, [GymNE][evotorch.neuroevolution.gymne.GymNE] passes the following keyword arguments:</p>
+<p>Notice that in the example code above, <code>CustomPolicy</code> is decorated with @<a class="autorefs autorefs-internal" href="../../reference/evotorch/decorators/#evotorch.decorators.pass_info">pass_info</a>. When this decorator is given, <a class="autorefs autorefs-internal" href="../../reference/evotorch/neuroevolution/gymne/#evotorch.neuroevolution.gymne.GymNE">GymNE</a> passes the following keyword arguments:</p>
 <ul>
 <li><code>obs_length</code>: Length of the observation vector, as an integer.</li>
 <li><code>act_length</code>: Length of the action vector, as an integer.</li>
 <li><code>obs_shape</code>: Shape of the observation space, as a tuple of integers.</li>
 <li><code>act_shape</code>: Shape of the action space, as a tuple of integers.</li>
 <li><code>obs_space</code>: The observation space, as a <a href="https://www.gymlibrary.dev/api/spaces/#box">Box</a>.</li>
-<li><code>act_space</code>: The action space, as a <a href="https://www.gymlibrary.dev/api/spaces/#box">Box</a>. Please note that, even if the gym environment's action space is discrete, this will be given as a Box. The reason is that, when using [GymNE][evotorch.neuroevolution.gymne.GymNE] (or [VecGymNE][evotorch.neuroevolution.vecgymne.VecGymNE]), the policy network is expected to produce tensors of floating-point numbers (of shape specified by the given Box).</li>
+<li><code>act_space</code>: The action space, as a <a href="https://www.gymlibrary.dev/api/spaces/#box">Box</a>. Please note that, even if the gym environment's action space is discrete, this will be given as a Box. The reason is that, when using <a class="autorefs autorefs-internal" href="../../reference/evotorch/neuroevolution/gymne/#evotorch.neuroevolution.gymne.GymNE">GymNE</a> (or <a class="autorefs autorefs-internal" href="../../reference/evotorch/neuroevolution/vecgymne/#evotorch.neuroevolution.vecgymne.VecGymNE">VecGymNE</a>), the policy network is expected to produce tensors of floating-point numbers (of shape specified by the given Box).</li>
 </ul>
-<p>It is also possible not to use the decorator @[pass_info][evotorch.decorators.pass_info] for when the policy class does not expect these arguments.</p>
+<p>It is also possible not to use the decorator @<a class="autorefs autorefs-internal" href="../../reference/evotorch/decorators/#evotorch.decorators.pass_info">pass_info</a> for when the policy class does not expect these arguments.</p>
 <p>You can specify additional arguments to pass to the instantiation of the environment, as you would pass <a href="https://www.gymlibrary.dev/environments/box2d/lunar_lander/#arguments">keyword arguments to <code>gym.make</code></a>, using the <code>env_config</code> dictionary. For example:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="n">problem</span> <span class="o">=</span> <span class="n">GymNE</span><span class="p">(</span>
 <a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>    <span class="n">env</span><span class="o">=</span><span class="s2">&quot;LunarLanderContinuous-v2&quot;</span><span class="p">,</span>
@@ -2042,9 +2044,9 @@ You can also tell [GymNE][evotorch.neuroevolution.gymne.GymNE] to use a custom <
 <a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a><span class="p">)</span>
 </code></pre></div>
 <p>will effectively disable <code>gravity</code> in the <code>"LunarLanderContinuous-v2"</code> environment.</p>
-<p>[GymNE][evotorch.neuroevolution.gymne.GymNE] and [VecGymNE][evotorch.neuroevolution.vecgymne.VecGymNE] provide a helper method named <code>to_policy(...)</code> to convert a solution (where the solution can be a 1-dimensional tensor or an instance of [Solution][evotorch.core.Solution]) to a policy network. While one could also use the methods <code>parameterize_net(...)</code> or <code>make_net(...)</code> for similar purposes, it is recommended to use <code>to_policy(...)</code>, because <code>to_policy</code> will wrap the policy network with observation normalization and action clipping modules to make sure that the inputs to the network are properly processed and the produced actions do not violate the boundaries of the action space.
-Further remarks regarding the differences between <code>parameterize_net(...)</code> and <code>to_policy(...)</code> are: (i) <code>parameterize_net(...)</code> is not available in [VecGymNE][evotorch.neuroevolution.vecgymne.VecGymNE], and (ii) <code>parameterize_net(...)</code> can be considered a lower level method and strictly expects PyTorch tensors (not [Solution][evotorch.core.Solution] objects).</p>
-<p>[GymNE][evotorch.neuroevolution.gymne.GymNE] and [VecGymNE][evotorch.neuroevolution.vecgymne.VecGymNE] have a number of useful arguments that will help you to recreate experiments from neuroevolution literature:</p>
+<p><a class="autorefs autorefs-internal" href="../../reference/evotorch/neuroevolution/gymne/#evotorch.neuroevolution.gymne.GymNE">GymNE</a> and <a class="autorefs autorefs-internal" href="../../reference/evotorch/neuroevolution/vecgymne/#evotorch.neuroevolution.vecgymne.VecGymNE">VecGymNE</a> provide a helper method named <code>to_policy(...)</code> to convert a solution (where the solution can be a 1-dimensional tensor or an instance of <a class="autorefs autorefs-internal" href="../../reference/evotorch/core/#evotorch.core.Solution">Solution</a>) to a policy network. While one could also use the methods <code>parameterize_net(...)</code> or <code>make_net(...)</code> for similar purposes, it is recommended to use <code>to_policy(...)</code>, because <code>to_policy</code> will wrap the policy network with observation normalization and action clipping modules to make sure that the inputs to the network are properly processed and the produced actions do not violate the boundaries of the action space.
+Further remarks regarding the differences between <code>parameterize_net(...)</code> and <code>to_policy(...)</code> are: (i) <code>parameterize_net(...)</code> is not available in <a class="autorefs autorefs-internal" href="../../reference/evotorch/neuroevolution/vecgymne/#evotorch.neuroevolution.vecgymne.VecGymNE">VecGymNE</a>, and (ii) <code>parameterize_net(...)</code> can be considered a lower level method and strictly expects PyTorch tensors (not <a class="autorefs autorefs-internal" href="../../reference/evotorch/core/#evotorch.core.Solution">Solution</a> objects).</p>
+<p><a class="autorefs autorefs-internal" href="../../reference/evotorch/neuroevolution/gymne/#evotorch.neuroevolution.gymne.GymNE">GymNE</a> and <a class="autorefs autorefs-internal" href="../../reference/evotorch/neuroevolution/vecgymne/#evotorch.neuroevolution.vecgymne.VecGymNE">VecGymNE</a> have a number of useful arguments that will help you to recreate experiments from neuroevolution literature:</p>
 <h2 id="controlling-the-number-of-episodes">Controlling the Number of Episodes<a class="headerlink" href="#controlling-the-number-of-episodes" title="Permanent link">&para;</a></h2>
 <p>The <code>num_episodes</code> argument allows you to evaluate individual networks repeatedly and have their episodic returns averaged. This is particularly useful when studying noisy environments, and when using population-based evolutionary algorithms whose selection procedures and elitism mechanisms may be more sensitive to noise. For example, instantiating the problem</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="n">problem</span> <span class="o">=</span> <span class="n">GymNE</span><span class="p">(</span>
@@ -2084,7 +2086,7 @@ Further remarks regarding the differences between <code>parameterize_net(...)</c
 <a id="__codelineno-7-10" name="__codelineno-7-10" href="#__codelineno-7-10"></a>)
 </code></pre></div>
 </details>
-<p>you will observe that the policy contains an [ObsNormWrapperModule][evotorch.neuroevolution.net.rl.ObsNormWrapperModule] which automatically applies observation normalization to the input to the policy, and an [ActClipWrapperModule][evotorch.neuroevolution.net.rl.ActClipWrapperModule] which automatically clips the actions to the space of the environment.</p>
+<p>you will observe that the policy contains an <a class="autorefs autorefs-internal" href="../../reference/evotorch/neuroevolution/net/rl/#evotorch.neuroevolution.net.rl.ObsNormWrapperModule">ObsNormWrapperModule</a> which automatically applies observation normalization to the input to the policy, and an <a class="autorefs autorefs-internal" href="../../reference/evotorch/neuroevolution/net/rl/#evotorch.neuroevolution.net.rl.ActClipWrapperModule">ActClipWrapperModule</a> which automatically clips the actions to the space of the environment.</p>
 <h2 id="modifying-the-step-reward">Modifying the step reward<a class="headerlink" href="#modifying-the-step-reward" title="Permanent link">&para;</a></h2>
 <p>A number of <code>gym</code> environments use an <code>alive_bonus</code>: a scalar value that is added to the <code>step_reward</code> in each step to encourage RL agents to survive for longer. In evolutionary RL, however, <a href="https://arxiv.org/pdf/2008.02387.pdf">it has been observed</a> that this <code>alive_bonus</code> is detrimental and creates unhelpful local optimal. While you can of course disabled particular rewards with the <code>env_config</code> argument when available, we also provide direct support for you to decrease the <code>step_reward</code> by a scalar amount.</p>
 <p>For example, the <code>"Humanoid-v4"</code> environment <a href="https://www.gymlibrary.dev/environments/mujoco/humanoid/#rewards">has an <code>alive_bonus</code> value of 5</a>. You can easily offset this using the <code>decrease_rewards_by</code> keyword argument:</p>

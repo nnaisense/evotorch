@@ -39,6 +39,8 @@
       
     
     
+      <link rel="stylesheet" href="../../assets/_mkdocstrings.css">
+    
     <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce((e,_)=>(e<<5)-e+_.charCodeAt(0),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
       
@@ -1927,7 +1929,7 @@
 
 <p>While we provide a number of logging functionalities out-of-the-box, there are many cases where you may wish to create your own logger. This short tutorial will walk you through the steps to achieve this.</p>
 <h2 id="general-structure">General Structure<a class="headerlink" href="#general-structure" title="Permanent link">&para;</a></h2>
-<p>A [Logger][evotorch.logging.Logger] object has quite a simple structure: it requires only an <code>__init__</code> method that accepts a [SearchAlgorithm][evotorch.algorithms.searchalgorithm.SearchAlgorithm] instance, and a <code>_log</code> method to handle the status that is returned from the [SearchAlgorithm][evotorch.algorithms.searchalgorithm.SearchAlgorithm]:</p>
+<p>A <a class="autorefs autorefs-internal" href="../../reference/evotorch/logging/#evotorch.logging.Logger">Logger</a> object has quite a simple structure: it requires only an <code>__init__</code> method that accepts a <a class="autorefs autorefs-internal" href="../../reference/evotorch/algorithms/searchalgorithm/#evotorch.algorithms.searchalgorithm.SearchAlgorithm">SearchAlgorithm</a> instance, and a <code>_log</code> method to handle the status that is returned from the <a class="autorefs autorefs-internal" href="../../reference/evotorch/algorithms/searchalgorithm/#evotorch.algorithms.searchalgorithm.SearchAlgorithm">SearchAlgorithm</a>:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">from</span> <span class="nn">evotorch.logging</span> <span class="kn">import</span> <span class="n">Logger</span>
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>
 <a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>
@@ -1944,7 +1946,7 @@
 <a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a>        <span class="c1"># do some work on the status dictionary</span>
 <a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a>        <span class="o">...</span>
 </code></pre></div>
-<p>From only these two methods, the [Logger][evotorch.logging.Logger] instance will work for any [SearchAlgorithm][evotorch.algorithms.searchalgorithm.SearchAlgorithm] instance, simply by attaching it at instantiation,</p>
+<p>From only these two methods, the <a class="autorefs autorefs-internal" href="../../reference/evotorch/logging/#evotorch.logging.Logger">Logger</a> instance will work for any <a class="autorefs autorefs-internal" href="../../reference/evotorch/algorithms/searchalgorithm/#evotorch.algorithms.searchalgorithm.SearchAlgorithm">SearchAlgorithm</a> instance, simply by attaching it at instantiation,</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="n">my_logger</span> <span class="o">=</span> <span class="n">MyLogger</span><span class="p">(</span><span class="n">searcher</span><span class="p">)</span>
 <a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="n">searcher</span><span class="o">.</span><span class="n">step</span><span class="p">()</span>
 </code></pre></div>

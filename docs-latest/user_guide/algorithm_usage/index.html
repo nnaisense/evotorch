@@ -39,6 +39,8 @@
       
     
     
+      <link rel="stylesheet" href="../../assets/_mkdocstrings.css">
+    
     <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce((e,_)=>(e<<5)-e+_.charCodeAt(0),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
       
@@ -1945,7 +1947,7 @@
 
 <h1 id="using-algorithms">Using Algorithms<a class="headerlink" href="#using-algorithms" title="Permanent link">&para;</a></h1>
 <h2 id="basic-interface">Basic Interface<a class="headerlink" href="#basic-interface" title="Permanent link">&para;</a></h2>
-<p>Once a [SearchAlgorithm][evotorch.algorithms.searchalgorithm.SearchAlgorithm] instance has been created, e.g.</p>
+<p>Once a <a class="autorefs autorefs-internal" href="../../reference/evotorch/algorithms/searchalgorithm/#evotorch.algorithms.searchalgorithm.SearchAlgorithm">SearchAlgorithm</a> instance has been created, e.g.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">from</span> <span class="nn">evotorch</span> <span class="kn">import</span> <span class="n">Problem</span>
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="kn">from</span> <span class="nn">evotorch.algorithms</span> <span class="kn">import</span> <span class="n">SNES</span>
 <a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="kn">import</span> <span class="nn">torch</span>
@@ -1961,7 +1963,7 @@
 <p>the main usage is to step the algorithm forward by a single generation</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="n">searcher</span><span class="o">.</span><span class="n">step</span><span class="p">()</span>
 </code></pre></div>
-<p>However, a common use-case is to run a [SearchAlgorithm][evotorch.algorithms.searchalgorithm.SearchAlgorithm] instance for many generations. In this case, the <code>run</code> function provides an easy interface for this,</p>
+<p>However, a common use-case is to run a <a class="autorefs autorefs-internal" href="../../reference/evotorch/algorithms/searchalgorithm/#evotorch.algorithms.searchalgorithm.SearchAlgorithm">SearchAlgorithm</a> instance for many generations. In this case, the <code>run</code> function provides an easy interface for this,</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="n">searcher</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">num_generations</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span>
 </code></pre></div>
 <div class="admonition important">
@@ -1969,7 +1971,7 @@
 <p>The above call to <code>run</code> will not produce any output as the <code>searcher</code> has no attached loggers.</p>
 </div>
 <h2 id="accessing-the-status">Accessing the Status<a class="headerlink" href="#accessing-the-status" title="Permanent link">&para;</a></h2>
-<p>Each [SearchAlgorithm][evotorch.algorithms.searchalgorithm.SearchAlgorithm] instance maintains a <code>status</code> dictionary which tracks various information about the current status of the <code>searcher</code>. You can discover the available status information for a specific class that inherits [SearchAlgorithm][evotorch.algorithms.searchalgorithm.SearchAlgorithm] using,</p>
+<p>Each <a class="autorefs autorefs-internal" href="../../reference/evotorch/algorithms/searchalgorithm/#evotorch.algorithms.searchalgorithm.SearchAlgorithm">SearchAlgorithm</a> instance maintains a <code>status</code> dictionary which tracks various information about the current status of the <code>searcher</code>. You can discover the available status information for a specific class that inherits <a class="autorefs autorefs-internal" href="../../reference/evotorch/algorithms/searchalgorithm/#evotorch.algorithms.searchalgorithm.SearchAlgorithm">SearchAlgorithm</a> using,</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="nb">print</span><span class="p">([</span><span class="n">k</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">searcher</span><span class="o">.</span><span class="n">iter_status_keys</span><span class="p">()])</span>
 </code></pre></div>
 <p>Each status property can be accessed by its name</p>
@@ -1987,7 +1989,7 @@
 <li><code>'median_eval'</code>, the best solution in the population.</li>
 </ul>
 <h2 id="changing-data-types-and-devices">Changing Data-types and Devices<a class="headerlink" href="#changing-data-types-and-devices" title="Permanent link">&para;</a></h2>
-<p>In EvoTorch, problems can be specified to use a specific <code>torch</code> device and data type. When a [SearchAlgorithm][evotorch.algorithms.searchalgorithm.SearchAlgorithm] instance is created, it is passed a [Problem][evotorch.core.Problem] instance, and in doing so, inherits the device and data type from the [Problem][evotorch.core.Problem].</p>
+<p>In EvoTorch, problems can be specified to use a specific <code>torch</code> device and data type. When a <a class="autorefs autorefs-internal" href="../../reference/evotorch/algorithms/searchalgorithm/#evotorch.algorithms.searchalgorithm.SearchAlgorithm">SearchAlgorithm</a> instance is created, it is passed a <a class="autorefs autorefs-internal" href="../../reference/evotorch/core/#evotorch.core.Problem">Problem</a> instance, and in doing so, inherits the device and data type from the <a class="autorefs autorefs-internal" href="../../reference/evotorch/core/#evotorch.core.Problem">Problem</a>.</p>
 <p>This is easy to observe, as running the following code,</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="n">prob</span> <span class="o">=</span> <span class="n">Problem</span><span class="p">(</span>
 <a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>    <span class="s2">&quot;min&quot;</span><span class="p">,</span>

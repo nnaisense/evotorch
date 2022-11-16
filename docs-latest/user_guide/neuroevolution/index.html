@@ -39,6 +39,8 @@
       
     
     
+      <link rel="stylesheet" href="../../assets/_mkdocstrings.css">
+    
     <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce((e,_)=>(e<<5)-e+_.charCodeAt(0),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
       
@@ -1958,7 +1960,7 @@
 
 
 <h1 id="neuroevolution-in-evotorch">Neuroevolution in EvoTorch<a class="headerlink" href="#neuroevolution-in-evotorch" title="Permanent link">&para;</a></h1>
-<p>EvoTorch provides extensive native support for neuroevolution through the [evotorch.neuroevolution][evotorch.neuroevolution] sub-package and the [NEProblem][evotorch.neuroevolution.neproblem.NEProblem] class. This page details the various features of this sub-package.</p>
+<p>EvoTorch provides extensive native support for neuroevolution through the <a class="autorefs autorefs-internal" href="../../reference/evotorch/neuroevolution/#evotorch.neuroevolution">evotorch.neuroevolution</a> sub-package and the <a class="autorefs autorefs-internal" href="../../reference/evotorch/neuroevolution/neproblem/#evotorch.neuroevolution.neproblem.NEProblem">NEProblem</a> class. This page details the various features of this sub-package.</p>
 <h2 id="general-usage">General Usage<a class="headerlink" href="#general-usage" title="Permanent link">&para;</a></h2>
 <p>To use neuroevolution, you can define a function that evaluates a single <code>torch.nn.Module</code> instance and returns a scalar fitness.</p>
 <p>Let's consider a simple fitness function: We wish to train a network that takes a vector of length 3 as input, and produces a scalar output, such that the sign of its output is the same as the sign of the sum of its inputs. To train this network, we choose a reward of +1 when the output has the correct sign, and -1 otherwise. We also choose a batch size of 32. The goal of our neuroevolution task is to maximise the average reward.</p>
@@ -1981,7 +1983,7 @@
 <a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a>    <span class="n">reward_lost</span> <span class="o">=</span> <span class="p">(</span><span class="n">sign_sum</span> <span class="o">!=</span> <span class="n">sign_out</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">float</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
 <a id="__codelineno-0-18" name="__codelineno-0-18" href="#__codelineno-0-18"></a>    <span class="k">return</span> <span class="p">(</span><span class="n">reward_gained</span> <span class="o">-</span> <span class="n">reward_lost</span><span class="p">)</span> <span class="o">/</span> <span class="mi">32</span>
 </code></pre></div>
-<p>A [NEProblem][evotorch.neuroevolution.neproblem.NEProblem] class can then be instantiated according to: an <code>objective_sense</code> (<code>'min'</code> or <code>'max</code>'), a <code>network</code> definition (a <code>torch.nn.Module</code> instance, a <code>torch.nn.Module</code> class, a function returning a <code>torch.nn.Module</code> instance or a string representation of a network -- see below) and <code>network_eval_func</code>, our fitness function:</p>
+<p>A <a class="autorefs autorefs-internal" href="../../reference/evotorch/neuroevolution/neproblem/#evotorch.neuroevolution.neproblem.NEProblem">NEProblem</a> class can then be instantiated according to: an <code>objective_sense</code> (<code>'min'</code> or <code>'max</code>'), a <code>network</code> definition (a <code>torch.nn.Module</code> instance, a <code>torch.nn.Module</code> class, a function returning a <code>torch.nn.Module</code> instance or a string representation of a network -- see below) and <code>network_eval_func</code>, our fitness function:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="kn">from</span> <span class="nn">evotorch.neuroevolution</span> <span class="kn">import</span> <span class="n">NEProblem</span>
 <a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>
 <a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="n">sign_prediction_problem</span> <span class="o">=</span> <span class="n">NEProblem</span><span class="p">(</span>
@@ -2038,7 +2040,7 @@
 <div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>    tensor([[-9.7548]], grad_fn=&lt;AddmmBackward0&gt;)
 </code></pre></div>
 </details>
-<p>Of course, you can also create a custom [NEProblem][evotorch.neuroevolution.neproblem.NEProblem] instance by inheriting from that class. In this case, you simply need to override the <code>_evaluate_network</code> function with your desired fitness function:</p>
+<p>Of course, you can also create a custom <a class="autorefs autorefs-internal" href="../../reference/evotorch/neuroevolution/neproblem/#evotorch.neuroevolution.neproblem.NEProblem">NEProblem</a> instance by inheriting from that class. In this case, you simply need to override the <code>_evaluate_network</code> function with your desired fitness function:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="k">class</span> <span class="nc">CustomNE</span><span class="p">(</span><span class="n">NEProblem</span><span class="p">):</span>
 <a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>
 <a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a>    <span class="o">...</span>
@@ -2059,7 +2061,7 @@
 <a id="__codelineno-9-18" name="__codelineno-9-18" href="#__codelineno-9-18"></a>        <span class="k">return</span> <span class="n">reward_gained</span> <span class="o">-</span> <span class="n">reward_lost</span>
 </code></pre></div>
 <h2 id="neuroevolution-at-scale">Neuroevolution at Scale<a class="headerlink" href="#neuroevolution-at-scale" title="Permanent link">&para;</a></h2>
-<p>When using [NEProblem][evotorch.neuroevolution.neproblem.NEProblem] classes without modifying the <code>num_actors</code> argument (i.e., without enabling Ray parallelization), the network used for evaluation will simply use the same device as the problem's main <code>device</code> attribute. This means that</p>
+<p>When using <a class="autorefs autorefs-internal" href="../../reference/evotorch/neuroevolution/neproblem/#evotorch.neuroevolution.neproblem.NEProblem">NEProblem</a> classes without modifying the <code>num_actors</code> argument (i.e., without enabling Ray parallelization), the network used for evaluation will simply use the same device as the problem's main <code>device</code> attribute. This means that</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="n">problem</span> <span class="o">=</span> <span class="n">NEProblem</span><span class="p">(</span><span class="o">...</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="s2">&quot;cuda:0&quot;</span><span class="p">)</span>
 </code></pre></div>
 <p>will mean that the network of the problem will, by default, live on the device <code>cuda:0</code>. However, if you specify a positive <code>num_actors</code> value,</p>
@@ -2095,7 +2097,7 @@
 <p>will cause each of the actors to attempt to move their networks to the device <code>cuda:3</code>. However, you should note that <code>ray</code>, by default, overrides the <code>CUDA_VISIBLE_DEVICES</code> environment variable so that each actor cannot see any GPUs unless the <code>num_gpus</code> flag is passed at instantiation to the <code>ray</code> actor. We provide a workaround to this through the <code>num_gpus_per_actor='all'</code> keyword argument that is passed to <code>super().__init__</code>, which will specify that all actors should be able to see all of the devices. and the above overriding of <code>network_device</code> will function as expected.</p>
 <p>Using the <code>num_actors</code>, <code>num_gpus_per_actor</code> arguments and the <code>network_device</code> property, you can straightforwardly scale your neuroevolution experiments to hundreds of CPU cores and dozens of GPUs across <code>ray</code> clusters.</p>
 <h2 id="instantiating-networks">Instantiating Networks<a class="headerlink" href="#instantiating-networks" title="Permanent link">&para;</a></h2>
-<p>[NEProblem][evotorch.neuroevolution.neproblem.NEProblem] supports a number of ways to instantiate networks. The first, as we have seen, is to pass a <code>torch.nn.Module</code> instance. In this case, the module will be copied to all actors when using <code>num_actors &gt; 1</code>. However, we generally discourage this usage as it means that the network will be moved to the CPU and copied to all actors, which can be a very expensive operation when working at scale. We provide a number of functionalities that allow automatic instantiation of the network <em>within the actor</em> so that no such copying is required.</p>
+<p><a class="autorefs autorefs-internal" href="../../reference/evotorch/neuroevolution/neproblem/#evotorch.neuroevolution.neproblem.NEProblem">NEProblem</a> supports a number of ways to instantiate networks. The first, as we have seen, is to pass a <code>torch.nn.Module</code> instance. In this case, the module will be copied to all actors when using <code>num_actors &gt; 1</code>. However, we generally discourage this usage as it means that the network will be moved to the CPU and copied to all actors, which can be a very expensive operation when working at scale. We provide a number of functionalities that allow automatic instantiation of the network <em>within the actor</em> so that no such copying is required.</p>
 <p>You can pass a string representation of the following form</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a><span class="n">policy_str</span> <span class="o">=</span> <span class="p">(</span>
 <a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a>    <span class="s2">&quot;torch.nn.Module(**args) &gt;&gt; torch.nn.Module(**args) &gt;&gt; torch.nn.Module(**args)&quot;</span>
@@ -2122,7 +2124,7 @@
 <a id="__codelineno-17-5" name="__codelineno-17-5" href="#__codelineno-17-5"></a>)
 </code></pre></div>
 </details>
-<p>The third option is to pass to the [NEProblem][evotorch.neuroevolution.neproblem.NEProblem] class a function which returns a <code>torch.nn.Module</code> instance. For example, we can define a function which returns the above network:</p>
+<p>The third option is to pass to the <a class="autorefs autorefs-internal" href="../../reference/evotorch/neuroevolution/neproblem/#evotorch.neuroevolution.neproblem.NEProblem">NEProblem</a> class a function which returns a <code>torch.nn.Module</code> instance. For example, we can define a function which returns the above network:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a><span class="k">def</span> <span class="nf">my_network</span><span class="p">():</span>
 <a id="__codelineno-18-2" name="__codelineno-18-2" href="#__codelineno-18-2"></a>    <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Sequential</span><span class="p">(</span>
 <a id="__codelineno-18-3" name="__codelineno-18-3" href="#__codelineno-18-3"></a>        <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">32</span><span class="p">),</span>

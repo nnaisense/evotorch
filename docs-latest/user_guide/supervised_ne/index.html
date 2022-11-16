@@ -39,6 +39,8 @@
       
     
     
+      <link rel="stylesheet" href="../../assets/_mkdocstrings.css">
+    
     <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce((e,_)=>(e<<5)-e+_.charCodeAt(0),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
       
@@ -584,8 +586,8 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#overview-of-supervisedneevotorchneuroevolutionsupervisednesupervisedne" class="md-nav__link">
-    Overview of [SupervisedNE][evotorch.neuroevolution.supervisedne.SupervisedNE]
+  <a href="#overview-of-supervisedne" class="md-nav__link">
+    Overview of SupervisedNE
   </a>
   
 </li>
@@ -1896,8 +1898,8 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#overview-of-supervisedneevotorchneuroevolutionsupervisednesupervisedne" class="md-nav__link">
-    Overview of [SupervisedNE][evotorch.neuroevolution.supervisedne.SupervisedNE]
+  <a href="#overview-of-supervisedne" class="md-nav__link">
+    Overview of SupervisedNE
   </a>
   
 </li>
@@ -1933,8 +1935,8 @@
 <p>Supervised Neuroevolution is the application of Neuroevolution to supervised learning. Typically, a supervised learning setting has a set of example inputs <span class="arithmatex">\(X = x_1 \dots x_N\)</span> and a set of example outputs <span class="arithmatex">\(Y = y_1 \dots y_n\)</span> and the objective is to find a function <span class="arithmatex">\(f\)</span> that minimizes a well-defined loss function <span class="arithmatex">\(L\)</span> across the dataset <span class="arithmatex">\((X, Y)\)</span>:</p>
 <div class="arithmatex">\[L*(f, X, Y) = \sum_{i=1}^N L(f(x_i), y_i)\]</div>
 <p>In Supervised Neuroevolution, <span class="arithmatex">\(f\)</span> is a neural network which is optimized via neuroevolution.</p>
-<h2 id="overview-of-supervisedneevotorchneuroevolutionsupervisednesupervisedne">Overview of [SupervisedNE][evotorch.neuroevolution.supervisedne.SupervisedNE]<a class="headerlink" href="#overview-of-supervisedneevotorchneuroevolutionsupervisednesupervisedne" title="Permanent link">&para;</a></h2>
-<p>EvoTorch provides direct support for Supervised Neuroevolution throough the [SupervisedNE][evotorch.neuroevolution.supervisedne.SupervisedNE] class. Consider a dataset, <span class="arithmatex">\(N=100\)</span>, generated from the function <span class="arithmatex">\(y = x_1 + x_2\)</span> by sampling <span class="arithmatex">\(x_1, x_2\)</span> from the standard normal distribution:</p>
+<h2 id="overview-of-supervisedne">Overview of <a class="autorefs autorefs-internal" href="../../reference/evotorch/neuroevolution/supervisedne/#evotorch.neuroevolution.supervisedne.SupervisedNE">SupervisedNE</a><a class="headerlink" href="#overview-of-supervisedne" title="Permanent link">&para;</a></h2>
+<p>EvoTorch provides direct support for Supervised Neuroevolution throough the <a class="autorefs autorefs-internal" href="../../reference/evotorch/neuroevolution/supervisedne/#evotorch.neuroevolution.supervisedne.SupervisedNE">SupervisedNE</a> class. Consider a dataset, <span class="arithmatex">\(N=100\)</span>, generated from the function <span class="arithmatex">\(y = x_1 + x_2\)</span> by sampling <span class="arithmatex">\(x_1, x_2\)</span> from the standard normal distribution:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">import</span> <span class="nn">torch</span>
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="kn">from</span> <span class="nn">torch</span> <span class="kn">import</span> <span class="n">nn</span>
 <a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>
@@ -1947,7 +1949,7 @@
 <a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>
 <a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="n">train_dataset</span> <span class="o">=</span> <span class="n">TensorDataset</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">)</span>
 </code></pre></div>
-<p>Creating a [SupervisedNE][evotorch.neuroevolution.supervisedne.SupervisedNE] instance for this dataset is straightforward:</p>
+<p>Creating a <a class="autorefs autorefs-internal" href="../../reference/evotorch/neuroevolution/supervisedne/#evotorch.neuroevolution.supervisedne.SupervisedNE">SupervisedNE</a> instance for this dataset is straightforward:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="kn">from</span> <span class="nn">evotorch.neuroevolution</span> <span class="kn">import</span> <span class="n">SupervisedNE</span>
 <a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>
 <a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="n">sum_of_problem</span> <span class="o">=</span> <span class="n">SupervisedNE</span><span class="p">(</span>
@@ -1978,7 +1980,7 @@
 <p>Unless your data is incompatible with <code>torch.utils.data.DataLoader</code> and/or the notation that minibatches drawn from the dataloader consist of data and targets:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="n">X</span><span class="p">,</span> <span class="n">Y</span> <span class="o">=</span> <span class="n">minibatch</span>
 </code></pre></div>
-<p>then [SupervisedNE][evotorch.neuroevolution.supervisedne.SupervisedNE] should work in most cases. If not, then you can create custom functionality wherever you see fit:</p>
+<p>then <a class="autorefs autorefs-internal" href="../../reference/evotorch/neuroevolution/supervisedne/#evotorch.neuroevolution.supervisedne.SupervisedNE">SupervisedNE</a> should work in most cases. If not, then you can create custom functionality wherever you see fit:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="k">class</span> <span class="nc">CustomSupervisedNE</span><span class="p">(</span><span class="n">SupervisedNE</span><span class="p">):</span>
 <a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>    <span class="k">def</span> <span class="nf">_make_dataloader</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DataLoader</span><span class="p">:</span>
 <a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>        <span class="c1"># Override to generate a custom dataloader</span>
@@ -1999,17 +2001,17 @@
 <a id="__codelineno-5-18" name="__codelineno-5-18" href="#__codelineno-5-18"></a>        <span class="o">...</span>
 </code></pre></div>
 <h2 id="manipulating-minibatches">Manipulating Minibatches<a class="headerlink" href="#manipulating-minibatches" title="Permanent link">&para;</a></h2>
-<p>[SupervisedNE][evotorch.neuroevolution.supervisedne.SupervisedNE] includes some particular features to manipulate how networks are evaluated on minibatches. These are:</p>
+<p><a class="autorefs autorefs-internal" href="../../reference/evotorch/neuroevolution/supervisedne/#evotorch.neuroevolution.supervisedne.SupervisedNE">SupervisedNE</a> includes some particular features to manipulate how networks are evaluated on minibatches. These are:</p>
 <ul>
 <li><code>minibatch_size: int</code>, which defines the size of the minibatch that each network is evaluated on. This argument is passed as the <code>batch_size</code> when the <code>SupervsiedNE</code> instance instantiates it's dataloader.</li>
 <li><code>num_minibatches: int</code>, which defines the number of minibatches that each network is evaluated on. Each minibatch will have size <code>minibatch_size</code>. This argument is useful in conjunction with <code>minibatch_size</code>, for example, when the <code>loss_func</code> is a non-linear function of the <code>minibatch_size</code>, or the GPU memory does not permit a larger <code>minibatch_size</code>, or some other reason that <code>minibatch_size</code> must take a particular value. In any of these cases, setting <code>num_minibatches &gt; 1</code> allows you to repeatedly evaluate each network on different minibatches, with the overall loss (fitness) averaged across the minibatches.</li>
-<li><code>common_minibatch: bool</code>, which specifies whether the same minibatch(es) should be used to evaluate <em>all</em> solutions when a [SolutionBatch][evotorch.core.SolutionBatch] instance is passed to the [SupervisedNE][evotorch.neuroevolution.supervisedne.SupervisedNE] instance's <code>evaluate</code> method. <a href="https://www.deepmind.com/publications/non-differentiable-supervised-learning-with-evolution-strategies-and-hybrid-methods">As noted in recent work</a>, it is sometimes more effective to evaluate all solutions on the same sets of minibatches, as this may reduce noise, for example, when approximating gradients in distribution-based evolution strategies. This is particularly true when <code>common_minibatch = True</code> is used in conjunction with <code>num_actors &gt; 1</code>, as <em>each</em> actor will evaluate it's sub-population on <em>it's own</em> fixed set of minibatches.</li>
+<li><code>common_minibatch: bool</code>, which specifies whether the same minibatch(es) should be used to evaluate <em>all</em> solutions when a <a class="autorefs autorefs-internal" href="../../reference/evotorch/core/#evotorch.core.SolutionBatch">SolutionBatch</a> instance is passed to the <a class="autorefs autorefs-internal" href="../../reference/evotorch/neuroevolution/supervisedne/#evotorch.neuroevolution.supervisedne.SupervisedNE">SupervisedNE</a> instance's <code>evaluate</code> method. <a href="https://www.deepmind.com/publications/non-differentiable-supervised-learning-with-evolution-strategies-and-hybrid-methods">As noted in recent work</a>, it is sometimes more effective to evaluate all solutions on the same sets of minibatches, as this may reduce noise, for example, when approximating gradients in distribution-based evolution strategies. This is particularly true when <code>common_minibatch = True</code> is used in conjunction with <code>num_actors &gt; 1</code>, as <em>each</em> actor will evaluate it's sub-population on <em>it's own</em> fixed set of minibatches.</li>
 </ul>
 <p>For example:</p>
 <ul>
 <li><code>minibatch_size = 16, num_minibatches = 2, common_minibatch = False</code> will mean that each network is evaluated on <em>it's own</em> set of 2 minibatches of size 16, with the loss averaged across these 2 minibatches.</li>
-<li><code>minibatch_size = 64, num_minibatches = 1, common_minibatch = True</code>, will mean that every network described by a [SolutionBatch][evotorch.core.SolutionBatch] passed to the <code>evaluate</code> method will be evaluated on <em>the same</em> minibatch of size 16.</li>
-<li><code>minibatch_size = 4, num_minibatches = 8, common_minibatch = True, num_actors = 16</code>, will mean that there will be 16 actors, each of which will evaluate a sub-population of the [SolutionBatch][evotorch.core.SolutionBatch] passed to the <code>evaluate</code> method. Each of the 16 actors will generate 8 minibatches of size 4, and will use those 8 minibatches to evaluate <em>all</em> of the solutions in its assigned sub-population.</li>
+<li><code>minibatch_size = 64, num_minibatches = 1, common_minibatch = True</code>, will mean that every network described by a <a class="autorefs autorefs-internal" href="../../reference/evotorch/core/#evotorch.core.SolutionBatch">SolutionBatch</a> passed to the <code>evaluate</code> method will be evaluated on <em>the same</em> minibatch of size 16.</li>
+<li><code>minibatch_size = 4, num_minibatches = 8, common_minibatch = True, num_actors = 16</code>, will mean that there will be 16 actors, each of which will evaluate a sub-population of the <a class="autorefs autorefs-internal" href="../../reference/evotorch/core/#evotorch.core.SolutionBatch">SolutionBatch</a> passed to the <code>evaluate</code> method. Each of the 16 actors will generate 8 minibatches of size 4, and will use those 8 minibatches to evaluate <em>all</em> of the solutions in its assigned sub-population.</li>
 </ul>
 
 

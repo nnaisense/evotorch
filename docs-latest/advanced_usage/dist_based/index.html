@@ -39,6 +39,8 @@
       
     
     
+      <link rel="stylesheet" href="../../assets/_mkdocstrings.css">
+    
     <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce((e,_)=>(e<<5)-e+_.charCodeAt(0),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
       
@@ -1947,7 +1949,7 @@
 <p>A distribution-based evolutionary algorithm is an algorithm which samples its population from a probability distribution.
 It can also be considered that these algorithms perform gradient-based search although they do not analytically derive the gradients.
 Instead of deriving, they <em>estimate</em> the gradients with the help of the fitnesses of the sampled solutions.
-The algorithms [PGPE][evotorch.algorithms.distributed.gaussian.PGPE] (Policy Gradients with Parameter-based Exploration), [SNES][evotorch.algorithms.distributed.gaussian.SNES] (Separable Natural Evolution Strategies), and [CEM][evotorch.algorithms.distributed.gaussian.CEM] (Cross Entropy Method) belong to the class of distribution-based algorithms.</p>
+The algorithms <a class="autorefs autorefs-internal" href="../../reference/evotorch/algorithms/distributed/gaussian/#evotorch.algorithms.distributed.gaussian.PGPE">PGPE</a> (Policy Gradients with Parameter-based Exploration), <a class="autorefs autorefs-internal" href="../../reference/evotorch/algorithms/distributed/gaussian/#evotorch.algorithms.distributed.gaussian.SNES">SNES</a> (Separable Natural Evolution Strategies), and <a class="autorefs autorefs-internal" href="../../reference/evotorch/algorithms/distributed/gaussian/#evotorch.algorithms.distributed.gaussian.CEM">CEM</a> (Cross Entropy Method) belong to the class of distribution-based algorithms.</p>
 <p>EvoTorch provides certain features that can scale up the distribution-based search algorithms to handle large computational requirements of challenging tasks.</p>
 <h2 id="distributed-mode">Distributed mode<a class="headerlink" href="#distributed-mode" title="Permanent link">&para;</a></h2>
 <p>When the problem at hand is parallelized across multiple CPUs, the default behavior of a distribution-based search algorithm is as follows:</p>
@@ -1993,8 +1995,8 @@ To switch to the distributed mode, it is enough to set the keyword argument <cod
 </code></pre></div>
 <h2 id="using-distributed-mode-for-efficient-multi-gpu-optimization">Using distributed mode for efficient multi-GPU optimization<a class="headerlink" href="#using-distributed-mode-for-efficient-multi-gpu-optimization" title="Permanent link">&para;</a></h2>
 <p>Some problems can be configured in such a way that each actor is assigned a GPU, therefore multiple GPUs can be used for efficient parallelized evaluation.
-For example, the supervised learning neuro-evolution problem, [SupervisedNE][evotorch.neuroevolution.supervisedne.SupervisedNE], is configured by default to allocate a GPU for each actor if a GPU driver recognized by PyTorch is available.
-Other than [SupervisedNE][evotorch.neuroevolution.supervisedne.SupervisedNE], any Problem with its <code>num_gpus_per_actor</code> set as a positive real number (or set as "max") is configured to allocate GPU(s) for its actors (see the reference documentation of the [Problem][evotorch.core.Problem] class for GPU allocation details).</p>
+For example, the supervised learning neuro-evolution problem, <a class="autorefs autorefs-internal" href="../../reference/evotorch/neuroevolution/supervisedne/#evotorch.neuroevolution.supervisedne.SupervisedNE">SupervisedNE</a>, is configured by default to allocate a GPU for each actor if a GPU driver recognized by PyTorch is available.
+Other than <a class="autorefs autorefs-internal" href="../../reference/evotorch/neuroevolution/supervisedne/#evotorch.neuroevolution.supervisedne.SupervisedNE">SupervisedNE</a>, any Problem with its <code>num_gpus_per_actor</code> set as a positive real number (or set as "max") is configured to allocate GPU(s) for its actors (see the reference documentation of the <a class="autorefs autorefs-internal" href="../../reference/evotorch/core/#evotorch.core.Problem">Problem</a> class for GPU allocation details).</p>
 <p>When a search algorithm in distributed mode is used on such a multi-GPU problem, each actor will do the following on the GPU assigned to itself:</p>
 <ul>
 <li>Sample a sub-population</li>
@@ -2003,7 +2005,7 @@ Other than [SupervisedNE][evotorch.neuroevolution.supervisedne.SupervisedNE], an
 </ul>
 <p>Except for the interprocess communication of distribution parameters and gradients, all operations therefore are done on the GPUs with the help of the actors.
 The fact that most operations are done on GPUs also means that the data transfer between CPU and GPUs are minimal.</p>
-<p>Therefore, one is encouraged to try the distributed mode when dealing with a [SupervisedNE][evotorch.neuroevolution.supervisedne.SupervisedNE] instance (or a similar multi-GPU problem).</p>
+<p>Therefore, one is encouraged to try the distributed mode when dealing with a <a class="autorefs autorefs-internal" href="../../reference/evotorch/neuroevolution/supervisedne/#evotorch.neuroevolution.supervisedne.SupervisedNE">SupervisedNE</a> instance (or a similar multi-GPU problem).</p>
 <h2 id="efficient-reinforcement-learning">Efficient reinforcement learning<a class="headerlink" href="#efficient-reinforcement-learning" title="Permanent link">&para;</a></h2>
 <p>Some reinforcement learning problems are subject to constraints, and when an agent breaks those constraints while running, its episode is terminated immediately (before reaching the actual desired length of an episode).
 Among popular constrained reinforcement learning problems are locomotion tasks such as MuJoCo humanoid (e.g. Humanoid-v4) where the constraints dictate that the humanoid body must be on its feet and standing tall. When the humanoid body falls down, the constraint is violated and the episode is terminated (or truncated).</p>

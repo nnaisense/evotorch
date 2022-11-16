@@ -39,6 +39,8 @@
       
     
     
+      <link rel="stylesheet" href="../../../../assets/_mkdocstrings.css">
+    
     <script>__md_scope=new URL("../../../..",location),__md_hash=e=>[...e].reduce((e,_)=>(e<<5)-e+_.charCodeAt(0),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
       
@@ -66,6 +68,11 @@
     <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
     <label class="md-overlay" for="__drawer"></label>
     <div data-md-component="skip">
+      
+        
+        <a href="#evotorch.neuroevolution.baseneproblem" class="md-skip">
+          Skip to content
+        </a>
       
     </div>
     <div data-md-component="announce">
@@ -1223,9 +1230,45 @@
       
       
       
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          baseneproblem
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
       <a href="./" class="md-nav__link md-nav__link--active">
         baseneproblem
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#evotorch.neuroevolution.baseneproblem" class="md-nav__link">
+    evotorch.neuroevolution.baseneproblem
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#evotorch.neuroevolution.baseneproblem.BaseNEProblem" class="md-nav__link">
+    BaseNEProblem
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
       
     </li>
   
@@ -1844,6 +1887,28 @@
   
   
   
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#evotorch.neuroevolution.baseneproblem" class="md-nav__link">
+    evotorch.neuroevolution.baseneproblem
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#evotorch.neuroevolution.baseneproblem.BaseNEProblem" class="md-nav__link">
+    BaseNEProblem
+  </a>
+  
+</li>
+      
+    </ul>
+  
 </nav>
                   </div>
                 </div>
@@ -1864,7 +1929,73 @@
 
   <h1>baseneproblem</h1>
 
-<p>::: evotorch.neuroevolution.baseneproblem</p>
+<div class="doc doc-object doc-module">
+
+<a id="evotorch.neuroevolution.baseneproblem"></a>
+    <div class="doc doc-contents first">
+
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+  <div class="doc doc-object doc-class">
+
+
+
+<h2 id="evotorch.neuroevolution.baseneproblem.BaseNEProblem" class="doc doc-heading">
+        <code>
+BaseNEProblem            (<a class="autorefs autorefs-internal" title="evotorch.core.Problem" href="../../core/#evotorch.core.Problem">Problem</a>)
+        </code>
+
+
+
+<a href="#evotorch.neuroevolution.baseneproblem.BaseNEProblem" class="headerlink" title="Permanent link">&para;</a></h2>
+
+    <div class="doc doc-contents ">
+
+      <p>This is the base class for all neuro-evolution problems.</p>
+<p>Currently, this class does not offer any additional functionality.
+Its purpose is to collect all neuro-evolution problems under the same
+branch of inheritance.</p>
+
+        <details class="quote">
+          <summary>Source code in <code>evotorch/neuroevolution/baseneproblem.py</code></summary>
+          <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="k">class</span> <span class="nc">BaseNEProblem</span><span class="p">(</span><span class="n">Problem</span><span class="p">):</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    <span class="sd">&quot;&quot;&quot;</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="sd">    This is the base class for all neuro-evolution problems.</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="sd">    Currently, this class does not offer any additional functionality.</span>
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="sd">    Its purpose is to collect all neuro-evolution problems under the same</span>
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="sd">    branch of inheritance.</span>
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="sd">    &quot;&quot;&quot;</span>
+<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>
+<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>    <span class="k">pass</span>
+</code></pre></div>
+        </details>
+
+
+    </div>
+
+  </div>
+
+
+
+
+
+
+
+  </div>
+
+    </div>
+
+  </div>
 
 
 

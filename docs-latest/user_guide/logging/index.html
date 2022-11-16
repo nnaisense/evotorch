@@ -39,6 +39,8 @@
       
     
     
+      <link rel="stylesheet" href="../../assets/_mkdocstrings.css">
+    
     <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce((e,_)=>(e<<5)-e+_.charCodeAt(0),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
       
@@ -1986,7 +1988,7 @@
 
 
 <h1 id="using-loggers">Using Loggers<a class="headerlink" href="#using-loggers" title="Permanent link">&para;</a></h1>
-<p>Loggers allow automatic accumulation, storage and visualisation of the <code>status</code> dictionary of a [SearchAlgorithm][evotorch.algorithms.searchalgorithm.SearchAlgorithm] instance. When we create a [Logger][evotorch.logging.Logger] instance, we attach it to a [SearchAlgorithm][evotorch.algorithms.searchalgorithm.SearchAlgorithm] instance, and the internal code will do the rest.</p>
+<p>Loggers allow automatic accumulation, storage and visualisation of the <code>status</code> dictionary of a <a class="autorefs autorefs-internal" href="../../reference/evotorch/algorithms/searchalgorithm/#evotorch.algorithms.searchalgorithm.SearchAlgorithm">SearchAlgorithm</a> instance. When we create a <a class="autorefs autorefs-internal" href="../../reference/evotorch/logging/#evotorch.logging.Logger">Logger</a> instance, we attach it to a <a class="autorefs autorefs-internal" href="../../reference/evotorch/algorithms/searchalgorithm/#evotorch.algorithms.searchalgorithm.SearchAlgorithm">SearchAlgorithm</a> instance, and the internal code will do the rest.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">from</span> <span class="nn">evotorch</span> <span class="kn">import</span> <span class="n">Problem</span>
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="kn">from</span> <span class="nn">evotorch.algorithms</span> <span class="kn">import</span> <span class="n">SNES</span>
 <a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="kn">import</span> <span class="nn">torch</span>
@@ -2004,13 +2006,13 @@
 <a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a>
 <a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a><span class="n">logger</span> <span class="o">=</span> <span class="n">StdOutLogger</span><span class="p">(</span><span class="n">searcher</span><span class="p">)</span>
 </code></pre></div>
-<p>Once a [Logger][evotorch.logging.Logger] instance has been created and attached to a [SearchAlgorithm][evotorch.algorithms.searchalgorithm.SearchAlgorithm] instance <code>searcher</code>, it will log <code>searcher.status</code> every time <code>searcher.step()</code> is called.</p>
-<p>Most loggers also support the argument <code>interval</code>. This allows you to control how often the [Logger][evotorch.logging.Logger] instance is updated. For example, if we instead do</p>
+<p>Once a <a class="autorefs autorefs-internal" href="../../reference/evotorch/logging/#evotorch.logging.Logger">Logger</a> instance has been created and attached to a <a class="autorefs autorefs-internal" href="../../reference/evotorch/algorithms/searchalgorithm/#evotorch.algorithms.searchalgorithm.SearchAlgorithm">SearchAlgorithm</a> instance <code>searcher</code>, it will log <code>searcher.status</code> every time <code>searcher.step()</code> is called.</p>
+<p>Most loggers also support the argument <code>interval</code>. This allows you to control how often the <a class="autorefs autorefs-internal" href="../../reference/evotorch/logging/#evotorch.logging.Logger">Logger</a> instance is updated. For example, if we instead do</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="n">logger</span> <span class="o">=</span> <span class="n">StdOutLogger</span><span class="p">(</span><span class="n">searcher</span><span class="p">,</span> <span class="n">interval</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
 </code></pre></div>
 <p>then <code>logger</code> will only log to the stdout every <span class="arithmatex">\(10\)</span> iterations.</p>
 <h2 id="direct-logging-with-stdoutlogger">Direct Logging with StdOutLogger<a class="headerlink" href="#direct-logging-with-stdoutlogger" title="Permanent link">&para;</a></h2>
-<p>The [StdOutLogger][evotorch.logging.StdOutLogger] class facilitates the logging of the status directly to the standard output. For example, calling <code>searcher.run(3)</code> with a [StdOutLogger][evotorch.logging.StdOutLogger] attached to <code>searcher</code> will print the <code>status</code> dictionary of the searcher in each of the 3 calls to <code>step()</code>, producing an output such as below:</p>
+<p>The <a class="autorefs autorefs-internal" href="../../reference/evotorch/logging/#evotorch.logging.StdOutLogger">StdOutLogger</a> class facilitates the logging of the status directly to the standard output. For example, calling <code>searcher.run(3)</code> with a <a class="autorefs autorefs-internal" href="../../reference/evotorch/logging/#evotorch.logging.StdOutLogger">StdOutLogger</a> attached to <code>searcher</code> will print the <code>status</code> dictionary of the searcher in each of the 3 calls to <code>step()</code>, producing an output such as below:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="n">logger</span> <span class="o">=</span> <span class="n">StdOutLogger</span><span class="p">(</span><span class="n">searcher</span><span class="p">)</span>
 <a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="n">searcher</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
 </code></pre></div>
@@ -2040,8 +2042,8 @@
 </details>
 <h2 id="locally-collecting-the-logs-via-pandas">Locally Collecting the Logs via Pandas<a class="headerlink" href="#locally-collecting-the-logs-via-pandas" title="Permanent link">&para;</a></h2>
 <p>One might want to collect the logs into a local progress report for performing analysis and plotting training/evolution curves.
-A [PandasLogger][evotorch.logging.PandasLogger] is provided which collects such logs into a <code>pandas.DataFrame</code> during the execution of the evolutionary algorithm.</p>
-<p>Given that one has a [SearchAlgorithm][evotorch.algorithms.searchalgorithm.SearchAlgorithm] instance (e.g. SNES, PGPE, etc.) stored by the variable <code>searcher</code>, a [PandasLogger][evotorch.logging.PandasLogger] can be instantiated as shown below:</p>
+A <a class="autorefs autorefs-internal" href="../../reference/evotorch/logging/#evotorch.logging.PandasLogger">PandasLogger</a> is provided which collects such logs into a <code>pandas.DataFrame</code> during the execution of the evolutionary algorithm.</p>
+<p>Given that one has a <a class="autorefs autorefs-internal" href="../../reference/evotorch/algorithms/searchalgorithm/#evotorch.algorithms.searchalgorithm.SearchAlgorithm">SearchAlgorithm</a> instance (e.g. SNES, PGPE, etc.) stored by the variable <code>searcher</code>, a <a class="autorefs autorefs-internal" href="../../reference/evotorch/logging/#evotorch.logging.PandasLogger">PandasLogger</a> can be instantiated as shown below:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="kn">from</span> <span class="nn">evotorch.logging</span> <span class="kn">import</span> <span class="n">PandasLogger</span>
 <a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>
 <a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="c1"># Instantiate a PandasLogger before the generations are executed</span>
@@ -2060,7 +2062,7 @@ A [PandasLogger][evotorch.logging.PandasLogger] is provided which collects such 
 <a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
 </code></pre></div>
 <h2 id="remote-logging-with-mlflow">Remote Logging with MLFlow<a class="headerlink" href="#remote-logging-with-mlflow" title="Permanent link">&para;</a></h2>
-<p>There is also a logger class named [MlflowLogger][evotorch.logging.MlflowLogger] which logs the metrics via the <code>mlflow</code> library.
+<p>There is also a logger class named <a class="autorefs autorefs-internal" href="../../reference/evotorch/logging/#evotorch.logging.MlflowLogger">MlflowLogger</a> which logs the metrics via the <code>mlflow</code> library.
 With the help of <code>mlflow</code>, the logs can be stored into the local disk or into a remote server.</p>
 <div class="admonition warning">
 <p class="admonition-title">Additional Requirements</p>
@@ -2097,7 +2099,7 @@ With the help of <code>mlflow</code>, the logs can be stored into the local disk
 <a id="__codelineno-8-26" name="__codelineno-8-26" href="#__codelineno-8-26"></a><span class="n">searcher</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="mi">100</span><span class="p">)</span>
 </code></pre></div>
 <h2 id="remote-logging-with-sacred">Remote Logging with Sacred<a class="headerlink" href="#remote-logging-with-sacred" title="Permanent link">&para;</a></h2>
-<p>As an alternative to <code>mlflow</code>, one might want to log the metrics with the help of the <code>sacred</code> library using the [SacredLogger][evotorch.logging.SacredLogger] class.
+<p>As an alternative to <code>mlflow</code>, one might want to log the metrics with the help of the <code>sacred</code> library using the <a class="autorefs autorefs-internal" href="../../reference/evotorch/logging/#evotorch.logging.SacredLogger">SacredLogger</a> class.
 The basic structure of a script using <code>sacred</code> is as follows:</p>
 <div class="admonition warning">
 <p class="admonition-title">Additional Requirements</p>
@@ -2171,7 +2173,7 @@ The basic structure of a script using <code>sacred</code> is as follows:</p>
 </details>
 <h2 id="remote-logging-with-neptune">Remote Logging with Neptune<a class="headerlink" href="#remote-logging-with-neptune" title="Permanent link">&para;</a></h2>
 <p>EvoTorch also supports remote logging with <a href="https://neptune.ai/home">Neptune</a>.
-Usage of [NeptuneLogger][evotorch.logging.NeptuneLogger] is as simple as creating a <code>neptune.new.run.Run</code> instance and passing it to the logger class at instantiation.</p>
+Usage of <a class="autorefs autorefs-internal" href="../../reference/evotorch/logging/#evotorch.logging.NeptuneLogger">NeptuneLogger</a> is as simple as creating a <code>neptune.new.run.Run</code> instance and passing it to the logger class at instantiation.</p>
 <div class="admonition warning">
 <p class="admonition-title">Additional Requirements</p>
 <p>The <code>neptune-client</code> package must be installed for this logger to work.
@@ -2216,7 +2218,7 @@ Usage of [NeptuneLogger][evotorch.logging.NeptuneLogger] is as simple as creatin
 </code></pre></div>
 </details>
 <h2 id="remote-logging-with-weights-biases">Remote Logging with Weights &amp; Biases<a class="headerlink" href="#remote-logging-with-weights-biases" title="Permanent link">&para;</a></h2>
-<p>Additionally, EvoTorch now supports logging into <a href="https://wandb.ai">Weights &amp; Biases</a> using the [WandbLogger][evotorch.logging.WandbLogger].</p>
+<p>Additionally, EvoTorch now supports logging into <a href="https://wandb.ai">Weights &amp; Biases</a> using the <a class="autorefs autorefs-internal" href="../../reference/evotorch/logging/#evotorch.logging.WandbLogger">WandbLogger</a>.</p>
 <div class="admonition warning">
 <p class="admonition-title">Additional Requirements</p>
 <p>The <code>wandb</code> package must be installed for this logger to work.

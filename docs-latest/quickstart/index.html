@@ -39,6 +39,8 @@
       
     
     
+      <link rel="stylesheet" href="../assets/_mkdocstrings.css">
+    
     <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce((e,_)=>(e<<5)-e+_.charCodeAt(0),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
       
@@ -2011,7 +2013,7 @@ f(x) = \sum_{i=1}^d x_i^2.
 <div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="k">def</span> <span class="nf">sphere</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
 <a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>    <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">pow</span><span class="p">(</span><span class="mf">2.0</span><span class="p">))</span>
 </code></pre></div>
-<p>To make this function visible to EvoTorch's algorithms, we simply wrap it up as a [Problem][evotorch.core.Problem] instance. To do this, we will need to specify that we want to minimise (<code>"min"</code>) the function, and the <code>solution_length</code> is <span class="arithmatex">\(d\)</span>, in this case <span class="arithmatex">\(d=10\)</span>. We will also specify that the initial bounds for solutions is in the range <span class="arithmatex">\((-1, 1)\)</span>, so that our algorithm knows roughly where to start.</p>
+<p>To make this function visible to EvoTorch's algorithms, we simply wrap it up as a <a class="autorefs autorefs-internal" href="../reference/evotorch/core/#evotorch.core.Problem">Problem</a> instance. To do this, we will need to specify that we want to minimise (<code>"min"</code>) the function, and the <code>solution_length</code> is <span class="arithmatex">\(d\)</span>, in this case <span class="arithmatex">\(d=10\)</span>. We will also specify that the initial bounds for solutions is in the range <span class="arithmatex">\((-1, 1)\)</span>, so that our algorithm knows roughly where to start.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="n">problem</span> <span class="o">=</span> <span class="n">Problem</span><span class="p">(</span><span class="s2">&quot;min&quot;</span><span class="p">,</span> <span class="n">sphere</span><span class="p">,</span> <span class="n">solution_length</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">initial_bounds</span><span class="o">=</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
 </code></pre></div>
 <h2 id="creating-a-searcher">Creating a searcher<a class="headerlink" href="#creating-a-searcher" title="Permanent link">&para;</a></h2>
@@ -2019,7 +2021,7 @@ f(x) = \sum_{i=1}^d x_i^2.
 <div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="n">searcher</span> <span class="o">=</span> <span class="n">SNES</span><span class="p">(</span><span class="n">problem</span><span class="p">,</span> <span class="n">stdev_init</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>
 </code></pre></div>
 <h2 id="attaching-a-logger">Attaching a logger<a class="headerlink" href="#attaching-a-logger" title="Permanent link">&para;</a></h2>
-<p>To keep an eye on what's happening as we run the algorithm, we'll also create a logger. In this case, we'll use the [StdOutLogger][evotorch.logging.StdOutLogger] which will print the status of the evolutionary algorithm to the terminal.</p>
+<p>To keep an eye on what's happening as we run the algorithm, we'll also create a logger. In this case, we'll use the <a class="autorefs autorefs-internal" href="../reference/evotorch/logging/#evotorch.logging.StdOutLogger">StdOutLogger</a> which will print the status of the evolutionary algorithm to the terminal.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="n">logger</span> <span class="o">=</span> <span class="n">StdOutLogger</span><span class="p">(</span><span class="n">searcher</span><span class="p">)</span>
 </code></pre></div>
 <h2 id="running-the-searcher">Running the searcher<a class="headerlink" href="#running-the-searcher" title="Permanent link">&para;</a></h2>
