@@ -681,7 +681,7 @@ if neptune is not None:
 if wandb is not None:
 
     class WandbLogger(ScalarLogger):
-        """A logger which stores the status via wandb."""
+        """A logger which stores the status to Weights & Biases."""
 
         def __init__(
             self,
@@ -712,9 +712,9 @@ if wandb is not None:
                 group: Into which group will the metrics be stored.
                     For example, if the status keys to be logged are "score" and
                     "elapsed", and `group` is set as "training", then the metrics
-                    will be sent to neptune with the keys "training/score" and
+                    will be sent to W&B with the keys "training/score" and
                     "training/elapsed". `group` can also be left as None,
-                    in which case the status will be sent to neptune with the
+                    in which case the status will be sent to W&B with the
                     key names unchanged.
                 **wandb_args: If `init` is `True` any additional keyword argument
                     will be passed to `wandb.init()`.
