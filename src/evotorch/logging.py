@@ -637,11 +637,12 @@ if neptune is not None:
         def __init__(
             self,
             searcher: SearchAlgorithm,
-            run,
+            run: Optional[neptune.Run] = None,
             *,
             interval: int = 1,
             after_first_step: bool = False,
             group: Optional[str] = None,
+            **neptune_kwargs,
         ):
             """`__init__(...)`: Initialize the NeptuneLogger.
 
@@ -649,7 +650,7 @@ if neptune is not None:
                 searcher: The evolutionary algorithm instance whose progress
                     is to be logged.
                 run: A `neptune.new.run.Run` instance using which the status
-                    will be logged.
+                    will be logged. If None, then a new run will be created.
                 interval: Expected as an integer n.
                     Logging is to be done at every n iterations.
                 after_first_step: Expected as a boolean.
@@ -667,10 +668,20 @@ if neptune is not None:
                     "training/elapsed". `group` can also be left as None,
                     in which case the status will be sent to neptune with the
                     key names unchanged.
+                **neptune_kwargs: Any additional keyword arguments to be passed
+                    to `neptune.init_run()` when creating a new run.
+                    For example, `project="my-project"` or `tags=["my-tag"]`.
             """
             super().__init__(searcher, interval=interval, after_first_step=after_first_step)
-            self._run = run
             self._group = group
+            if run is None:
+                self._run = neptune.init_run(**neptune_kwargs)
+            else:
+                self._run = run
+
+        @property
+        def run(self) -> neptune.Run:
+            return self._run
 
         def _log(self, status: dict):
             for k, v in status.items():
@@ -691,7 +702,7 @@ if wandb is not None:
             interval: int = 1,
             after_first_step: bool = False,
             group: Optional[str] = None,
-            **wandb_args,
+            **wandb_kwargs,
         ):
             """`__init__(...)`: Initialize the WandbLogger.
 
@@ -716,7 +727,7 @@ if wandb is not None:
                     "training/elapsed". `group` can also be left as None,
                     in which case the status will be sent to W&B with the
                     key names unchanged.
-                **wandb_args: If `init` is `True` any additional keyword argument
+                **wandb_kwargs: If `init` is `True` any additional keyword argument
                     will be passed to `wandb.init()`.
                     For example, WandbLogger(searcher, project=my-project, entity=my-organization)
                     will result in calling `wandb.init(project=my-project, entity=my-organization)`
@@ -724,7 +735,7 @@ if wandb is not None:
             super().__init__(searcher, interval=interval, after_first_step=after_first_step)
             self._group = group
             if init:
-                wandb.init(**wandb_args)
+                wandb.init(**wandb_kwargs)
 
         def _log(self, status: dict):
             log_status = dict()
