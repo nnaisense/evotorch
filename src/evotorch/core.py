@@ -2716,6 +2716,15 @@ def _opt_bool(x: Optional[bool], default: bool) -> bool:
     return result
 
 
+_near_zero_float_tolerance = {
+    torch.float16: 1e-4,
+}
+
+
+if hasattr(torch, "bfloat16"):
+    _near_zero_float_tolerance[torch.bfloat16] = 1e-4
+
+
 def _crowding_distance_assignment(pareto_set_utilities: torch.Tensor) -> torch.Tensor:
     """Compute the crowding distance metric as described in:
         Deb, Kalyanmoy, et al.
@@ -2726,14 +2735,17 @@ def _crowding_distance_assignment(pareto_set_utilities: torch.Tensor) -> torch.T
     Returns:
         crowding_distances (torch.Tensor): The computed crowding distances of the pareto_set_utilities.
     """
+    Inf = float("inf")
+    near_zero_tolerance = _near_zero_float_tolerance.get(pareto_set_utilities.dtype, 1e-8)
+
     # Arg sort each objective
     argsorted_utilities = torch.argsort(pareto_set_utilities, dim=0)
     # Initialize distances to zero
     crowding_distances = torch.zeros_like(pareto_set_utilities[:, 0])
 
     # Solutions at the limits are assigned infinite distance
-    crowding_distances[argsorted_utilities[0]] = torch.inf
-    crowding_distances[argsorted_utilities[-1]] = torch.inf
+    crowding_distances[argsorted_utilities[0]] = Inf
+    crowding_distances[argsorted_utilities[-1]] = Inf
 
     # Enumerate objectives (TODO can this be vectorized also?)
     for obj_index in range(pareto_set_utilities.shape[-1]):
@@ -2744,6 +2756,9 @@ def _crowding_distance_assignment(pareto_set_utilities: torch.Tensor) -> torch.T
 
         # Compute the denominator (f_max - f_min)
         denominator = torch.amax(obj_utilities) - torch.amin(obj_utilities)
+
+        # Ensure that the denominator is not very close to 0
+        denominator.clamp_(near_zero_tolerance, Inf)
 
         # Get the solutions 0 ... num_samples -2
         obj_sorted_utilities_low = obj_sorted_utilities[:-2]
@@ -2778,9 +2793,18 @@ def _compute_pareto_ranks(utils: torch.Tensor, crowdsort: bool) -> Tuple[torch.T
     """
     # TODO, this is only needed while there are issues with ReadOnlyTensor
     utils = utils.clone()
-    # Construct dense matrix of domination. Assumes maximization for all objectives
-    # For element i,j we have True iff solution j dominates solution i, False otherwise
-    dominated_matrix = (utils.unsqueeze(1) < utils.unsqueeze(0)).all(dim=-1)
+
+    # Construct dense matrix of domination. Assumes maximization for all objectives.
+    # For element i,j we have True iff solution j dominates solution i, False otherwise.
+    # Solution `a` dominates solution `b` if the two conditions below are satisfied:
+    # - `a` is never worse than `b` on any objective,
+    # - `a` is better than `b` on at least one objective.
+    utils_a = utils.unsqueeze(0)
+    utils_b = utils.unsqueeze(1)
+    never_worse_matrix = utils_a >= utils_b
+    strictly_better_matrix = utils_a > utils_b
+    dominated_matrix = torch.all(never_worse_matrix, dim=-1) & torch.any(strictly_better_matrix, dim=-1)
+
     # Calculate how many samples are dominated
     n_dominations = torch.sum(dominated_matrix, dim=-1)
 
@@ -2850,7 +2874,7 @@ def _pareto_sort(utils: torch.Tensor, crowdsort: bool) -> Tuple[List[torch.Tenso
         # Sort according to crowdsort_ranks if crowdsort
         if crowdsort:
             front_crowdsort_ranks = crowdsort_ranks[front]
-            front = front[torch.argsort(front_crowdsort_ranks)]
+            front = front[front_crowdsort_ranks]
 
         fronts.append(front)
     return fronts, ranks
