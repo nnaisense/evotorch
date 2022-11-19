@@ -17,35 +17,55 @@
 from pathlib import Path
 
 import mkdocs_gen_files
+from rich import print
 
-nav = mkdocs_gen_files.Nav()
+DEBUG = True
 
-exclude = {
-    # TODO: Put any files you would like to exclude from the documentation
-}
 
-for path in sorted(Path("src").glob("**/*.py")):
-    if str(path) in exclude or (path.name.startswith("_") and not path.name == "__init__.py"):
-        continue
-    module_path = path.relative_to("src").with_suffix("")
-    doc_path = path.relative_to("src").with_suffix(".md")
-    full_doc_path = Path("reference", doc_path)
+def generate_reference_for_file(path: Path, src_dir: Path, target_dir: Path):
+    # Ignore private modules
+    if path.name.startswith("_") and not path.name == "__init__.py":
+        return None, None
 
-    parts = list(module_path.parts)
+    doc_path = path.relative_to(src_dir).with_suffix(".md")
+    full_doc_path = Path(target_dir, doc_path)
+
+    # Split the module path into a list of directories and the module name
+    parts = list(path.relative_to(src_dir).with_suffix("").parts)
+
     if parts[-1] == "__init__":
         parts = parts[:-1]
         doc_path = doc_path.with_name("index.md")
         full_doc_path = full_doc_path.with_name("index.md")
+
     elif parts[-1] == "__main__":
-        continue
-    nav_parts = list(parts)
-    nav[[".".join(nav_parts[:2])] + nav_parts[2:]] = doc_path
+        return None, None
 
-    with mkdocs_gen_files.open(full_doc_path, "w") as fd:
-        ident = ".".join(parts)
-        print("::: " + ident, file=fd)
+    if DEBUG:
+        print(f"Generating docs for <{'.'.join(parts)}> -> '{full_doc_path}'")
+    else:
+        with mkdocs_gen_files.open(full_doc_path, "w") as fd:
+            ident = ".".join(parts)
+            print("::: " + ident, file=fd)
 
-    mkdocs_gen_files.set_edit_path(full_doc_path, path)
+        mkdocs_gen_files.set_edit_path(full_doc_path, path)
 
-with mkdocs_gen_files.open("reference/SUMMARY.md", "w") as nav_file:
-    nav_file.writelines(nav.build_literate_nav())
+    return [".".join(parts[:2])] + parts[2:], doc_path
+
+
+def generate_reference(src_dir: Path, target_dir: Path):
+    """Generate the code reference pages and navigation."""
+    nav = mkdocs_gen_files.Nav()
+    for path in sorted(src_dir.glob("**/*.py")):
+        key, path = generate_reference_for_file(path, src_dir=src_dir, target_dir=target_dir)
+        if key:
+            nav[key] = path
+
+    if DEBUG:
+        print(list(nav.build_literate_nav()))
+    else:
+        with mkdocs_gen_files.open(target_dir / "SUMMARY.md", "w") as nav_file:
+            nav_file.writelines(nav.build_literate_nav())
+
+
+generate_reference(Path("src"), Path("reference"))
