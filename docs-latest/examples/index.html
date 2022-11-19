@@ -15,7 +15,7 @@
     
     
       
-        <title>Index - EvoTorch</title>
+        <title>Examples - EvoTorch</title>
       
     
     
@@ -69,6 +69,11 @@
     <label class="md-overlay" for="__drawer"></label>
     <div data-md-component="skip">
       
+        
+        <a href="#examples" class="md-skip">
+          Skip to content
+        </a>
+      
     </div>
     <div data-md-component="announce">
       
@@ -116,7 +121,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Index
+              Examples
             
           </span>
         </div>
@@ -785,8 +790,36 @@
   
   
     <li class="md-nav__item">
+      <a href="notebooks/Brax_Experiments_with_PGPE/" class="md-nav__link">
+        Solving a Brax environment using EvoTorch
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
       <a href="notebooks/Gym_Experiments_with_PGPE_and_CoSyNE/" class="md-nav__link">
         Gym Experiments with PGPE and CoSyNE
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="notebooks/Minimizing_Lennard-Jones_Atom_Cluster_Potentials/" class="md-nav__link">
+        Minimising Lennard-Jones Atom Cluster Potentials with Evolution
       </a>
     </li>
   
@@ -815,34 +848,6 @@
     <li class="md-nav__item">
       <a href="notebooks/Variational_Quantum_Eigensolvers_with_SNES/" class="md-nav__link">
         Variational Quantum Eigensolvers with SNES
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="notebooks/Brax_Experiments_with_PGPE/" class="md-nav__link">
-        Solving a Brax environment using EvoTorch
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="notebooks/Minimizing_Lennard-Jones_Atom_Cluster_Potentials/" class="md-nav__link">
-        Minimising Lennard-Jones Atom Cluster Potentials with Evolution
       </a>
     </li>
   
@@ -1835,6 +1840,30 @@
   
   
   
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#examples-in-examplesnotebooks" class="md-nav__link">
+    Examples in examples/notebooks
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#examples-in-examplesscripts" class="md-nav__link">
+    Examples in examples/scripts
+  </a>
+  
+</li>
+      
+    </ul>
   
 </nav>
                   </div>
@@ -1854,34 +1883,56 @@
   </a>
 
 
-  <h1>Index</h1>
-
-<style>
-  .md-typeset h1 {
-    display: none;
-  }
-</style>
-
+<h1 id="examples">Examples<a class="headerlink" href="#examples" title="Permanent link">&para;</a></h1>
 <p>We provide a number of reference examples directly on our <a href="https://github.com/nnaisense/evotorch/tree/master/examples">GitHub</a>. Each of these examples demonstrates how to recreate a particular experiment or result from recent evolutionary algorithm literature, to highlight that Evotorch is highly suited to both academic research in and advanced industrial applications of evolutionary algorithms.</p>
-<p>We provide a number of examples as <a href="https://jupyter.org/">jupyter notebooks</a>. The easiest way to get started with these examples is to run:</p>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<p>We provide a number of examples as <a href="https://jupyter.org/">jupyter notebooks</a>.
+The easiest way to get started with these examples is to run:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nb">cd</span> evotorch
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>pip install jupyterlab
 <a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>jupyter lab
 </code></pre></div>
-<p>In the <code>examples/notebooks/</code> directory, you can find the following notebooks:</p>
-<ul>
-<li><strong><a href="notebooks/Gym_Experiments_with_PGPE_and_CoSyNE/">Gym Experiments with PGPE and CoSyNE</a></strong> demonstrates how you can solve "LunarLanderContinuous-v2" using both <code>PGPE</code> and <code>CoSyNE</code> following the configurations described in <a href="https://dl.acm.org/doi/abs/10.1007/978-3-030-58115-2_36">the paper proposing ClipUp</a> and <a href="https://www.jmlr.org/papers/volume9/gomez08a/gomez08a.pdf">the JMLR paper on the CoSyNE algorithm</a>.</li>
-<li><strong><a href="notebooks/Minimizing_Lennard-Jones_Atom_Cluster_Potentials/">Minimizing Lennard-Jones Atom Cluster Potentials</a></strong> recreates experiments from <a href="https://dl.acm.org/doi/abs/10.1145/2001576.2001692">the paper introducing <code>SNES</code></a>, showing that the algorithm can effectively solve the challenging task of <a href="https://pubs.acs.org/doi/abs/10.1021/jp970984n">minimising Lennard-Jones atom cluster potentials</a>.</li>
-<li><strong><a href="notebooks/reacher_mpc/">Model_Predictive_Control_with_CEM</a></strong> demonstrates the application of <a href="https://link.springer.com/article/10.1023/A:1010091220143">the Cross-Entropy Method <code>CEM</code></a> to Model Predictive Control (MPC) of the MuJoCo task named "Reacher-v4".</li>
-<li><strong><a href="notebooks/Training_MNIST30K/">Training MNIST30K</a></strong> recreates experiments <a href="https://www.deepmind.com/publications/non-differentiable-supervised-learning-with-evolution-strategies-and-hybrid-methods">from a recent paper</a> which demonstrates that <code>SNES</code> can be used to solve supervised learning problems. The script in particular recreates the training of the 30K-parameter 'MNIST30K' model on the MNIST dataset, but can easily be reconfigured to recreate other experiments from that paper.</li>
-<li><strong><a href="notebooks/Variational_Quantum_Eigensolvers_with_SNES/">Variational Quantum Eigensolvers with SNES</a></strong> re-implements (with some minor changes in experimental setup), <a href="https://iopscience.iop.org/article/10.1088/2632-2153/abf3ac">experiments in a recent paper</a> demonstrating that <code>SNES</code> is a scalable alternative to <a href="https://journals.aps.org/pra/abstract/10.1103/PhysRevA.99.032331">analytic gradients on a quantum computer</a>, and can practically optimize <a href="https://www.nature.com/articles/ncomms5213">Quantum Eigensolvers</a>.</li>
-</ul>
+</div>
+<h2 id="examples-in-examplesnotebooks">Examples in <code>examples/notebooks</code><a class="headerlink" href="#examples-in-examplesnotebooks" title="Permanent link">&para;</a></h2>
+<dl>
+<dt><strong><a href="notebooks/Gym_Experiments_with_PGPE_and_CoSyNE/">Gym Experiments with PGPE and CoSyNE</a></strong></dt>
+<dd>
+<p>Demonstrates how you can solve "LunarLanderContinuous-v2" using both <code>PGPE</code> and <code>CoSyNE</code> following the configurations described in <a href="https://dl.acm.org/doi/abs/10.1007/978-3-030-58115-2_36">the paper proposing ClipUp</a> and <a href="https://www.jmlr.org/papers/volume9/gomez08a/gomez08a.pdf">the JMLR paper on the CoSyNE algorithm</a>.</p>
+</dd>
+<dt><strong><a href="notebooks/Minimizing_Lennard-Jones_Atom_Cluster_Potentials/">Minimizing Lennard-Jones Atom Cluster Potentials</a></strong></dt>
+<dd>
+<p>Recreates experiments from <a href="https://dl.acm.org/doi/abs/10.1145/2001576.2001692">the paper introducing <code>SNES</code></a>, showing that the algorithm can effectively solve the challenging task of <a href="https://pubs.acs.org/doi/abs/10.1021/jp970984n">minimising Lennard-Jones atom cluster potentials</a>.</p>
+</dd>
+<dt><strong><a href="notebooks/reacher_mpc/">Model_Predictive_Control_with_CEM</a></strong></dt>
+<dd>
+<p>Demonstrates the application of <a href="https://link.springer.com/article/10.1023/A:1010091220143">the Cross-Entropy Method <code>CEM</code></a> to Model Predictive Control (MPC) of the MuJoCo task named "Reacher-v4".</p>
+</dd>
+<dt><strong><a href="notebooks/Training_MNIST30K/">Training MNIST30K</a></strong></dt>
+<dd>
+<p>Recreates experiments <a href="https://www.deepmind.com/publications/non-differentiable-supervised-learning-with-evolution-strategies-and-hybrid-methods">from a recent paper</a> which demonstrates that <code>SNES</code> can be used to solve supervised learning problems. The script in particular recreates the training of the 30K-parameter 'MNIST30K' model on the MNIST dataset, but can easily be reconfigured to recreate other experiments from that paper.</p>
+</dd>
+<dt><strong><a href="notebooks/Variational_Quantum_Eigensolvers_with_SNES/">Variational Quantum Eigensolvers with SNES</a></strong></dt>
+<dd>
+<p>Re-implements (with some minor changes in experimental setup), <a href="https://iopscience.iop.org/article/10.1088/2632-2153/abf3ac">experiments in a recent paper</a> demonstrating that <code>SNES</code> is a scalable alternative to <a href="https://journals.aps.org/pra/abstract/10.1103/PhysRevA.99.032331">analytic gradients on a quantum computer</a>, and can practically optimize <a href="https://www.nature.com/articles/ncomms5213">Quantum Eigensolvers</a>.</p>
+</dd>
+</dl>
+<h2 id="examples-in-examplesscripts">Examples in <code>examples/scripts</code><a class="headerlink" href="#examples-in-examplesscripts" title="Permanent link">&para;</a></h2>
 <p>In addition, to help you to implement advanced neuroevolutionary reinforcement learning settings, we have provided 3 python scripts in the <code>examples/scripts</code> directory:</p>
-<ul>
-<li><code>rl.py</code> re-implements almost all experiments from <a href="https://dl.acm.org/doi/abs/10.1007/978-3-030-58115-2_36">the paper proposing ClipUp</a>, and is easily reconfigured to replicate any particular experiment using <a href="https://sacred.readthedocs.io/en/stable/quickstart.html"><code>sacred</code></a>.</li>
-<li><code>rl_enjoy.py</code> allows you to easily visualize and enjoy agents trained through <code>rl.py</code>.</li>
-<li><code>tinytraj_humanoid_bullet.py</code> implements the modified <code>"pybullet_envs:HumanoidBulletEnv-v0"</code> environment from the paper.</li>
-</ul>
+<dl>
+<dt><code>rl.py</code></dt>
+<dd>
+<p>Re-implements almost all experiments from <a href="https://dl.acm.org/doi/abs/10.1007/978-3-030-58115-2_36">the paper proposing ClipUp</a>, and is easily reconfigured to replicate any particular experiment using <a href="https://sacred.readthedocs.io/en/stable/quickstart.html"><code>sacred</code></a>.</p>
+</dd>
+<dt><code>rl_enjoy.py</code></dt>
+<dd>
+<p>Allows you to easily visualize and enjoy agents trained through <code>rl.py</code>.</p>
+</dd>
+<dt><code>tinytraj_humanoid_bullet.py</code></dt>
+<dd>
+<p>Implements the modified <code>"pybullet_envs:HumanoidBulletEnv-v0"</code> environment from the paper.</p>
+</dd>
+</dl>
 
 
 
@@ -1923,13 +1974,13 @@
       
       
         
-        <a href="notebooks/Gym_Experiments_with_PGPE_and_CoSyNE/" class="md-footer__link md-footer__link--next" aria-label="Next: Gym Experiments with PGPE and CoSyNE" rel="next">
+        <a href="notebooks/Brax_Experiments_with_PGPE/" class="md-footer__link md-footer__link--next" aria-label="Next: Solving a Brax environment using EvoTorch" rel="next">
           <div class="md-footer__title">
             <div class="md-ellipsis">
               <span class="md-footer__direction">
                 Next
               </span>
-              Gym Experiments with PGPE and CoSyNE
+              Solving a Brax environment using EvoTorch
             </div>
           </div>
           <div class="md-footer__button md-icon">
