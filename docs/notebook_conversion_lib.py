@@ -14,12 +14,17 @@
 
 
 import subprocess as sp
+import tempfile
 from pathlib import Path
 from typing import Optional
 
-from mkdocs.structure.files import File
+from mkdocs.config import Config
+from mkdocs.structure.files import File, Files
+from mkdocs.structure.nav import Navigation
 
-TMP_DIR = Path("/tmp").absolute()
+# FIXME: Clean up the temp directory
+TMP_DIR = Path(tempfile.mkdtemp())
+print(f"Temporary directory: {TMP_DIR}")
 NOTEBOOKS_DIR = Path(__file__).parent.parent / "examples" / "notebooks"
 TARGET_DIR = TMP_DIR / "examples" / "notebooks"
 GITHUB_BASE_ADDRESS = "https://github.com/nnaisense/evotorch/tree/master/examples/notebooks"
@@ -78,12 +83,37 @@ def convert_all_notebooks(**_):
     fix_mpc_links()
 
 
-def append_notebooks(files, config):
+def append_notebooks(files: Files, config: Config):
     """Append notebooks to the list of files to be processed by mkdocs."""
+    from rich import print
+
     print("Appending notebooks to docs...")
-    dest_dir = Path(files._files[0].abs_dest_path).parent
+
+    nav = {}
+
+    # Add all notebooks to the list of files to be processed by mkdocs
     for fname in TARGET_DIR.rglob("*.md"):
         file_name = (TARGET_DIR / fname).relative_to(TMP_DIR)
-        f = File(path=file_name, src_dir=TMP_DIR.absolute(), dest_dir=dest_dir, use_directory_urls=True)
+        f = File(
+            path=file_name,
+            src_dir=TMP_DIR.absolute(),
+            dest_dir=config["site_dir"],
+            use_directory_urls=config["use_directory_urls"],
+        )
         # print(f"Appending file {f}")
         files.append(f)
+        nav[fname.stem] = fname.name
+
+    summary = File(
+        path=(TARGET_DIR / "SUMMARY.md").relative_to(TMP_DIR),
+        src_dir=TMP_DIR.absolute(),
+        dest_dir=config["site_dir"],
+        use_directory_urls=config["use_directory_urls"],
+    )
+    files.append(summary)
+
+    with open(summary.abs_src_path, "w") as f:
+        for k, v in nav.items():
+            f.write(f"* [{k}]({v})\n")
+
+    print("Done appending notebooks to docs.")

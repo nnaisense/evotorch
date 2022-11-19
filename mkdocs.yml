@@ -111,12 +111,12 @@ plugins:
   - gen-files:
       scripts:
         - docs/gen_doc_stubs.py
-  - literate-nav:
-      nav_file: SUMMARY.md
   - mkdocs-simple-hooks:
       hooks:
         on_pre_build: "docs.notebook_conversion_lib:convert_all_notebooks"
         on_files: "docs.notebook_conversion_lib:append_notebooks"
+  - literate-nav:
+      nav_file: SUMMARY.md
 
 watch:
   - examples/notebooks
