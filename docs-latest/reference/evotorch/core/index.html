@@ -5950,7 +5950,7 @@ class MinNorm(Problem):
 <a id="__codelineno-0-1593" name="__codelineno-0-1593" href="#__codelineno-0-1593"></a><span class="sd">        Evaluate the given Solution or SolutionBatch.</span>
 <a id="__codelineno-0-1594" name="__codelineno-0-1594" href="#__codelineno-0-1594"></a>
 <a id="__codelineno-0-1595" name="__codelineno-0-1595" href="#__codelineno-0-1595"></a><span class="sd">        Args:</span>
-<a id="__codelineno-0-1596" name="__codelineno-0-1596" href="#__codelineno-0-1596"></a><span class="sd">            batch: The SolutionBatch to be evaluated.</span>
+<a id="__codelineno-0-1596" name="__codelineno-0-1596" href="#__codelineno-0-1596"></a><span class="sd">            x: The SolutionBatch to be evaluated.</span>
 <a id="__codelineno-0-1597" name="__codelineno-0-1597" href="#__codelineno-0-1597"></a><span class="sd">        &quot;&quot;&quot;</span>
 <a id="__codelineno-0-1598" name="__codelineno-0-1598" href="#__codelineno-0-1598"></a>
 <a id="__codelineno-0-1599" name="__codelineno-0-1599" href="#__codelineno-0-1599"></a>        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">Solution</span><span class="p">):</span>
@@ -8842,8 +8842,8 @@ a negative number if <code>b</code> is better;
   </thead>
   <tbody>
       <tr>
-        <td><code>batch</code></td>
-        <td></td>
+        <td><code>x</code></td>
+        <td><code>Union[SolutionBatch, Solution]</code></td>
         <td><p>The SolutionBatch to be evaluated.</p></td>
         <td><em>required</em></td>
       </tr>
@@ -8856,7 +8856,7 @@ a negative number if <code>b</code> is better;
 <a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="sd">    Evaluate the given Solution or SolutionBatch.</span>
 <a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>
 <a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="sd">    Args:</span>
-<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="sd">        batch: The SolutionBatch to be evaluated.</span>
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="sd">        x: The SolutionBatch to be evaluated.</span>
 <a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="sd">    &quot;&quot;&quot;</span>
 <a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>
 <a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">Solution</span><span class="p">):</span>
@@ -10377,7 +10377,7 @@ its original SolutionBatch anymore.</p>
 <a id="__codelineno-0-160" name="__codelineno-0-160" href="#__codelineno-0-160"></a><span class="sd">        class.</span>
 <a id="__codelineno-0-161" name="__codelineno-0-161" href="#__codelineno-0-161"></a>
 <a id="__codelineno-0-162" name="__codelineno-0-162" href="#__codelineno-0-162"></a><span class="sd">        Args:</span>
-<a id="__codelineno-0-163" name="__codelineno-0-163" href="#__codelineno-0-163"></a><span class="sd">            evals: New evaluation result(s) for the Solution.</span>
+<a id="__codelineno-0-163" name="__codelineno-0-163" href="#__codelineno-0-163"></a><span class="sd">            evaluation: New evaluation result(s) for the Solution.</span>
 <a id="__codelineno-0-164" name="__codelineno-0-164" href="#__codelineno-0-164"></a><span class="sd">                For single-objective problems, this argument can be given</span>
 <a id="__codelineno-0-165" name="__codelineno-0-165" href="#__codelineno-0-165"></a><span class="sd">                as a scalar.</span>
 <a id="__codelineno-0-166" name="__codelineno-0-166" href="#__codelineno-0-166"></a><span class="sd">                When this argument is given as a scalar (for single-objective</span>
@@ -11270,8 +11270,8 @@ class.</p>
   </thead>
   <tbody>
       <tr>
-        <td><code>evals</code></td>
-        <td></td>
+        <td><code>evaluation</code></td>
+        <td><code>Union[float, Iterable[float], torch.Tensor]</code></td>
         <td><p>New evaluation result(s) for the Solution.
 For single-objective problems, this argument can be given
 as a scalar.
@@ -11304,7 +11304,7 @@ specify extra evaluation data separately.
 <a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="sd">    class.</span>
 <a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>
 <a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="sd">    Args:</span>
-<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span class="sd">        evals: New evaluation result(s) for the Solution.</span>
+<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span class="sd">        evaluation: New evaluation result(s) for the Solution.</span>
 <a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a><span class="sd">            For single-objective problems, this argument can be given</span>
 <a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a><span class="sd">            as a scalar.</span>
 <a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a><span class="sd">            When this argument is given as a scalar (for single-objective</span>

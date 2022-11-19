@@ -5750,7 +5750,7 @@ the cpu.</p></td>
   </thead>
   <tbody>
     <tr>
-      <td></td>
+      <td><code>Any</code></td>
       <td><p>The sequence whose correctness in terms of length, dtype, and
 device is ensured.</p></td>
     </tr>
@@ -5782,7 +5782,7 @@ device is ensured.</p></td>
 <a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>    <span class="o">*</span><span class="p">,</span>
 <a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>    <span class="n">allow_scalar</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
 <a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>    <span class="n">device</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Device</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span class="p">):</span>
+<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
 <a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>    <span class="sd">&quot;&quot;&quot;</span>
 <a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a><span class="sd">    Return the given sequence as a tensor while also confirming its</span>
 <a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a><span class="sd">    length, dtype, and device.</span>
@@ -6044,14 +6044,14 @@ other than None.</p></td>
   </thead>
   <tbody>
     <tr>
-      <td></td>
+      <td><code>bool</code></td>
       <td><p>True if the elements of <code>x</code> are bools; False otherwise.</p></td>
     </tr>
   </tbody>
 </table>
         <details class="quote">
           <summary>Source code in <code>evotorch/tools/misc.py</code></summary>
-          <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="k">def</span> <span class="nf">is_bool_vector</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="n">Any</span><span class="p">):</span>
+          <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="k">def</span> <span class="nf">is_bool_vector</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    <span class="sd">&quot;&quot;&quot;</span>
 <a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="sd">    Return True if `x` is a vector consisting of bools.</span>
 <a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>
@@ -6541,14 +6541,14 @@ or a PyTorch dtype.</p></td>
   </thead>
   <tbody>
     <tr>
-      <td></td>
+      <td><code>bool</code></td>
       <td><p>True if the elements of <code>x</code> are integers; False otherwise.</p></td>
     </tr>
   </tbody>
 </table>
         <details class="quote">
           <summary>Source code in <code>evotorch/tools/misc.py</code></summary>
-          <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="k">def</span> <span class="nf">is_integer_vector</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="n">Any</span><span class="p">):</span>
+          <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="k">def</span> <span class="nf">is_integer_vector</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    <span class="sd">&quot;&quot;&quot;</span>
 <a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="sd">    Return True if `x` is a vector consisting of integers.</span>
 <a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>
@@ -6701,14 +6701,14 @@ or a PyTorch dtype.</p></td>
   </thead>
   <tbody>
     <tr>
-      <td></td>
+      <td><code>bool</code></td>
       <td><p>True if the elements of <code>x</code> are real numbers; False otherwise.</p></td>
     </tr>
   </tbody>
 </table>
         <details class="quote">
           <summary>Source code in <code>evotorch/tools/misc.py</code></summary>
-          <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="k">def</span> <span class="nf">is_real_vector</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="n">Any</span><span class="p">):</span>
+          <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="k">def</span> <span class="nf">is_real_vector</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    <span class="sd">&quot;&quot;&quot;</span>
 <a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="sd">    Return True if `x` is a vector consisting of real numbers.</span>
 <a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>
@@ -9872,7 +9872,7 @@ even when D was created via a basic slicing operation on C.</p>
 <a id="__codelineno-0-473" name="__codelineno-0-473" href="#__codelineno-0-473"></a><span class="sd">        Convert a numpy array of dtype `object` to an `ObjectArray`.</span>
 <a id="__codelineno-0-474" name="__codelineno-0-474" href="#__codelineno-0-474"></a>
 <a id="__codelineno-0-475" name="__codelineno-0-475" href="#__codelineno-0-475"></a><span class="sd">        Args:</span>
-<a id="__codelineno-0-476" name="__codelineno-0-476" href="#__codelineno-0-476"></a><span class="sd">            The numpy array that will be converted to `ObjectArray`.</span>
+<a id="__codelineno-0-476" name="__codelineno-0-476" href="#__codelineno-0-476"></a><span class="sd">            ndarray: The numpy array that will be converted to `ObjectArray`.</span>
 <a id="__codelineno-0-477" name="__codelineno-0-477" href="#__codelineno-0-477"></a><span class="sd">        Returns:</span>
 <a id="__codelineno-0-478" name="__codelineno-0-478" href="#__codelineno-0-478"></a><span class="sd">            The ObjectArray counterpart of the given numpy array.</span>
 <a id="__codelineno-0-479" name="__codelineno-0-479" href="#__codelineno-0-479"></a><span class="sd">        &quot;&quot;&quot;</span>
@@ -10346,6 +10346,25 @@ This is equivalent to getting the length of the size tuple.</p>
 
       <p>Convert a numpy array of dtype <code>object</code> to an <code>ObjectArray</code>.</p>
 
+<p><strong>Parameters:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Type</th>
+      <th>Description</th>
+      <th>Default</th>
+    </tr>
+  </thead>
+  <tbody>
+      <tr>
+        <td><code>ndarray</code></td>
+        <td><code>ndarray</code></td>
+        <td><p>The numpy array that will be converted to <code>ObjectArray</code>.</p></td>
+        <td><em>required</em></td>
+      </tr>
+  </tbody>
+</table>
 <p><strong>Returns:</strong></p>
 <table>
   <thead>
@@ -10369,7 +10388,7 @@ This is equivalent to getting the length of the size tuple.</p>
 <a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="sd">    Convert a numpy array of dtype `object` to an `ObjectArray`.</span>
 <a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>
 <a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="sd">    Args:</span>
-<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="sd">        The numpy array that will be converted to `ObjectArray`.</span>
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="sd">        ndarray: The numpy array that will be converted to `ObjectArray`.</span>
 <a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="sd">    Returns:</span>
 <a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="sd">        The ObjectArray counterpart of the given numpy array.</span>
 <a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span class="sd">    &quot;&quot;&quot;</span>
