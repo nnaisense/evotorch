@@ -271,7 +271,7 @@ def is_bool(x: Any) -> bool:
         return False
 
 
-def is_integer_vector(x: Any):
+def is_integer_vector(x: Any) -> bool:
     """
     Return True if `x` is a vector consisting of integers.
 
@@ -294,7 +294,7 @@ def is_integer_vector(x: Any):
         return False
 
 
-def is_bool_vector(x: Any):
+def is_bool_vector(x: Any) -> bool:
     """
     Return True if `x` is a vector consisting of bools.
 
@@ -317,7 +317,7 @@ def is_bool_vector(x: Any):
         return False
 
 
-def is_real_vector(x: Any):
+def is_real_vector(x: Any) -> bool:
     """
     Return True if `x` is a vector consisting of real numbers.
 
@@ -611,7 +611,7 @@ def ensure_tensor_length_and_dtype(
     *,
     allow_scalar: bool = False,
     device: Optional[Device] = None,
-):
+) -> Any:
     """
     Return the given sequence as a tensor while also confirming its
     length, dtype, and device.

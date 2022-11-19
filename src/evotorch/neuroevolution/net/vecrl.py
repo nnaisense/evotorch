@@ -137,7 +137,10 @@ def convert_from_torch(x: torch.Tensor, array_type: str) -> Any:
         array_type: Type to which the PyTorch tensor will be converted.
             Expected as one of these strings: "jax", "torch", "numpy".
     Returns:
-
+        The array of the specified type. Can be a JAX array, a numpy array,
+        or PyTorch tensor.
+    Raises:
+        ValueError: if the array type cannot be determined.
     """
     if array_type == "torch":
         return x

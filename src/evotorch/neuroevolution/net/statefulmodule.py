@@ -86,7 +86,7 @@ class StatefulModule(nn.Module):
         self._hidden = None
 
 
-def ensure_stateful(net: nn.Module):
+def ensure_stateful(net: nn.Module) -> StatefulModule:
     """
     Ensure that a module is wrapped by StatefulModule.
 
@@ -104,3 +104,4 @@ def ensure_stateful(net: nn.Module):
     """
     if not isinstance(net, StatefulModule):
         return StatefulModule(net)
+    return net
