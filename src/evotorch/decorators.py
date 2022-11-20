@@ -311,9 +311,12 @@ def on_device(device: Device) -> Callable:
         device: The device on which the decorated fitness function will work.
     """
 
+    # Take the `torch.device` counterpart of `device`
+    device = torch.device(device)
+
     def decorator(fn: Callable) -> Callable:
-        fn.__evotorch_on_device__ = True
-        fn.device = device
+        setattr(fn, "__evotorch_on_device__", True)
+        setattr(fn, "device", device)
         return fn
 
     return decorator
@@ -421,11 +424,8 @@ def on_cuda(*args) -> Callable:
         # If a cuda index is given, then we add ":N" (where N is the index) to the end of `device_str`.
         device_str += ":" + str(index)
 
-    # Take the `torch.device` counterpart of `device_str`
-    device = torch.device(device_str)
-
     # Prepare the decorator function which, upon being called with a function argument, wraps that function.
-    decorator = on_device(device)
+    decorator = on_device(device_str)
 
     # If the function that is being decorated is not known yet (i.e. if `fn` is None), then we return the
     # decorator function. If the function is known, then we decorate and return it.
