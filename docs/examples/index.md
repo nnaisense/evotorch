@@ -39,14 +39,22 @@ We provide a number of reference examples directly on our [GitHub](https://githu
 
 In addition, to help you to implement advanced neuroevolutionary reinforcement learning settings, we have provided 3 python scripts in the `examples/scripts` directory:
 
-`rl.py`
+`bbo_vectorized.py`
+
+:    Demonstrates single objective black-box optimization using a distribution-based algorithm, accelerated using vectorization on a single GPU/CPU.
+
+`moo_parallel.py`
+
+:    Demonstrates multi-objective optimization using parallelization on all CPU cores without vectorization.
+
+`rl_clipup.py`
 
 :    Re-implements almost all experiments from [the paper proposing ClipUp](https://dl.acm.org/doi/abs/10.1007/978-3-030-58115-2_36), and is easily reconfigured to replicate any particular experiment using [`sacred`](https://sacred.readthedocs.io/en/stable/quickstart.html).
 
 `rl_enjoy.py`
 
-:    Allows you to easily visualize and enjoy agents trained through `rl.py`.
+:    Allows you to easily visualize and enjoy agents trained through `rl_clipup.py`.
 
-`tinytraj_humanoid_bullet.py`
+`rl_gym.py`
 
-:    Implements the modified `"pybullet_envs:HumanoidBulletEnv-v0"` environment from the paper.
+:    Demonstrates how to solve a simple [Gym](https://www.gymlibrary.ml/) problem using the PGPE algorithm and ClipUp optimizer.
