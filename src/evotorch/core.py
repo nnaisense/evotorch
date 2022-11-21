@@ -20,6 +20,7 @@ Problem, Solution, and SolutionBatch.
 """
 
 import io
+import logging
 import math
 import os
 import random
@@ -32,7 +33,7 @@ import numpy as np
 import ray
 import torch
 
-from ._main_logger import logger as _evolog
+_evolog = logging.getLogger(__name__)
 
 try:
     from numba import njit

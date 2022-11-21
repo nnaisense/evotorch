@@ -17,12 +17,14 @@ Optimizers (like Adam or ClipUp) to be used with distribution-based
 search algorithms.
 """
 
+import logging
 from typing import Callable, Optional, Type
 
 import torch
 
-from ._main_logger import logger as _evolog
 from .tools.misc import Device, DType, RealOrVector, ensure_tensor_length_and_dtype, message_from, to_torch_dtype
+
+_evolog = logging.getLogger(__name__)
 
 
 class TorchOptimizer:
