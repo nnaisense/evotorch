@@ -332,16 +332,10 @@ Usage of [NeptuneLogger][evotorch.logging.NeptuneLogger] is as simple as creatin
 ```python
 from evotorch.logging import NeptuneLogger
 
-# In addition, instantiate an NeptuneLogger so that the logs are stored
-# via neptune.
-import neptune.new as neptune
+logger = NeptuneLogger(searcher, project='workspace-name/project-name')
 
-...
-
-run = neptune.init(
-    project='workspace-name/project-name',
-)  # Start an neptune run to log to
-_ = NeptuneLogger(searcher, run=run)
+# User can explicitly log other parameters, metrics etc.
+logger.run["..."].log(...)
 ```
 
 ??? example "Full Example"
@@ -354,14 +348,13 @@ _ = NeptuneLogger(searcher, run=run)
     problem = Problem("min", sphere, solution_length=10, initial_bounds=(-1, 1))
     searcher = SNES(problem, stdev_init=5)
 
-    # In addition, instantiate an NeptuneLogger so that the logs are stored
-    # via neptune.
-    import neptune.new as neptune
+    # Instantiate the Neptune logger
+    # You can pass additional parameters that you would normally pass to neptune.init_run(...)
+    # via further keyword arguments
+    logger = NeptuneLogger(searcher, project='workspace-name/project-name')
 
-    run = neptune.init(
-        project='workspace-name/project-name',
-    )  # Start an neptune run to log to
-    _ = NeptuneLogger(searcher, run=run)
+    # User can explicitly log other parameters, metrics etc.
+    # logger.run["..."].log(...)
 
     # Run the search algorithm
     searcher.run(100)
@@ -402,8 +395,8 @@ _ = WandbLogger(searcher, project="project-name")
     searcher = SNES(problem, stdev_init=5)
 
     # Instantiate the W&B logger
-    # You can also pass any other parameters that are expected by wandb.init(...)
-    # As an example, we pass the 'project' parameter to set the project name
+    # You can pass additional parameters that you would normally pass to wandb.init(...)
+    # via further keyword arguments
     _ = WandbLogger(searcher, project="project-name")
 
     # Run the search algorithm
