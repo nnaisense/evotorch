@@ -135,8 +135,8 @@ def generate_reference(src_dir: Union[str, Path], target_dir: Union[str, Path]):
         if key:
             nav[key] = path
 
-    with mkdocs_gen_files.open(target_dir / "SUMMARY.md", "w") as nav_file:
-        nav_file.writelines(nav.build_literate_nav())
+    # with mkdocs_gen_files.open(target_dir / "SUMMARY.md", "w") as nav_file:
+    #     nav_file.writelines(nav.build_literate_nav())
 
 
 # Generate the code reference
