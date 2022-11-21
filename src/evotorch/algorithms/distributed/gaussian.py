@@ -610,8 +610,6 @@ class PGPE(GaussianSearchAlgorithm):
                 the default value for this setting is 0.2, meaning that
                 the update on the standard deviation values can not be
                 more than 20% of their original values.
-            device: The device in which the population is to be stored.
-                The default value is 'cpu'.
             symmetric: Whether or not the solutions will be sampled
                 in a symmetric/mirrored/antithetic manner.
                 The default is True.
@@ -1270,14 +1268,6 @@ class XNES(GaussianSearchAlgorithm):
                 Can be given as None if no such ranking is required.
             center_init: The initial center solution.
                 Can be left as None.
-            stdev_min: Minimum values for the standard deviation.
-                Expected as a 1-dimensional array to serve as a limiter
-                to the diagonals of the covariance matrix's square root.
-            stdev_max: Maximum values for the standard deviation.
-                Expected as a 1-dimensional array to serve as a limiter
-                to the diagonals of the covariance matrix's square root.
-            stdev_max_change: Maximum change allowed for when updating
-                the square roort of the covariance matrix.
             obj_index: Index of the objective according to which the
                 gradient estimations will be done.
                 For single-objective problems, this can be left as None.

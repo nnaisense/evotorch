@@ -1953,7 +1953,7 @@ class Problem(TensorMakerMixin, Serializable):
         Evaluate the given Solution or SolutionBatch.
 
         Args:
-            batch: The SolutionBatch to be evaluated.
+            x: The SolutionBatch to be evaluated.
         """
 
         if isinstance(x, Solution):
@@ -4219,7 +4219,7 @@ class Solution(Serializable):
         class.
 
         Args:
-            evals: New evaluation result(s) for the Solution.
+            evaluation: New evaluation result(s) for the Solution.
                 For single-objective problems, this argument can be given
                 as a scalar.
                 When this argument is given as a scalar (for single-objective

@@ -511,7 +511,7 @@ class ObjectArray(Sequence, RecursivePrintable):
         Convert a numpy array of dtype `object` to an `ObjectArray`.
 
         Args:
-            The numpy array that will be converted to `ObjectArray`.
+            ndarray: The numpy array that will be converted to `ObjectArray`.
         Returns:
             The ObjectArray counterpart of the given numpy array.
         """
