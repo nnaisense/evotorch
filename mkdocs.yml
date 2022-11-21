@@ -100,22 +100,23 @@ nav:
     - Custom Searchers: advanced_usage/custom_ea.md
     - Custom Loggers: advanced_usage/custom_logger.md
     - Using Ray Clusters: advanced_usage/ray_cluster.md
-  - Examples: examples/
+  - Examples:
+    - examples/index.md
+    - Notebooks: examples/notebooks/
   - API Reference: reference/
 
 plugins:
   - search
-  - mkdocstrings:
-      watch:
-          - src/evotorch
+  - mkdocstrings
   - gen-files:
       scripts:
         - docs/gen_doc_stubs.py
   - literate-nav:
       nav_file: SUMMARY.md
-  - mkdocs-simple-hooks:
-      hooks:
-        on_pre_build: "docs.notebook_conversion_lib:convert_all_notebooks"
+
+watch:
+  - examples/notebooks
+  - src/evotorch
 
 extra:
   homepage: https://evotorch.ai
