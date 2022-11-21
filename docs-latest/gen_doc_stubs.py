@@ -14,7 +14,6 @@
 
 """Generate the code reference pages and navigation."""
 
-import subprocess as sp
 from pathlib import Path
 from typing import Optional, Union
 
