@@ -173,9 +173,14 @@ def _eval_with_constants(node: ast.expr, constants: dict) -> Any:
         name = name.id
 
         index = node.slice
-        if not isinstance(index, ast.Index):
+        if isinstance(index, ast.Index):
+            index = index.value
+        elif isinstance(index, ast.Constant):
+            pass  # Do nothing
+        else:
             fail(f"Expected a simple indexing operation, but got a {type(index).__name__}.", index)
-        index = literal_eval(index.value)
+
+        index = literal_eval(index)
 
         return get_from_constant(name, index)
     else:
@@ -223,10 +228,9 @@ def str_to_net(s: str, **constants) -> nn.Module:
 
     ```python
     from torch import nn
+    from evotorch.neuroevolution.net import MultiLayered
 
-    net = nn.Sequential(
-        nn.Linear(8, 16), nn.Tanh(), nn.Linear(16, 4, bias=False), nn.ReLU()
-    )
+    net = MultiLayered(nn.Linear(8, 16), nn.Tanh(), nn.Linear(16, 4, bias=False), nn.ReLU())
     ```
 
     By using `str_to_net(...)` one can construct an equivalent

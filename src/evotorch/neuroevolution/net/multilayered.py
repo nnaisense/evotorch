@@ -67,5 +67,8 @@ class MultiLayered(nn.Module):
     def __getitem__(self, i):
         return self._submodules[i]
 
+    def __len__(self):
+        return len(self._submodules)
+
     def append(self, module: nn.Module):
         self._submodules.append(module)

@@ -364,7 +364,7 @@ def on_cuda(*args) -> Callable:
     for further details.
 
     Args:
-        index: An optional positional arguments using which one can specify
+        args: An optional positional arguments using which one can specify
             the index of the cuda device to use.
     """
 

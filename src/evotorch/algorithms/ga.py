@@ -135,7 +135,7 @@ class Cosyne(SearchAlgorithm, SinglePopulationAlgorithmMixin):
         popsize: int,
         tournament_size: int,
         mutation_stdev: Optional[float],
-        mutation_probability: Optional[float],
+        mutation_probability: Optional[float] = None,
         permute_all: bool = False,
         num_elites: Optional[int] = None,
         elitism_ratio: Optional[float] = None,
@@ -150,7 +150,10 @@ class Cosyne(SearchAlgorithm, SinglePopulationAlgorithmMixin):
             popsize: Population size, as an integer.
             tournament_size: Tournament size, for tournament selection.
             mutation_stdev: Standard deviation of the Gaussian mutation.
+                See [GaussianMutation][evotorch.operators.real.GaussianMutation] for more information.
             mutation_probability: Elementwise Gaussian mutation probability.
+                Defaults to None.
+                See [GaussianMutation][evotorch.operators.real.GaussianMutation] for more information.
             permute_all: If given as True, all solutions are subject to
                 permutation. If given as False (which is the default),
                 there will be a selection procedure for each decision
@@ -176,11 +179,19 @@ class Cosyne(SearchAlgorithm, SinglePopulationAlgorithmMixin):
 
         SearchAlgorithm.__init__(self, problem)
 
-        if mutation_stdev is None and mutation_probability is None:
+        if mutation_stdev is None:
+            if mutation_probability is not None:
+                raise ValueError(
+                    f"`mutation_probability` was set to {mutation_probability}, but `mutation_stdev` is None, "
+                    "which means, mutation is disabled. If you want to enable the mutation, be sure to provide "
+                    "`mutation_stdev` as well."
+                )
             self.mutation_op = None
         else:
             self.mutation_op = GaussianMutation(
-                self._problem, mutation_probability=float(mutation_probability), stdev=float(mutation_stdev)
+                self._problem,
+                stdev=mutation_stdev,
+                mutation_probability=mutation_probability,
             )
 
         cross_over_kwargs = {"tournament_size": tournament_size}
