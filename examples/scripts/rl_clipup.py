@@ -39,7 +39,7 @@ https://arxiv.org/abs/2008.02387
 
 To run an experiment use:
 
-    python rl.py with [CONFIGURATION NAME]
+    python rl_clipup.py with [CONFIGURATION NAME]
 
 Where the [CONFIGURATION_NAME] is one of the following:
 
@@ -62,12 +62,12 @@ named clipup_alpha.
 
 If you wish to have the sacred log stored in .json format do:
 
-    python rl.py -F [RESULTS_DIR] with [CONFIGURATION NAME]
+    python rl_clipup.py -F [RESULTS_DIR] with [CONFIGURATION NAME]
 
 You can freely modify the configuration using sacred.
 For example, if you wish to run the Humanoid-v2 environment with the Adam optimizer and alpha=0.15 (as studied in the paper) do:
 
-    python rl.py with humanoid optimizer="adam" adam_alpha=0.15
+    python rl_clipup.py with humanoid optimizer="adam" adam_alpha=0.15
 
 Once finished, you can view your result using the lightweight 'rl_enjoy.py' script. To visualize a trained agent simply do:
 

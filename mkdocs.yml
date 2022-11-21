@@ -89,7 +89,7 @@ nav:
     - Algorithms Tour: user_guide/algorithms_tour.md
     - Defining Problems: user_guide/problems.md
     - Problem Parallelization: user_guide/problem_parallelization.md
-    - Using Logging: user_guide/logging.md
+    - Logging: user_guide/logging.md
     - Neuroevolution: user_guide/neuroevolution.md
     - Neuroevolution for Gym: user_guide/gym.md
     - Supervised Neuroevolution: user_guide/supervised_ne.md
