@@ -175,9 +175,10 @@ def _eval_with_constants(node: ast.expr, constants: dict) -> Any:
         index = node.slice
         if isinstance(index, ast.Index):
             index = index.value
-        elif isinstance(index, ast.Constant):
-            pass  # Do nothing
-        else:
+
+        # Note: ast.Num is a subclass of ast.Constant in Python 3.8 and later.
+        #       To support Python 3.7 and earlier, we need to check for both.
+        if not isinstance(index, (ast.Constant, ast.Num)):
             fail(f"Expected a simple indexing operation, but got a {type(index).__name__}.", index)
 
         index = literal_eval(index)
