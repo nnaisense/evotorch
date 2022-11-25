@@ -744,8 +744,7 @@ class Problem(TensorMakerMixin, Serializable):
                 If a manual solution initialization is preferred
                 (instead of an interval-based initialization),
                 one can leave `initial_bounds` as None, and override
-                the `generate_values(...)` method instead in the
-                inheriting subclass.
+                the `_fill(...)` method in the inheriting subclass.
             bounds: Interval in which all the solutions must always
                 reside.
                 Expected as a tuple, each element being either a
@@ -755,8 +754,8 @@ class Problem(TensorMakerMixin, Serializable):
                 if one does not wish to declare hard bounds on the
                 decision values of the problem.
                 If `bounds` is specified, `initial_bounds` is missing,
-                and `generate_values(...)` is not overriden, then
-                `bounds` will also serve as the `initial_bounds`.
+                and `_fill(...)` is not overriden, then `bounds` will
+                also serve as the `initial_bounds`.
             solution_length: Length of a solution.
                 Required for all fixed-length numeric optimization
                 problems.
@@ -979,25 +978,8 @@ class Problem(TensorMakerMixin, Serializable):
                     f" However, received `device` as {repr(device)}."
                 )
         else:
-            # If dtype is something other than `object`, then we need to properly store the given numeric bounds,
-            # and also perform some sanity checks.
-            initbnd_tuple_name = "initial_bounds"
-            bnd_tuple_name = "bounds"
-
-            if (bounds is None) and (initial_bounds is None):
-                # With a numeric dtype, if no boundary is provided at all, then we cannot know how to initialize
-                # the solutions. With such a lack of information, we raise an error.
-                raise ValueError(
-                    f"Together with a numeric dtype ({repr(dtype)}),"
-                    f" expected to receive `initial_bounds` and/or `bounds` as something other than None."
-                    f" However, both `initial_bounds` and `bounds` are None."
-                )
-            elif (bounds is not None) and (initial_bounds is None):
-                # With a numeric dtype, if strict bounds are given but initial bounds are not given, then we assume
-                # that the strict bounds also serve as the initial bounds.
-                # Therefore, we take clones of the strict bounds and use this clones as the initial bounds.
-                initial_bounds = clone(bounds)
-                initbnd_tuple_name = "bounds"
+            # If dtype is something other than `object`, then we need to make sure that we have a valid length for
+            # solutions, and also properly store the given numeric bounds.
 
             if solution_length is None:
                 # With a numeric dtype, if solution length is missing, then we raise an error.
@@ -1013,59 +995,72 @@ class Problem(TensorMakerMixin, Serializable):
             # Store the solution length
             self._solution_length = solution_length
 
-            # Below is an internal helper function for some common operations for the (strict) bounds
-            # and for the initial bounds.
-            def process_bounds(bounds_tuple: BoundsPairLike, tuple_name: str) -> BoundsPair:
-                # This function receives the bounds_tuple (a tuple containing lower and upper bounds),
-                # and the string name of the bounds argument ("bounds" or "initial_bounds").
-                # What is returned is the bounds expressed as PyTorch tensors in the correct dtype and device.
+            if (bounds is not None) or (initial_bounds is not None):
+                # This is the case where we have a dtype other than `object`, and either `bounds` or `initial_bounds`
+                # was provided.
+                initbnd_tuple_name = "initial_bounds"
+                bnd_tuple_name = "bounds"
 
-                nonlocal solution_length
+                if (bounds is not None) and (initial_bounds is None):
+                    # With a numeric dtype, if strict bounds are given but initial bounds are not given, then we assume
+                    # that the strict bounds also serve as the initial bounds.
+                    # Therefore, we take clones of the strict bounds and use this clones as the initial bounds.
+                    initial_bounds = clone(bounds)
+                    initbnd_tuple_name = "bounds"
 
-                # Extract the lower and upper bounds from the received bounds tuple.
-                lb, ub = bounds_tuple
+                # Below is an internal helper function for some common operations for the (strict) bounds
+                # and for the initial bounds.
+                def process_bounds(bounds_tuple: BoundsPairLike, tuple_name: str) -> BoundsPair:
+                    # This function receives the bounds_tuple (a tuple containing lower and upper bounds),
+                    # and the string name of the bounds argument ("bounds" or "initial_bounds").
+                    # What is returned is the bounds expressed as PyTorch tensors in the correct dtype and device.
 
-                # Make sure that the lower and upper bounds are expressed as tensors of correct dtype and device.
-                lb = self.make_tensor(lb)
-                ub = self.make_tensor(ub)
+                    nonlocal solution_length
 
-                for bound_array in (lb, ub):  # For each boundary tensor (lb and ub)
-                    if bound_array.ndim not in (0, 1):
-                        # If the boundary tensor is not as scalar and is not a 1-dimensional vector, then raise an
-                        # error.
-                        raise ValueError(
-                            f"Lower and upper bounds are expected as scalars or as 1-dimensional vectors."
-                            f" However, these given boundaries have incompatible shape:"
-                            f" {bound_array} (of shape {bound_array.shape})."
-                        )
-                    if bound_array.ndim == 1:
-                        if len(bound_array) != solution_length:
-                            # In the case where the boundary tensor is a 1-dimensional vector, if this vector's length
-                            # is not equal to the solution length, then we raise an error.
+                    # Extract the lower and upper bounds from the received bounds tuple.
+                    lb, ub = bounds_tuple
+
+                    # Make sure that the lower and upper bounds are expressed as tensors of correct dtype and device.
+                    lb = self.make_tensor(lb)
+                    ub = self.make_tensor(ub)
+
+                    for bound_array in (lb, ub):  # For each boundary tensor (lb and ub)
+                        if bound_array.ndim not in (0, 1):
+                            # If the boundary tensor is not as scalar and is not a 1-dimensional vector, then raise an
+                            # error.
                             raise ValueError(
-                                f"When boundaries are expressed as 1-dimensional vectors, their length are"
-                                f" expected as the solution length of the Problem object."
-                                f" However, while the problem's solution length is {solution_length},"
-                                f" these given boundaries have incompatible length:"
-                                f" {bound_array} (of length {len(bound_array)})."
+                                f"Lower and upper bounds are expected as scalars or as 1-dimensional vectors."
+                                f" However, these given boundaries have incompatible shape:"
+                                f" {bound_array} (of shape {bound_array.shape})."
                             )
+                        if bound_array.ndim == 1:
+                            if len(bound_array) != solution_length:
+                                # In the case where the boundary tensor is a 1-dimensional vector, if this vector's length
+                                # is not equal to the solution length, then we raise an error.
+                                raise ValueError(
+                                    f"When boundaries are expressed as 1-dimensional vectors, their length are"
+                                    f" expected as the solution length of the Problem object."
+                                    f" However, while the problem's solution length is {solution_length},"
+                                    f" these given boundaries have incompatible length:"
+                                    f" {bound_array} (of length {len(bound_array)})."
+                                )
 
-                # Return the processed forms of the lower and upper boundary tensors.
-                return lb, ub
+                    # Return the processed forms of the lower and upper boundary tensors.
+                    return lb, ub
 
-            # Process the initial bounds with the help of the internal function `process_bounds(...)`
-            init_lb, init_ub = process_bounds(initial_bounds, initbnd_tuple_name)
+                # Process the initial bounds with the help of the internal function `process_bounds(...)`
+                init_lb, init_ub = process_bounds(initial_bounds, initbnd_tuple_name)
 
-            # Store the processed initial bounds
-            self._initial_lower_bounds = init_lb
-            self._initial_upper_bounds = init_ub
+                # Store the processed initial bounds
+                self._initial_lower_bounds = init_lb
+                self._initial_upper_bounds = init_ub
 
-            if bounds is not None:
-                # If there are strict bounds, then process those bounds with the help of `process_bounds(...)`.
-                lb, ub = process_bounds(bounds, bnd_tuple_name)
-                # Store the processed bounds
-                self._lower_bounds = lb
-                self._upper_bounds = ub
+                if bounds is not None:
+                    # If there are strict bounds, then process those bounds with the help of `process_bounds(...)`.
+                    lb, ub = process_bounds(bounds, bnd_tuple_name)
+                    # Store the processed bounds
+                    self._lower_bounds = lb
+                    self._upper_bounds = ub
 
         # Annotate the variable that will store the objective sense(s) of the problem
         self._objective_sense: ObjectiveSense
@@ -1734,11 +1729,20 @@ class Problem(TensorMakerMixin, Serializable):
                 " method `_fill(...)` needs to be provided by the inheriting class."
             )
         else:
-            return self.make_uniform(
-                out=values,
-                lb=self.initial_lower_bounds,
-                ub=self.initial_upper_bounds,
-            )
+            if (self.initial_lower_bounds is None) or (self.initial_upper_bounds is None):
+                raise RuntimeError(
+                    "The default implementation of the method `_fill(...)` does not know how to initialize solutions"
+                    " because it appears that this Problem object was not given neither `initial_bounds` nor `bounds`"
+                    " during the moment of initialization."
+                    " Please either instantiate this Problem object with `initial_bounds` and/or `bounds`, or override"
+                    " the method `_fill(...)` to specify how solutions should be initialized."
+                )
+            else:
+                return self.make_uniform(
+                    out=values,
+                    lb=self.initial_lower_bounds,
+                    ub=self.initial_upper_bounds,
+                )
 
     def generate_batch(
         self,

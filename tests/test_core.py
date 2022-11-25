@@ -520,10 +520,14 @@ def test_api():
         return torch.sum(x), torch.linalg.norm(x)
 
     with pytest.raises(ValueError):
-        et.Problem("min", f)  # Missing solution_length and (initial_)bounds
+        et.Problem("min", f)  # Missing solution_length
 
-    with pytest.raises(ValueError):
-        et.Problem("min", f, solution_length=5)  # Missing (initial_)bounds
+    prob_with_bounds_missing = et.Problem("min", f, solution_length=5)  # Missing (initial_)bounds
+    with pytest.raises(RuntimeError):
+        prob_with_bounds_missing.generate_batch(10)  # fails because `fill(...)` does not know the bounds
+
+    with pytest.raises(RuntimeError):
+        prob_with_bounds_missing.generate_values(10)  # fails because `fill(...)` does not know the bounds
 
     with pytest.raises(ValueError):
         # This should fail, because et.Problem cannot work with non-numeric dtypes
@@ -572,6 +576,28 @@ def test_api():
 
     assert prob4.objective_sense == ["min", "min"]
     assert prob4.senses == ["min", "min"]
+
+
+def test_manual_fill():
+    class ProblemWithManualFill(et.Problem):
+        def __init__(self):
+            super().__init__(objective_sense="min", solution_length=5, dtype="int64")
+
+        def _evaluate_batch(self, batch: et.SolutionBatch):
+            batch.set_evals(torch.linalg.norm(batch.values, dim=-1))
+
+        def _fill(self, x: torch.Tensor):
+            x.zero_()
+
+    problem = ProblemWithManualFill()
+
+    new_batch = problem.generate_batch(10)
+    assert len(new_batch) == 10
+    assert torch.all(new_batch.values == 0)
+
+    new_values = problem.generate_values(10)
+    assert new_values.shape == (10, 5)
+    assert torch.all(new_values == 0)
 
 
 def test_problem_hooks():
