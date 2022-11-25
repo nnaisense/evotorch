@@ -16,6 +16,8 @@
 """ Implementation of the Real-Parameter Black-Box Optimization Benchmarking 2009 functions
 """
 
+from typing import Type
+
 import numpy as np
 import torch
 
@@ -501,7 +503,7 @@ _functions = [
 ]
 
 
-def get_function_i(i: int) -> BBOBProblem:
+def get_function_i(i: int) -> Type[BBOBProblem]:
     """Get the ith function, for i in 1 ... 24
     Args:
         i (int): The index of the function to obtain, between 1 and 24

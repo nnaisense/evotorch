@@ -13,7 +13,7 @@
 # limitations under the License.
 
 
-from typing import Optional
+from typing import List, Optional
 
 import numpy as np
 import torch
@@ -26,7 +26,8 @@ class BBOBProblem(Problem):
     def __init__(
         self,
         solution_length: int,
-        initial_bounds: Optional[BoundsPairLike] = (-5, 5),
+        targets: List[int] = [trg for trg in range(-8, 4)],
+        initial_bounds: Optional[BoundsPairLike] = (-3, 3),
         bounds: Optional[BoundsPairLike] = None,
         dtype: Optional[DType] = torch.float64,
         eval_dtype: Optional[DType] = torch.float64,
@@ -56,7 +57,10 @@ class BBOBProblem(Problem):
 
         # Initialize meta variables
         self.initialize_meta_variables()
-        self._log_closest = 1e6
+        self._targets, _ = torch.sort(self.make_tensor(targets), descending=True)
+        self._targets_hit = torch.zeros_like(self._targets, dtype=torch.bool)
+        self._targets_hit_at_feval = -1 * torch.ones_like(self._targets, dtype=torch.long)
+        self._n_fevals = 0
 
     """ Extra BBOB-specific generator functions that ensure compliant dtype, device and generator
     """
@@ -181,9 +185,26 @@ class BBOBProblem(Problem):
         z = self.map_x_to_z(x)
         # Get f(x) from function application to z
         f_x = self.apply_function(z, x)
+
+        n_sol = len(batch)
+
         # Compute log distance from f_opt
-        log_f_x = torch.log(f_x - self._f_opt)
-        if torch.amin(log_f_x) < self.log_closest:
-            self.log_closest = torch.amin(log_f_x)
+        log_f_x = torch.log10(f_x - self._f_opt)
+
+        # Update any targets hit
+        targets_hit = log_f_x.unsqueeze(-1) < self._targets.unsqueeze(0)
+        indices = torch.arange(len(batch), dtype=torch.long, device=batch.device).unsqueeze(-1)
+        targets_hit_at_feval = torch.logical_not(targets_hit).to(torch.long) * 100 * (self._n_fevals + n_sol) + (
+            self._n_fevals + indices + 1
+        )
+        min_new_target_hit = targets_hit_at_feval.amin(dim=0)
+        new_target_hit = torch.logical_and(targets_hit.any(dim=0), torch.logical_not(self._targets_hit))
+
+        self._targets_hit_at_feval = torch.where(new_target_hit, min_new_target_hit, self._targets_hit_at_feval)
+        self._targets_hit = torch.logical_or(self._targets_hit, new_target_hit)
+
+        # Increment number of fitness evaluations
+        self._n_fevals += n_sol
+
         # Assign fitnesses to batch
         batch.set_evals(f_x)

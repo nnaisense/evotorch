@@ -21,3 +21,4 @@ __all__ = ("bbob_utilities", "bbob_problem", "bbob_noiseless_suite")
 
 
 from . import bbob_noiseless_suite, bbob_problem, bbob_utilities
+from .bbob_problem import BBOBProblem
