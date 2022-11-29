@@ -20,16 +20,20 @@ evolutionary algorithms.
 __all__ = (
     "CMAES",
     "CEM",
+    "Cosyne",
+    "MAPElites",
     "PGPE",
     "SNES",
     "XNES",
+    "GeneticAlgorithm",
     "SteadyStateGA",
     "SearchAlgorithm",
 )
 
 
-from . import cmaes, distributed, ga, searchalgorithm
+from . import cmaes, distributed, ga, mapelites, searchalgorithm
 from .cmaes import CMAES
 from .distributed import CEM, PGPE, SNES, XNES
-from .ga import Cosyne, SteadyStateGA
+from .ga import Cosyne, GeneticAlgorithm, SteadyStateGA
+from .mapelites import MAPElites
 from .searchalgorithm import SearchAlgorithm
