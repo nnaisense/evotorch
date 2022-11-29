@@ -66,17 +66,190 @@ class GaussianMutation(CopyingOperator):
         return result
 
 
-class OnePointCrossOver(CrossOver):
+class MultiPointCrossOver(CrossOver):
+    """
+    Representation of a multi-point cross-over operator.
+
+    When this operator is applied on a SolutionBatch, a tournament selection
+    technique is used for selecting parent solutions from the batch, and then
+    those parent solutions are mated via cutting from a random position and
+    recombining. The result of these recombination operations is a new
+    SolutionBatch, containing the children solutions. The original
+    SolutionBatch stays unmodified.
+
+    This operator is a generalization over the standard cross-over operators
+    [OnePointCrossOver][evotorch.operators.real.OnePointCrossOver]
+    and [TwoPointCrossOver][evotorch.operators.real.TwoPointCrossOver].
+    In more details, instead of having one or two cutting points, this operator
+    is configurable in terms of how many cutting points is desired.
+    This generalized cross-over implementation follows the procedure described
+    in:
+
+        Sean Luke, 2013, Essentials of Metaheuristics, Lulu, second edition
+        available for free at http://cs.gmu.edu/~sean/book/metaheuristics/
+    """
+
+    def __init__(
+        self,
+        problem: Problem,
+        *,
+        tournament_size: int,
+        obj_index: Optional[int] = None,
+        num_points: Optional[int] = None,
+        num_children: Optional[int] = None,
+        cross_over_rate: Optional[float] = None,
+    ):
+        """
+        `__init__(...)`: Initialize the MultiPointCrossOver.
+
+        Args:
+            problem: The problem object to work on.
+            tournament_size: What is the size (or length) of a tournament
+                when selecting a parent candidate from a population
+            obj_index: Objective index according to which the selection
+                will be done.
+            num_points: Number of cutting points for the cross-over operator.
+            num_children: Optionally a number of children to produce by the
+                cross-over operation.
+                Not to be used together with `cross_over_rate`.
+                If `num_children` and `cross_over_rate` are both None,
+                then the number of children is equal to the number
+                of solutions received.
+            cross_over_rate: Optionally expected as a real number between
+                0.0 and 1.0. Specifies the number of cross-over operations
+                to perform. 1.0 means `1.0 * len(solution_batch)` amount of
+                cross overs will be performed, resulting in
+                `2.0 * len(solution_batch)` amount of children.
+                Not to be used together with `num_children`.
+                If `num_children` and `cross_over_rate` are both None,
+                then the number of children is equal to the number
+                of solutions received.
+        """
+
+        super().__init__(
+            problem,
+            tournament_size=tournament_size,
+            obj_index=obj_index,
+            num_children=num_children,
+            cross_over_rate=cross_over_rate,
+        )
+
+        self._num_points = int(num_points)
+        if self._num_points < 1:
+            raise ValueError(
+                f"Invalid `num_points`: {self._num_points}."
+                f" Please provide a `num_points` which is greater than or equal to 1"
+            )
+
+    @torch.no_grad()
+    def _do_cross_over(self, parents1: torch.Tensor, parents2: torch.Tensor) -> SolutionBatch:
+        # What we expect here is this:
+        #
+        #    parents1      parents2
+        #    ==========    ==========
+        #    parents1[0]   parents2[0]
+        #    parents1[1]   parents2[1]
+        #    ...           ...
+        #    parents1[N]   parents2[N]
+        #
+        # where parents1 and parents2 are 2D tensors, each containing values of N solutions.
+        # For each row i, we will apply cross-over on parents1[i] and parents2[i].
+        # From each cross-over, we will obtain 2 children.
+        # This means, there are N pairings, and 2N children.
+
+        num_pairings = parents1.shape[0]
+        # num_children = num_pairings * 2
+
+        device = parents1[0].device
+        solution_length = len(parents1[0])
+        num_points = self._num_points
+
+        # For each pairing, generate all gene indices (i.e. [0, 1, 2, ...] for each pairing)
+        gene_indices = (
+            torch.arange(0, solution_length, device=device).unsqueeze(0).expand(num_pairings, solution_length)
+        )
+
+        if num_points == 1:
+            # For each pairing, generate a gene index at which the parent solutions will be cut and recombined
+            crossover_point = self.problem.make_randint((num_pairings, 1), n=(solution_length - 1), device=device) + 1
+
+            # Make a mask for crossing over
+            # (False: take the value from one parent, True: take the value from the other parent).
+            # For gene indices less than crossover_point of that pairing, the mask takes the value 0.
+            # Otherwise, the mask takes the value 1.
+            crossover_mask = gene_indices >= crossover_point
+        else:
+            # For each pairing, generate gene indices at which the parent solutions will be cut and recombined
+            crossover_points = self.problem.make_randint(
+                (num_pairings, num_points), n=(solution_length + 1), device=device
+            )
+
+            # From `crossover_points`, extract each cutting point for each solution.
+            cutting_points = [crossover_points[:, i].reshape(-1, 1) for i in range(num_points)]
+
+            # Initialize `crossover_mask` as a tensor filled with False.
+            crossover_mask = torch.zeros((num_pairings, solution_length), dtype=torch.bool, device=device)
+
+            # For each cutting point p, toggle the boolean values of `crossover_mask`
+            # for indices bigger than the index pointed to by p
+            for p in cutting_points:
+                crossover_mask ^= gene_indices >= p
+
+        # Using the mask, generate two children.
+        children1 = torch.where(crossover_mask, parents1, parents2)
+        children2 = torch.where(crossover_mask, parents2, parents1)
+
+        # Combine the children tensors in one big tensor
+        children = torch.cat([children1, children2], dim=0)
+
+        # Write the children solutions into a new SolutionBatch, and return the new batch
+        result = self._make_children_batch(children)
+        return result
+
+
+class OnePointCrossOver(MultiPointCrossOver):
     """
     Representation of a one-point cross-over operator.
 
-    When this operator is applied on a SolutionBatch,
-    a tournament selection technique is used for selecting
-    parent solutions from the batch, and then those parent
-    solutions are mated via cutting from a random position
-    and recombining. The result of these recombination
-    operations is a new SolutionBatch, containing the children
-    solutions. The original SolutionBatch stays unmodified.
+    When this operator is applied on a SolutionBatch, a tournament selection
+    technique is used for selecting parent solutions from the batch, and then
+    those parent solutions are mated via cutting from a random position and
+    recombining. The result of these recombination operations is a new
+    SolutionBatch, containing the children solutions. The original
+    SolutionBatch stays unmodified.
+
+    Let us assume that the two of the parent solutions that were selected for
+    the cross-over operation are as follows:
+
+    ```
+    a: [ a0 , a1 , a2 , a3 , a4 , a5 ]
+    b: [ b0 , b1 , b2 , b3 , b4 , b5 ]
+    ```
+
+    For recombining parents `a` and `b`, a cutting point is first randomly
+    selected. In the case of this example, let us assume that the cutting
+    point was chosen as the point between the items with indices 2 and 3:
+
+    ```
+    a: [ a0 , a1 , a2 | a3 , a4 , a5 ]
+    b: [ b0 , b1 , b2 | b3 , b4 , b5 ]
+                      |
+                      ^
+           Selected cutting point
+    ```
+
+    Considering this selected cutting point, the two children `c` and `d`
+    will be constructed from `a` and `b` like this:
+
+    ```
+    c: [ a0 , a1 , a2 | b3 , b4 , b5 ]
+    d: [ b0 , b1 , b2 | a3 , a4 , a5 ]
+    ```
+
+    Note that the recombination procedure explained above is be done on all
+    of the parents chosen from the given SolutionBatch, in a vectorized manner.
+    For each chosen pair of parents, the cutting points will be sampled
+    differently.
     """
 
     def __init__(
@@ -113,61 +286,106 @@ class OnePointCrossOver(CrossOver):
                 then the number of children is equal to the number
                 of solutions received.
         """
-
         super().__init__(
             problem,
             tournament_size=tournament_size,
             obj_index=obj_index,
+            num_points=1,
             num_children=num_children,
             cross_over_rate=cross_over_rate,
         )
 
-    @torch.no_grad()
-    def _do_cross_over(self, parents1: torch.Tensor, parents2: torch.Tensor) -> SolutionBatch:
-        # What we expect here is this:
-        #
-        #    parents1      parents2
-        #    ==========    ==========
-        #    parents1[0]   parents2[0]
-        #    parents1[1]   parents2[1]
-        #    ...           ...
-        #    parents1[N]   parents2[N]
-        #
-        # where parents1 and parents2 are 2D tensors, each containing values of N solutions.
-        # For each row i, we will apply cross-over on parents1[i] and parents2[i].
-        # From each cross-over, we will obtain 2 children.
-        # This means, there are N pairings, and 2N children.
 
-        num_pairings = parents1.shape[0]
-        # num_children = num_pairings * 2
+class TwoPointCrossOver(MultiPointCrossOver):
+    """
+    Representation of a two-point cross-over operator.
 
-        device = parents1[0].device
-        dtype = parents1[0].dtype
-        solution_length = len(parents1[0])
+    When this operator is applied on a SolutionBatch, a tournament selection
+    technique is used for selecting parent solutions from the batch, and then
+    those parent solutions are mated via cutting from a random position and
+    recombining. The result of these recombination operations is a new
+    SolutionBatch, containing the children solutions. The original
+    SolutionBatch stays unmodified.
 
-        # For each pairing, generate a gene index at which the parent solutions will be cut and recombined
-        crossover_point = self.problem.make_randint((num_pairings, 1), n=(solution_length - 1), device=device) + 1
+    Let us assume that the two of the parent solutions that were selected for
+    the cross-over operation are as follows:
 
-        # For each pairing, generate all gene indices (i.e. [0, 1, 2, ...] for each pairing)
-        gene_indices = (
-            torch.arange(0, solution_length, device=device).unsqueeze(0).expand(num_pairings, solution_length)
+    ```
+    a: [ a0 , a1 , a2 , a3 , a4 , a5 ]
+    b: [ b0 , b1 , b2 , b3 , b4 , b5 ]
+    ```
+
+    For recombining parents `a` and `b`, two cutting points are first randomly
+    selected. In the case of this example, let us assume that the cutting
+    point were chosen as the point between the items with indices 1 and 2,
+    and between 3 and 4:
+
+    ```
+    a: [ a0 , a1 | a2 , a3 | a4 , a5 ]
+    b: [ b0 , b1 | b2 , b3 | b4 , b5 ]
+                 |         |
+                 ^         ^
+               First     Second
+              cutting    cutting
+               point     point
+    ```
+
+    Given these two cutting points, the two children `c` and `d` will be
+    constructed from `a` and `b` like this:
+
+    ```
+    c: [ a0 , a1 | b2 , b3 | a4 , a5 ]
+    d: [ b0 , b1 | a2 , a3 | b4 , b5 ]
+    ```
+
+    Note that the recombination procedure explained above is be done on all
+    of the parents chosen from the given SolutionBatch, in a vectorized manner.
+    For each chosen pair of parents, the cutting points will be sampled
+    differently.
+    """
+
+    def __init__(
+        self,
+        problem: Problem,
+        *,
+        tournament_size: int,
+        obj_index: Optional[int] = None,
+        num_children: Optional[int] = None,
+        cross_over_rate: Optional[float] = None,
+    ):
+        """
+        `__init__(...)`: Initialize the TwoPointCrossOver.
+
+        Args:
+            problem: The problem object to work on.
+            tournament_size: What is the size (or length) of a tournament
+                when selecting a parent candidate from a population
+            obj_index: Objective index according to which the selection
+                will be done.
+            num_children: Optionally a number of children to produce by the
+                cross-over operation.
+                Not to be used together with `cross_over_rate`.
+                If `num_children` and `cross_over_rate` are both None,
+                then the number of children is equal to the number
+                of solutions received.
+            cross_over_rate: Optionally expected as a real number between
+                0.0 and 1.0. Specifies the number of cross-over operations
+                to perform. 1.0 means `1.0 * len(solution_batch)` amount of
+                cross overs will be performed, resulting in
+                `2.0 * len(solution_batch)` amount of children.
+                Not to be used together with `num_children`.
+                If `num_children` and `cross_over_rate` are both None,
+                then the number of children is equal to the number
+                of solutions received.
+        """
+        super().__init__(
+            problem,
+            tournament_size=tournament_size,
+            obj_index=obj_index,
+            num_points=2,
+            num_children=num_children,
+            cross_over_rate=cross_over_rate,
         )
-
-        # Make a mask for crossing over. (0: take the value from one parent, 1: take the value from the other parent)
-        # For gene indices less than crossover_point of that pairing, the mask takes the value 0.
-        # Otherwise, the mask takes the value 1.
-        crossover_mask = (gene_indices >= crossover_point).to(dtype)
-
-        # Using the mask, generate two children.
-        children1 = crossover_mask * parents1 + (1 - crossover_mask) * parents2
-        children2 = crossover_mask * parents2 + (1 - crossover_mask) * parents1
-
-        # Combine the children tensors in one big tensor
-        children = torch.cat([children1, children2], dim=0)
-
-        # Write the children solutions into a new SolutionBatch, and return the new batch
-        result = self._make_children_batch(children)
-        return result
 
 
 class SimulatedBinaryCrossOver(CrossOver):
@@ -260,6 +478,128 @@ class SimulatedBinaryCrossOver(CrossOver):
         # Write the children solutions into a new SolutionBatch, and return the new batch
         result = self._make_children_batch(children)
 
+        return result
+
+
+class PolynomialMutation(CopyingOperator):
+    """
+    Representation of the polynomial mutation operator.
+
+    Follows the algorithm description in:
+
+        Kalyanmoy Deb, Santosh Tiwari (2008).
+        Omni-optimizer: A generic evolutionary algorithm for single
+        and multi-objective optimization
+
+    The operator ensures a non-zero probability of generating offspring in
+    the entire search space by dividing the space into two regions and using
+    independent probability distributions associated with each region.
+    In contrast, the original polynomial mutation formulation may render the
+    mutation ineffective when the decision variable approaches its boundary.
+    """
+
+    def __init__(
+        self,
+        problem: Problem,
+        *,
+        eta: Optional[float] = None,
+        prob: Optional[float] = None,
+    ):
+        """
+        `__init__(...)`: Initialize the PolynomialMutation.
+
+        Args:
+            problem: The problem object to work with.
+            eta: The index for polynomial mutation; a large value gives a higher
+                probability for creating near-parent solutions, whereas a small
+                value allows distant solutions to be created.
+                If not specified, `eta` will be assumed as 20.0.
+            prob: The probability of mutation, for each decision variable.
+                If not specified, all variables will be mutated.
+        """
+
+        super().__init__(problem)
+
+        if "float" not in str(problem.dtype):
+            raise ValueError(
+                f"This operator can be used only when `dtype` of the problem is float type"
+                f" (like, e.g. torch.float32, torch.float64, etc.)"
+                f" The dtype of the problem is {problem.dtype}."
+            )
+
+        if (self.problem.lower_bounds is None) or (self.problem.upper_bounds is None):
+            raise ValueError(
+                "The polynomial mutation operator can be used only when the problem object has"
+                " `lower_bounds` and `upper_bounds`."
+                " In the given problem object, at least one of them appears to be missing."
+            )
+
+        if torch.any(self.problem.lower_bounds > self.problem.upper_bounds):
+            raise ValueError("Some of the `lower_bounds` appear greater than their `upper_bounds`")
+
+        self._prob = None if prob is None else float(prob)
+        self._eta = 20.0 if eta is None else float(eta)
+        self._lb = self.problem.lower_bounds
+        self._ub = self.problem.upper_bounds
+
+    @torch.no_grad()
+    def _do(self, batch: SolutionBatch) -> SolutionBatch:
+        # Take a copy of the original batch. Modifications will be done on this copy.
+        result = deepcopy(batch)
+
+        # Take the decision values tensor from within the newly made copy of the batch (`result`).
+        # Any modification done on this tensor will affect the `result` batch.
+        data = result.access_values()
+
+        # Take the population size
+        pop_size, _ = data.size()
+
+        if self._prob is None:
+            # If a probability of mutation is not given, then we prepare our mutation mask (`to_mutate`) as a tensor
+            # consisting only of `True`s.
+            to_mutate = torch.ones(data.shape, dtype=torch.bool, device=data.device)
+        else:
+            # If a probability of mutation is given, then we produce a boolean mask that probabilistically marks which
+            # decision variables will be affected by this mutation operation.
+            to_mutate = self.problem.make_uniform_shaped_like(data) < self._prob
+
+        # Obtain a flattened (1-dimensional) tensor which addresses only the variables that are subject to mutation
+        # (i.e. variables that are not subject to mutation are filtered out).
+        selected = data[to_mutate]
+
+        # Obtain flattened (1-dimensional) lower and upper bound tensors such that `lb[i]` and `ub[i]` specify the
+        # bounds for `selected[i]`.
+        lb = self._lb.expand(pop_size, -1)[to_mutate]
+        ub = self._ub.expand(pop_size, -1)[to_mutate]
+
+        # Apply the mutation procedure explained by Deb & Tiwari (2008).
+        delta_1 = (selected - lb) / (ub - lb)
+        delta_2 = (ub - selected) / (ub - lb)
+
+        r = self.problem.make_uniform(selected.size())
+        mask = r < 0.5
+        mask_not = torch.logical_not(mask)
+
+        mut_str = 1.0 / (self._eta + 1.0)
+        delta_q = torch.zeros_like(selected)
+
+        v = 2.0 * r + (1.0 - 2.0 * r) * (1.0 - delta_1).pow(self._eta + 1.0)
+        d = v.pow(mut_str) - 1.0
+        delta_q[mask] = d[mask]
+
+        v = 2.0 * (1.0 - r) + 2.0 * (r - 0.5) * (1.0 - delta_2).pow(self._eta + 1.0)
+        d = 1.0 - v.pow(mut_str)
+        delta_q[mask_not] = d[mask_not]
+
+        mutated = selected + delta_q * (ub - lb)
+
+        # Put the mutated decision values into the decision variables tensor stored within the `result` batch.
+        data[to_mutate] = mutated
+
+        # Prevent violations that could happen because of numerical errors.
+        data[:] = self._respect_bounds(data)
+
+        # Return the `result` batch.
         return result
 
 

@@ -1486,7 +1486,27 @@ def make_uniform(
         lb = torch.as_tensor(lb, dtype=out.dtype, device=out.device)
         ub = torch.as_tensor(ub, dtype=out.dtype, device=out.device)
 
-    if out.dtype in (torch.uint8, torch.int8, torch.int16, torch.int32, torch.int64):
+    if out.dtype == torch.bool:
+        out.random_(**gen_kwargs)
+        if (lb is None) and (ub is None):
+            pass  # nothing to do
+        elif (lb is not None) and (ub is not None):
+            _cast_bounds()
+            lb_shape_matches = lb.shape == out.shape
+            ub_shape_matches = ub.shape == out.shape
+            if (not lb_shape_matches) or (not ub_shape_matches):
+                all_false = torch.zeros_like(out)
+                if not lb_shape_matches:
+                    lb = lb | all_false
+                if not ub_shape_matches:
+                    ub = ub | all_false
+            mask_for_always_false = (~lb) & (~ub)
+            mask_for_always_true = lb & ub
+            out[mask_for_always_false] = False
+            out[mask_for_always_true] = True
+        else:
+            _invalid_bound_args()
+    elif out.dtype in (torch.uint8, torch.int8, torch.int16, torch.int32, torch.int64):
         out.random_(**gen_kwargs)
         if (lb is None) and (ub is None):
             out %= 2

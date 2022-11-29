@@ -2224,14 +2224,12 @@ class Problem(TensorMakerMixin, Serializable):
                 self._worst_evals[i_obj] = worst_score
                 self._worst[i_obj] = batch[worst_sln_index].clone()
 
-        result = {}
-
         if len(senses) == 1:
             return dict(
                 best=self._best[0],
                 worst=self._worst[0],
-                best_eval=float(self._best[0].evaluation),
-                worst_eval=float(self._worst[0].evaluation),
+                best_eval=float(self._best[0].evals[0]),
+                worst_eval=float(self._worst[0].evals[0]),
             )
         else:
             return {"best": self._best, "worst": self._worst}

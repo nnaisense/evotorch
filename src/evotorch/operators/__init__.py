@@ -13,81 +13,86 @@
 # limitations under the License.
 
 """
-This module provides various common operators
-to be used within evolutionary algorithms.
+This module provides various common operators to be used within evolutionary
+algorithms.
 
-Each operator is provided as a separate class,
-which is to be instantiated in this form:
+Each operator is provided as a separate class, which is to be instantiated in
+this form:
 
-    op = OperatorName(
-        problem,  # where problem is a Problem instance
-        hyperparameter1=...,
-        hyperparameter2=...,
-        ...
-    )
+```python
+op = OperatorName(
+    problem,  # where problem is a Problem instance
+    hyperparameter1=...,
+    hyperparameter2=...,
+    # ...
+)
+```
 
-Each operator has its `__call__(...)` method overriden
-so that it can be used like a function.
-For example, if the operator `op` instantiated above
-were a mutation operator, it would be used like this:
+Each operator has its `__call__(...)` method overriden so that it can be used
+like a function. For example, if the operator `op` instantiated above were a
+mutation operator, it would be used like this:
 
-    # Apply mutation on a SolutionBatch
-    mutated_solution = op(my_solution_batch)
+```python
+# Apply mutation on a SolutionBatch
+mutated_solution = op(my_solution_batch)
+```
 
-Please see the documentations of the provided operator
-classes for details about how to instantiate them,
-and how to call them.
+Please see the documentations of the provided operator classes for details
+about how to instantiate them, and how to call them.
 
-A common usage for the operators provided here is to
-use them with a genetic algorithm.
-More specifically, the SteadyStateGA algorithm provided
-within the namespace `evotorch.algorithms` needs
-to be configured so that it knows which cross-over operator
-and which mutation operator it should apply on the
-solutions. The way this is done is as follows:
+A common usage for the operators provided here is to use them with
+[GeneticAlgorithm][evotorch.algorithms.ga.GeneticAlgorithm], as shown below:
 
-    import evotorch.algorithms as ea
-    import evotorch.operators as eo
+```python
+from evotorch.algorithms import GeneticAlgorithm
+from evotorch.operators import SimulatedBinaryCrossOver, GaussianMutation
 
-    problem = ...   # initialize the Problem
+problem = ...  # initialize the Problem
 
-    ga = ea.SteadyStateGA(problem, popsize=...)
-
-    # Configure the genetic algorithm to use
-    # simulated binary cross-over
-    ga.use(
-        eo.SimulatedBinaryCrossOver(
+ga = GeneticAlgorithm(
+    problem,
+    operators=[
+        SimulatedBinaryCrossOver(
             problem,
             tournament_size=...,
             cross_over_rate=...,
-            eta=...
-        )
-    )
-
-    # Configure the genetic algorithm to use
-    # Gaussian mutation
-    ga.use(
-        eo.GaussianMutation(
+            eta=...,
+        ),
+        GaussianMutation(
             problem,
-            stdev=...
-        )
-    )
+            stdev=...,
+        ),
+    ],
+    popsize=...,
+)
+```
 """
 
 __all__ = (
     "CopyingOperator",
-    "CrossOver",
-    "Operator",
-    "SingleObjOperator",
     "CosynePermutation",
-    "GaussianMutation",
-    "OnePointCrossOver",
-    "SimulatedBinaryCrossOver",
+    "CrossOver",
     "CutAndSplice",
+    "GaussianMutation",
+    "MultiPointCrossOver",
+    "OnePointCrossOver",
+    "Operator",
+    "PolynomialMutation",
+    "SimulatedBinaryCrossOver",
+    "SingleObjOperator",
+    "TwoPointCrossOver",
 )
 
 
 from . import base, real, sequence
 from .base import CopyingOperator, CrossOver, Operator, SingleObjOperator
-from .real import CosynePermutation, GaussianMutation, OnePointCrossOver, SimulatedBinaryCrossOver
+from .real import (
+    CosynePermutation,
+    GaussianMutation,
+    MultiPointCrossOver,
+    OnePointCrossOver,
+    PolynomialMutation,
+    SimulatedBinaryCrossOver,
+    TwoPointCrossOver,
+)
 from .sequence import CutAndSplice
