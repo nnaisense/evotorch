@@ -62,7 +62,7 @@ class SupervisedNE(NEProblem):
         initial_bounds: Optional[BoundsPairLike] = (-0.00001, 0.00001),
         minibatch_size: Optional[int] = None,
         num_minibatches: Optional[int] = None,
-        num_actors: Optional[Union[int, str]] = "num_devices",
+        num_actors: Optional[Union[int, str]] = None,
         common_minibatch: bool = True,
         num_gpus_per_actor: Optional[Union[int, float, str]] = None,
         actor_config: Optional[dict] = None,

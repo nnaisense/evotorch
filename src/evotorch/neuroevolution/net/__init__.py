@@ -15,33 +15,34 @@
 """Utility classes and functions for neural networks"""
 
 __all__ = (
-    "count_parameters",
-    "fill_parameters",
-    "parameter_vector",
-    "device_of_module",
-    "layers",
-    "misc",
-    "rl",
-    "vecrl",
-    "multilayered",
-    "MultiLayered",
-    "statefulmodule",
-    "StatefulModule",
-    "parser",
-    "str_to_net",
-    "Policy",
-    "RunningStat",
-    "RunningNorm",
-    "functional",
     "ModuleExpectingFlatParameters",
+    "MultiLayered",
+    "NetParsingError",
+    "Policy",
+    "RunningNorm",
+    "RunningStat",
+    "StatefulModule",
+    "count_parameters",
+    "device_of_module",
+    "fill_parameters",
+    "functional",
+    "layers",
     "make_functional_module",
+    "misc",
+    "multilayered",
+    "parameter_vector",
+    "parser",
+    "rl",
+    "statefulmodule",
+    "str_to_net",
+    "vecrl",
 )
 
 from . import functional, layers, misc, multilayered, parser, rl, statefulmodule, vecrl
 from .functional import ModuleExpectingFlatParameters, make_functional_module
 from .misc import count_parameters, device_of_module, fill_parameters, parameter_vector
 from .multilayered import MultiLayered
-from .parser import str_to_net
+from .parser import NetParsingError, str_to_net
 from .runningnorm import RunningNorm
 from .runningstat import RunningStat
 from .statefulmodule import StatefulModule

@@ -16,7 +16,9 @@
 
 import functools
 import inspect
+import logging
 import math
+import sys
 from collections.abc import Mapping
 from numbers import Integral, Number, Real
 from typing import Any, Callable, Dict, Iterable, NamedTuple, Optional, Type, Union
@@ -1921,3 +1923,114 @@ def pass_info_if_needed(f: Callable, info: Dict[str, Any]) -> Callable:
         return functools.partial(f, **info)
     else:
         return f
+
+
+def set_default_logger_config(
+    logger_name: str = "evotorch",
+    logger_level: int = logging.INFO,
+    show_process: bool = True,
+    show_lineno: bool = False,
+    override: bool = False,
+):
+    """
+    Configure the "EvoTorch" Python logger to print to the console with default format.
+
+    The logger will be configured to print to all messages with level INFO or lower to stdout and all
+    messages with level WARNING or higher to stderr.
+
+    The default format is:
+    ```
+    [2022-11-23 22:28:47] INFO     <75935>   evotorch:      This is a log message
+    {asctime}             {level}  {process} {logger_name}: {message}
+    ```
+    The format can be slightly customized by passing `show_process=False` to hide Process ID or `show_lineno=True` to
+    show the filename and line number of the log message instead of the Logger Name.
+
+    This function should be called before any other logging is performed, otherwise the default configuration will
+    not be applied. If the logger is already configured, this function will do nothing unless `override=True` is passed,
+    in which case the logger will be reconfigured.
+
+    Args:
+        logger_name: Name of the logger to configure.
+        logger_level: Level of the logger to configure.
+        show_process: Whether to show the process name in the log message.
+        show_lineno: Whether to show the filename with the line number in the log message or just the name of the logger.
+        override: Whether to override the logger configuration if it has already been configured.
+    """
+    logger = logging.getLogger(logger_name)
+
+    if not override and logger.hasHandlers():
+        # warn user that the logger is already configured
+        logger.warning(
+            "The logger is already configured. "
+            "The default configuration will not be applied. "
+            "Call `set_default_logger_config` with `override=True` to override the current configuration."
+        )
+        return
+    elif override:
+        # remove all handlers
+        for handler in logger.handlers:
+            logger.removeHandler(handler)
+
+    logger.setLevel(logger_level)
+
+    formatter = logging.Formatter(
+        "[{asctime}] "
+        + "{levelname:<8s} "
+        + ("<{process:5d}> " if show_process else "")
+        + ("{filename}:{lineno}: " if show_lineno else "{name}: ")
+        + "{message}",
+        datefmt="%Y-%m-%d %H:%M:%S",
+        style="{",
+    )
+
+    _stdout_handler = logging.StreamHandler(sys.stdout)
+    _stdout_handler.addFilter(lambda log_record: log_record.levelno < logging.WARNING)
+    _stdout_handler.setFormatter(formatter)
+    logger.addHandler(_stdout_handler)
+
+    _stderr_handler = logging.StreamHandler(sys.stderr)
+    _stderr_handler.addFilter(lambda log_record: log_record.levelno >= logging.WARNING)
+    _stderr_handler.setFormatter(formatter)
+    logger.addHandler(_stderr_handler)
+
+
+def message_from(sender: object, message: Any) -> str:
+    """
+    Prepend the sender object's name and id to a string message.
+
+    Let us imagine that we have a class named `Example`:
+
+    ```python
+    from evotorch.tools import message_from
+
+
+    class Example:
+        def say_hello(self):
+            print(message_from(self, "Hello!"))
+    ```
+
+    Let us now instantiate this class and use its `say_hello` method:
+
+    ```python
+    ex = Example()
+    ex.say_hello()
+    ```
+
+    The output becomes something like this:
+
+    ```
+    Instance of `Example` (id:...) -- Hello!
+    ```
+
+    Args:
+        sender: The object which produces the message
+        message: The message, as something that can be converted to string
+    Returns:
+        The new message string, with the details regarding the sender object
+        inserted to the beginning.
+    """
+    sender_type = type(sender).__name__
+    sender_id = id(sender)
+
+    return f"Instance of `{sender_type}` (id:{sender_id}) -- {message}"

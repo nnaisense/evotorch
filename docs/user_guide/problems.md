@@ -2,7 +2,7 @@
 
 ## Basic Usage
 
-One of the most important components of EvoTorch is the definition of problems. To define problems, we use the [Problem][evotorch.core.Problem] class, which provides various advanced functionality, including vectorisation, GPU usage, [Ray](https://www.ray.io/) parallelisation and variable population sizes, out of the box. The most basic usage of the [Problem][evotorch.core.Problem] class is simply to pass to it a function to minimize or maximize. In the following documentation, we will focus on minimization of the Sphere function
+One of the most important components of EvoTorch is the definition of problems. To define problems, we use the [Problem][evotorch.core.Problem] class, which provides various advanced functionality, including vectorization, GPU usage, [Ray](https://www.ray.io/) parallelisation and variable population sizes, out of the box. The most basic usage of the [Problem][evotorch.core.Problem] class is simply to pass to it a function to minimize or maximize. In the following documentation, we will focus on minimization of the Sphere function
 
 \[
 f(x) = \sum_{i=1}^d x_i^2.
@@ -49,28 +49,34 @@ problem = Problem(
 )
 ```
 
-## Vectorising Problems
+## Vectorizing Problems
 
-One of the most straight-forward ways to accelerate evolution is to use *vectorised* problems. In a typical EA implementation, the population is stored as a list of vectors, so that fitnesses can be evaluated with a simple `for` loop
+One of the most straight-forward ways to accelerate evolution is to use *vectorized* problems. In a typical EA implementation, the population is stored as a list of vectors, so that fitnesses can be evaluated with a simple `for` loop
 
 ```python
 fitnesses = [f(x) for x in population]
 ```
 
-In EvoTorch, the population is stored as a `torch` tensor of shape $N \times d$ (or, to use the PyTorch notation, of shape `torch.Size([N, d])`) where $N$ is the population size and $d$ is the problem dimensionality. If it is possible to define a fitness function that can evaluate *all* $N$ solutions at once, as is often possible when the fitness function is defined in terms of PyTorch operators, then significant speedups can be achieved by letting the low-level C implementation of PyTorch do much of the work. To demonstrate this, let's vectorise the `sphere` function from earlier:
+In EvoTorch, the population is stored as a `torch` tensor of shape $N \times d$ (or, to use the PyTorch notation, of shape `torch.Size([N, d])`) where $N$ is the population size and $d$ is the problem dimensionality. If it is possible to define a fitness function that can evaluate *all* $N$ solutions at once, as is often possible when the fitness function is defined in terms of PyTorch operators, then significant speedups can be achieved by letting the low-level C implementation of PyTorch do much of the work. To demonstrate this, let's vectorize the `sphere` function from earlier:
 
 ```python
-def vectorised_sphere(xs: torch.Tensor) -> torch.Tensor:
+from evotorch.decorators import vectorized
+
+
+@vectorized
+def vectorized_sphere(xs: torch.Tensor) -> torch.Tensor:
     return torch.sum(xs.pow(2.0), dim=-1)
 ```
 
-By specifying that we want to sum across the last dimension, we return an $N$ dimensional vector of fitnesses, rather than a single fitness value. Using this new vectorised function is as simple as using the `vectorized` flag in the instantiation of the [Problem][evotorch.core.Problem].
+By specifying that we want to sum across the last dimension (via `dim=-1`), we return an $N$ dimensional vector of fitnesses, rather than a single fitness value.
+The decorator @[vectorized][evotorch.decorators.vectorized] informs the [Problem][evotorch.core.Problem] instance that this fitness function is vectorized, and therefore expects to receive multiple solutions and returns fitnesses for all those solutions.
+
+We are now ready to make our problem description around our vectorized fitness function:
 
 ```python
 problem = Problem(
     objective_sense="min",
-    objective_func=vectorised_sphere,
-    vectorized=True,
+    objective_func=vectorized_sphere,
     solution_length=10,
     initial_bounds=(-1, 1),
 )
@@ -145,9 +151,9 @@ Let's break down what is happening in the `_evaluate` method definition.
 
 For more detail on interacting with [Solution][evotorch.core.Solution] instances, please refer to [the relevant advanced usage guide](../advanced_usage/solution_batch.md).
 
-## Vectorising Custom Problems
+## Vectorizing Custom Problems
 
-Much like the base [Problem][evotorch.core.Problem] class, it is straight-forward to introduce fitness vectorisation when creating a custom [Problem][evotorch.core.Problem] class. To do this, we simply override the `_evaluate_batch` method, rather than the `_evaluate` method.
+Much like the base [Problem][evotorch.core.Problem] class, it is straight-forward to introduce fitness vectorization when creating a custom [Problem][evotorch.core.Problem] class. To do this, we simply override the `_evaluate_batch` method, rather than the `_evaluate` method.
 
 ```python
 from evotorch import SolutionBatch
@@ -187,8 +193,7 @@ One way to accelerate solution evaluation is to use CUDA-capable devices to comp
 ```python
 problem = Problem(
     objective_sense="min",
-    objective_func=vectorised_sphere,
-    vectorized=True,
+    objective_func=vectorized_sphere,
     solution_length=10,
     initial_bounds=(-1, 1),
     dtype=torch.float16,

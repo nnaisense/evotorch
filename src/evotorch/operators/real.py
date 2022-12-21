@@ -37,7 +37,7 @@ class GaussianMutation(CopyingOperator):
         available for free at http://cs.gmu.edu/~sean/book/metaheuristics/
     """
 
-    def __init__(self, problem: Problem, *, stdev: float, mutation_probability: Optional[float] = 1.0):
+    def __init__(self, problem: Problem, *, stdev: float, mutation_probability: Optional[float] = None):
         """
         `__init__(...)`: Initialize the GaussianMutation.
 
@@ -47,13 +47,13 @@ class GaussianMutation(CopyingOperator):
                 each decision variable.
             mutation_probability: The probability of mutation, for each
                 decision variable.
-                By default, the value of this argument is 1.0, which means
+                If None, the value of this argument becomes 1.0, which means
                 that all of the decision variables will be affected by the
-                mutation.
+                mutation. Defatuls to None
         """
 
         super().__init__(problem)
-        self._mutation_probability = float(mutation_probability)
+        self._mutation_probability = 1.0 if mutation_probability is None else float(mutation_probability)
         self._stdev = float(stdev)
 
     @torch.no_grad()

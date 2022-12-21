@@ -87,7 +87,7 @@ class GymNE(NEProblem):
         decrease_rewards_by: Optional[float] = None,
         alive_bonus_schedule: Optional[tuple] = None,
         action_noise_stdev: Optional[float] = None,
-        num_actors: Optional[Union[int, str]] = "max",
+        num_actors: Optional[Union[int, str]] = None,
         actor_config: Optional[dict] = None,
         num_subbatches: Optional[int] = None,
         subbatch_size: Optional[int] = None,
@@ -182,9 +182,6 @@ class GymNE(NEProblem):
                 an actor will be created on each available CPU.
                 When the parallelization is enabled each actor will have its
                 own instance of the `gym` environment.
-                In the case of `GymNE`, the default value for this argument
-                is "max", which means there will be full parallelization,
-                utilizing all the available CPUs.
             actor_config: A dictionary, representing the keyword arguments
                 to be passed to the options(...) used when creating the
                 ray actor objects. To be used for explicitly allocating
