@@ -33,7 +33,23 @@ from .core import Problem, Solution, SolutionBatch
 
 # isort: on
 
+import logging
+
 from . import algorithms, decorators, distributions, logging, neuroevolution, optimizers, testing
+
+# Set verbosity level of EvoTorch
+
+_env_verbose_level = str(os.getenv("EVOTORCH_VERBOSE_LEVEL", "1"))
+_verbose_level = {
+    "0": logging.WARNING,
+    "1": logging.INFO,
+    "2": logging.DEBUG,
+}.get(_env_verbose_level)
+
+if _verbose_level:
+    tools.misc.set_default_logger_config(logger_level=_verbose_level)
+else:
+    logging.getLogger("evotorch").warning(f"Unknown value passed to EVOTORCH_VERBOSE_LEVEL ({_env_verbose_level}).")
 
 __all__ = (
     "__version__",
