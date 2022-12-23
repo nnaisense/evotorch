@@ -51,8 +51,9 @@ Various evolutionary computation algorithms are available in EvoTorch:
     - **SNES:** Separable Natural Evolution Strategies.
     - **CEM:** Cross Entropy Method.
 - **Population-based search algorithms:**
-    - **SteadyStateGA:** A fully elitist genetic algorithm implementation. Also supports multiple objectives, in which case it behaves like **NSGA-II**.
+    - **GeneticAlgorithm:** A genetic algorithm implementation. Also supports multiple objectives, in which case it behaves like **NSGA-II**.
     - **CoSyNE:** Cooperative Synapse Neuroevolution.
+    - **MAPElites:** Multi-dimensional Archive of Phenotypic Elites
 
 Since all of these algorithms are implemented in PyTorch, they benefit from use of vectorization and parallelization on GPUs, drastically speeding up optimization when GPUs are available.
 Using [Ray](https://github.com/ray-project/ray), EvoTorch scales these algorithms even further by splitting the workload across:
@@ -179,4 +180,5 @@ More examples can be found [here](examples/).
 - [Nihat Engin Toklu](https://github.com/engintoklu)
 - [Timothy Atkinson](https://github.com/NaturalGradient)
 - [Vojtech Micka](https://github.com/Higgcz)
+- [Pawel Liskowski](https://github.com/pliskowski)
 - [Rupesh Kumar Srivastava](https://github.com/flukeskywalker)
