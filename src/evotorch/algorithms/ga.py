@@ -691,8 +691,8 @@ class SteadyStateGA(GeneticAlgorithm):
         self,
         problem: Problem,
         *,
-        operators: Iterable,
         popsize: int,
+        operators: Optional[Iterable] = None,
         elitist: bool = True,
         re_evaluate: bool = True,
         re_evaluate_parents_first: Optional[bool] = None,
@@ -702,14 +702,16 @@ class SteadyStateGA(GeneticAlgorithm):
 
         Args:
             problem: The problem to optimize.
-            operators: Operators to be used by the genetic algorithm.
-                Expected as an iterable, such as a list or a tuple.
-                Each item within this iterable object is expected either
-                as an instance of [Operator][evotorch.operators.base.Operator],
+            operators: Optionally, an iterable of operators to be used by the
+                genetic algorithm. Each item within this iterable object is
+                expected either as an instance of
+                [Operator][evotorch.operators.base.Operator],
                 or as a function which receives the decision values of
                 multiple solutions in a PyTorch tensor (or in an
                 [ObjectArray][evotorch.tools.objectarray.ObjectArray]
                 for when dtype is `object`) and returns a modified copy.
+                If this is omitted, then it will be required to specify the
+                operators via the `use(...)` method.
             popsize: Population size.
             elitist: Whether or not this genetic algorithm will behave in an
                 elitist manner. This argument controls how the genetic
