@@ -215,11 +215,11 @@ class MAPElites(SearchAlgorithm, SinglePopulationAlgorithmMixin, ExtendedPopulat
 
     ```python
     hypergrid = MAPElites.make_feature_grid(
-        lower_bound=[
+        lower_bounds=[
             global_lower_bound_for_feat0,
             global_lower_bound_for_feat1,
         ],
-        upper_bound=[
+        upper_bounds=[
             global_upper_bound_for_feat0,
             global_upper_bound_for_feat1,
         ],
@@ -399,8 +399,8 @@ class MAPElites(SearchAlgorithm, SinglePopulationAlgorithmMixin, ExtendedPopulat
 
     @staticmethod
     def make_feature_grid(
-        lower_bound: Iterable,
-        upper_bound: Iterable,
+        lower_bounds: Iterable,
+        upper_bounds: Iterable,
         num_bins: Union[int, torch.Tensor],
         *,
         device: Optional[Device] = None,
@@ -424,11 +424,11 @@ class MAPElites(SearchAlgorithm, SinglePopulationAlgorithmMixin, ExtendedPopulat
         [MAPElites][evotorch.algorithms.mapelites.MAPElites].
 
         Args:
-            lower_bound: The lower bounds, as a 1-dimensional sequence of numbers.
+            lower_bounds: The lower bounds, as a 1-dimensional sequence of numbers.
                 The length of this sequence must be equal to the number of
                 features, and the i-th element must express the lower bound
                 of the i-th feature.
-            upper_bound: The upper bounds, as a 1-dimensional sequence of numbers.
+            upper_bounds: The upper bounds, as a 1-dimensional sequence of numbers.
                 The length of this sequence must be equal to the number of
                 features, and the i-th element must express the upper bound
                 of the i-th feature.
@@ -450,45 +450,45 @@ class MAPElites(SearchAlgorithm, SinglePopulationAlgorithmMixin, ExtendedPopulat
         has_casting = len(cast_args) > 0
 
         if has_casting:
-            lower_bound = torch.as_tensor(lower_bound, **cast_args)
-            upper_bound = torch.as_tensor(upper_bound, **cast_args)
+            lower_bounds = torch.as_tensor(lower_bounds, **cast_args)
+            upper_bounds = torch.as_tensor(upper_bounds, **cast_args)
 
-        if (not isinstance(lower_bound, torch.Tensor)) or (not isinstance(upper_bound, torch.Tensor)):
+        if (not isinstance(lower_bounds, torch.Tensor)) or (not isinstance(upper_bounds, torch.Tensor)):
             raise TypeError(
                 f"While preparing the map elites hypergrid with device={device} and dtype={dtype},"
-                f"`lower_bound` and `upper_bound` were expected as tensors, but their types are different."
-                f" The type of `lower_bound` is {type(lower_bound)}."
-                f" The type of `upper_bound` is {type(upper_bound)}."
+                f"`lower_bounds` and `upper_bounds` were expected as tensors, but their types are different."
+                f" The type of `lower_bounds` is {type(lower_bounds)}."
+                f" The type of `upper_bounds` is {type(upper_bounds)}."
             )
 
-        if lower_bound.device != upper_bound.device:
+        if lower_bounds.device != upper_bounds.device:
             raise ValueError(
                 f"Cannot determine on which device to place the map elites grid,"
-                f" because `lower_bound` and `upper_bound` are on different devices."
-                f" The device of `lower_bound` is {lower_bound.device}."
-                f" The device of `upper_bound` is {upper_bound.device}."
+                f" because `lower_bounds` and `upper_bounds` are on different devices."
+                f" The device of `lower_bounds` is {lower_bounds.device}."
+                f" The device of `upper_bounds` is {upper_bounds.device}."
             )
 
-        if lower_bound.dtype != upper_bound.dtype:
+        if lower_bounds.dtype != upper_bounds.dtype:
             raise ValueError(
                 f"Cannot determine the dtype of the map elites grid,"
-                f" because `lower_bound` and `upper_bound` have different dtypes."
-                f" The dtype of `lower_bound` is {lower_bound.dtype}."
-                f" The dtype of `upper_bound` is {upper_bound.dtype}."
+                f" because `lower_bounds` and `upper_bounds` have different dtypes."
+                f" The dtype of `lower_bounds` is {lower_bounds.dtype}."
+                f" The dtype of `upper_bounds` is {upper_bounds.dtype}."
             )
 
-        if lower_bound.size() != upper_bound.size():
-            raise ValueError("`lower_bound` and `upper_bound` have incompatible shapes")
+        if lower_bounds.size() != upper_bounds.size():
+            raise ValueError("`lower_bounds` and `upper_bounds` have incompatible shapes")
 
-        if lower_bound.dim() != 1:
-            raise ValueError("Only 1D tensors are supported for `lower_bound` and for `upper_bound`")
+        if lower_bounds.dim() != 1:
+            raise ValueError("Only 1D tensors are supported for `lower_bounds` and for `upper_bounds`")
 
-        dtype = lower_bound.dtype
-        device = lower_bound.device
+        dtype = lower_bounds.dtype
+        device = lower_bounds.device
 
         num_bins = torch.as_tensor(num_bins, dtype=torch.int64, device=device)
         if num_bins.dim() == 0:
-            num_bins = num_bins.expand(lower_bound.size())
+            num_bins = num_bins.expand(lower_bounds.size())
 
         p_inf = torch.tensor([float("inf")], dtype=dtype, device=device)
         n_inf = torch.tensor([float("-inf")], dtype=dtype, device=device)
@@ -498,5 +498,5 @@ class MAPElites(SearchAlgorithm, SinglePopulationAlgorithmMixin, ExtendedPopulat
             sp = torch.cat((n_inf, sp, p_inf))
             return sp.unfold(dimension=0, size=2, step=1).unsqueeze(1)
 
-        f_grids = [_make_feature_grid(*bounds) for bounds in zip(lower_bound, upper_bound, num_bins)]
+        f_grids = [_make_feature_grid(*bounds) for bounds in zip(lower_bounds, upper_bounds, num_bins)]
         return torch.stack([torch.cat(c) for c in itertools.product(*f_grids)])

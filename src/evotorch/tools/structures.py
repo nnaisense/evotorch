@@ -22,6 +22,7 @@ contiguous and therefore vectorization-friendly.
 from collections import namedtuple
 from numbers import Number
 from typing import Any, Iterable, Optional, Union
+from .misc import to_torch_dtype, DType, Device
 
 import torch
 
@@ -280,8 +281,8 @@ class CMemory:
         batch_size: Optional[Union[int, tuple, list]] = None,
         batch_shape: Optional[Union[int, tuple, list]] = None,
         fill_with: Optional[Numbers] = None,
-        dtype: Optional[torch.dtype] = None,
-        device: Optional[torch.device] = None,
+        dtype: Optional[DType] = None,
+        device: Optional[Device] = None,
         verify: bool = True,
     ):
         """
@@ -332,7 +333,7 @@ class CMemory:
                 that there are no indexing errors. Can be set as False for
                 performance.
         """
-        self._dtype = torch.float32 if dtype is None else dtype
+        self._dtype = torch.float32 if dtype is None else to_torch_dtype(dtype)
         self._device = torch.device("cpu") if device is None else torch.device(device)
         self._verify = bool(verify)
 
@@ -1129,8 +1130,8 @@ class CDict(Structure):
         key_offset: Optional[Union[int, tuple, list]] = None,
         batch_size: Optional[Union[int, tuple, list]] = None,
         batch_shape: Optional[Union[int, tuple, list]] = None,
-        dtype: Optional[torch.dtype] = None,
-        device: Optional[torch.device] = None,
+        dtype: Optional[DType] = None,
+        device: Optional[Device] = None,
         verify: bool = True,
     ):
         """
@@ -1583,8 +1584,8 @@ class CList(Structure):
         max_length: int,
         batch_size: Optional[Union[int, tuple, list]] = None,
         batch_shape: Optional[Union[int, tuple, list]] = None,
-        dtype: Optional[torch.dtype] = None,
-        device: Optional[Union[str, torch.device]] = None,
+        dtype: Optional[DType] = None,
+        device: Optional[Device] = None,
         verify: bool = True,
     ):
         self._verify = bool(verify)
@@ -2006,9 +2007,9 @@ class CList(Structure):
         """
         is_empty = self._is_empty()
         is_full = self._is_full()
-        result = (self._end[self._all_zeros] - self._begin[self._all_zeros]) + 1
+        result = ((self._end[self._all_zeros] - self._begin[self._all_zeros]) % self._max_length) + 1
         result[is_empty] = 0
-        result[is_full] = self._max_length - 1
+        result[is_full] = self._max_length
         return result
 
     @property
@@ -2298,8 +2299,8 @@ class CBag(Structure):
         batch_size: Optional[Union[int, tuple, list]] = None,
         batch_shape: Optional[Union[int, tuple, list]] = None,
         generator: Any = None,
-        dtype: Optional[torch.dtype] = None,
-        device: Optional[Union[str, torch.device]] = None,
+        dtype: Optional[DType] = None,
+        device: Optional[Device] = None,
         verify: bool = True,
     ):
         """
@@ -2338,6 +2339,7 @@ class CBag(Structure):
         if dtype is None:
             dtype = torch.int64
         else:
+            dtype = to_torch_dtype(dtype)
             if dtype not in (torch.int16, torch.int32, torch.int64):
                 raise RuntimeError(
                     f"CBag currently supports only torch.int16, torch.int32, and torch.int64."

@@ -503,7 +503,7 @@ class PolynomialMutation(CopyingOperator):
         problem: Problem,
         *,
         eta: Optional[float] = None,
-        prob: Optional[float] = None,
+        mutation_probability: Optional[float] = None,
     ):
         """
         `__init__(...)`: Initialize the PolynomialMutation.
@@ -514,8 +514,8 @@ class PolynomialMutation(CopyingOperator):
                 probability for creating near-parent solutions, whereas a small
                 value allows distant solutions to be created.
                 If not specified, `eta` will be assumed as 20.0.
-            prob: The probability of mutation, for each decision variable.
-                If not specified, all variables will be mutated.
+            mutation_probability: The probability of mutation, for each decision
+                variable. If not specified, all variables will be mutated.
         """
 
         super().__init__(problem)
@@ -537,7 +537,7 @@ class PolynomialMutation(CopyingOperator):
         if torch.any(self.problem.lower_bounds > self.problem.upper_bounds):
             raise ValueError("Some of the `lower_bounds` appear greater than their `upper_bounds`")
 
-        self._prob = None if prob is None else float(prob)
+        self._prob = None if mutation_probability is None else float(mutation_probability)
         self._eta = 20.0 if eta is None else float(eta)
         self._lb = self.problem.lower_bounds
         self._ub = self.problem.upper_bounds
@@ -552,7 +552,7 @@ class PolynomialMutation(CopyingOperator):
         data = result.access_values()
 
         # Take the population size
-        pop_size, _ = data.size()
+        pop_size, solution_length = data.size()
 
         if self._prob is None:
             # If a probability of mutation is not given, then we prepare our mutation mask (`to_mutate`) as a tensor
@@ -569,8 +569,8 @@ class PolynomialMutation(CopyingOperator):
 
         # Obtain flattened (1-dimensional) lower and upper bound tensors such that `lb[i]` and `ub[i]` specify the
         # bounds for `selected[i]`.
-        lb = self._lb.expand(pop_size, -1)[to_mutate]
-        ub = self._ub.expand(pop_size, -1)[to_mutate]
+        lb = self._lb.expand(pop_size, solution_length)[to_mutate]
+        ub = self._ub.expand(pop_size, solution_length)[to_mutate]
 
         # Apply the mutation procedure explained by Deb & Tiwari (2008).
         delta_1 = (selected - lb) / (ub - lb)
