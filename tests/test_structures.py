@@ -13,11 +13,12 @@
 # limitations under the License.
 
 
-from evotorch.tools.structures import CBag, CDict, CList, CMemory
+from typing import Type
 
 import pytest
 import torch
-from typing import Type
+
+from evotorch.tools.structures import CBag, CDict, CList, CMemory
 
 
 def test_cmemory():
