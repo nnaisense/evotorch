@@ -22,9 +22,10 @@ contiguous and therefore vectorization-friendly.
 from collections import namedtuple
 from numbers import Number
 from typing import Any, Iterable, Optional, Union
-from .misc import to_torch_dtype, DType, Device
 
 import torch
+
+from .misc import Device, DType, to_torch_dtype
 
 Numbers = Union[Number, Iterable[Number]]
 

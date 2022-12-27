@@ -13,6 +13,13 @@
 # limitations under the License.
 
 
+import itertools
+from collections import namedtuple
+from typing import Type
+
+import pytest
+import torch
+
 from evotorch import Problem, SolutionBatch
 from evotorch.algorithms import GeneticAlgorithm, MAPElites, SteadyStateGA
 from evotorch.operators import (
@@ -23,14 +30,7 @@ from evotorch.operators import (
     SimulatedBinaryCrossOver,
     TwoPointCrossOver,
 )
-from evotorch.tools import DType, to_torch_dtype, make_uniform
-
-from collections import namedtuple
-import itertools
-import pytest
-import torch
-from typing import Type
-
+from evotorch.tools import DType, make_uniform, to_torch_dtype
 
 OperatorInfo = namedtuple("OperatorInfo", ["operator_type", "operator_kwargs"])
 
@@ -250,7 +250,7 @@ class Helpers:
             SteadyStateGA,
             MAPElites,
         ],
-    )
+    ),
 )
 def test_ga(dtype: DType, ga_type: Type):
     # Obtain a list of operator suggestions from the problem object
