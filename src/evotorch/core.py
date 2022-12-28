@@ -4623,6 +4623,7 @@ class Solution(Serializable):
                     f"The argument `eval_data` was expected as a 1-dimensional sequence."
                     f" However, the shape of `eval_data` is {eval_data.shape}."
                 )
+            eval_data = eval_data.reshape(1, -1)
 
         self._batch.set_evals(evals, eval_data)
 
