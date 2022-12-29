@@ -30,7 +30,7 @@ repos:
             - flake8-docstrings==1.6.0
 
   - repo: https://github.com/PyCQA/isort
-    rev: v5.11.3
+    rev: 5.11.4
     hooks:
       - id: isort
 
