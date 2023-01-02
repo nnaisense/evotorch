@@ -41,15 +41,16 @@ from . import algorithms, decorators, distributions, logging, neuroevolution, op
 
 _env_verbose_level = str(os.getenv("EVOTORCH_VERBOSE_LEVEL", "1"))
 _verbose_level = {
+    "-1": -1,
     "0": _py_logging.WARNING,
     "1": _py_logging.INFO,
     "2": _py_logging.DEBUG,
 }.get(_env_verbose_level)
 
-if _verbose_level:
-    tools.misc.set_default_logger_config(logger_level=_verbose_level)
-else:
+if _verbose_level is None:
     _py_logging.getLogger("evotorch").warning(f"Unknown value passed to EVOTORCH_VERBOSE_LEVEL ({_env_verbose_level}).")
+elif _verbose_level >= 0:
+    tools.misc.set_default_logger_config(logger_level=_verbose_level)
 
 __all__ = (
     "__version__",
