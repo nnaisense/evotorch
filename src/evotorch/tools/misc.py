@@ -1973,6 +1973,7 @@ def set_default_logger_config(
             logger.removeHandler(handler)
 
     logger.setLevel(logger_level)
+    logger.propagate = False
 
     formatter = logging.Formatter(
         "[{asctime}] "
