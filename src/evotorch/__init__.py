@@ -33,7 +33,7 @@ from .core import Problem, Solution, SolutionBatch
 
 # isort: on
 
-import logging
+import logging as _py_logging
 
 from . import algorithms, decorators, distributions, logging, neuroevolution, optimizers, testing
 
@@ -41,15 +41,15 @@ from . import algorithms, decorators, distributions, logging, neuroevolution, op
 
 _env_verbose_level = str(os.getenv("EVOTORCH_VERBOSE_LEVEL", "1"))
 _verbose_level = {
-    "0": logging.WARNING,
-    "1": logging.INFO,
-    "2": logging.DEBUG,
+    "0": _py_logging.WARNING,
+    "1": _py_logging.INFO,
+    "2": _py_logging.DEBUG,
 }.get(_env_verbose_level)
 
 if _verbose_level:
     tools.misc.set_default_logger_config(logger_level=_verbose_level)
 else:
-    logging.getLogger("evotorch").warning(f"Unknown value passed to EVOTORCH_VERBOSE_LEVEL ({_env_verbose_level}).")
+    _py_logging.getLogger("evotorch").warning(f"Unknown value passed to EVOTORCH_VERBOSE_LEVEL ({_env_verbose_level}).")
 
 __all__ = (
     "__version__",
