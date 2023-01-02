@@ -14,25 +14,16 @@
 
 """
 This namespace contains the implementations of various
-evolutionary algorithms.
+restart mechanisms
 """
 
 __all__ = (
-    "CMAES",
-    "PyCMAES",
-    "CEM",
-    "PGPE",
-    "SNES",
-    "XNES",
-    "SteadyStateGA",
-    "SearchAlgorithm",
-    "Cosyne",
+    "Restart",
+    "ModifyingRestart",
+    "IPOP",
 )
 
 
-from . import cmaes, distributed, ga, pycmaes, searchalgorithm
-from .cmaes import CMAES
-from .distributed import CEM, PGPE, SNES, XNES
-from .ga import Cosyne, SteadyStateGA
-from .pycmaes import PyCMAES
-from .searchalgorithm import SearchAlgorithm
+from . import modify_restart, restart
+from .modify_restart import IPOP, ModifyingRestart
+from .restart import Restart

@@ -441,6 +441,11 @@ class SearchAlgorithm(LazyReporter):
         """
         self._first_step_datetime = None
 
+    @property
+    def is_terminated(self) -> bool:
+        """Whether the algorithm is in a terminal state"""
+        return False
+
 
 class SinglePopulationAlgorithmMixin:
     """
