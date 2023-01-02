@@ -15,7 +15,7 @@
 import torch
 
 from evotorch import Problem
-from evotorch.algorithms import SteadyStateGA
+from evotorch.algorithms import GeneticAlgorithm
 from evotorch.logging import StdOutLogger
 from evotorch.operators import GaussianMutation, SimulatedBinaryCrossOver
 
@@ -41,9 +41,14 @@ problem = Problem(
 )
 
 # Run a GA similar to NSGA-II for 100 steps and log results to standard output every 10 steps
-searcher = SteadyStateGA(problem, popsize=200)
-searcher.use(SimulatedBinaryCrossOver(problem, tournament_size=4, cross_over_rate=1.0, eta=8))
-searcher.use(GaussianMutation(problem, stdev=0.03))
+searcher = GeneticAlgorithm(
+    problem,
+    popsize=200,
+    operators=[
+        SimulatedBinaryCrossOver(problem, tournament_size=4, cross_over_rate=1.0, eta=8),
+        GaussianMutation(problem, stdev=0.03),
+    ],
+)
 logger = StdOutLogger(searcher, interval=10)
 
 searcher.run(100)
