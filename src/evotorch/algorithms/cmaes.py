@@ -106,7 +106,7 @@ class CMAES(SearchAlgorithm, SinglePopulationAlgorithmMixin):
         self,
         problem: Problem,
         *,
-        stepsize_init: Real,
+        stdev_init: Real,
         popsize: Optional[int] = None,
         center_init: Optional[Vector] = None,
         c_m: Real = 1.0,
@@ -133,7 +133,7 @@ class CMAES(SearchAlgorithm, SinglePopulationAlgorithmMixin):
 
         Args:
             problem (Problem): The problem object which is being worked on.
-            stepsize_init (Real): Initial step-size
+            stdev_init (Real): Initial step-size
             popsize: Population size. Can be specified as an int,
                 or can be left as None in which case the CMA-ES rule of thumb is applied:
                 popsize = 4 + floor(3 log d) where d is the dimension
@@ -240,7 +240,7 @@ class CMAES(SearchAlgorithm, SinglePopulationAlgorithmMixin):
         self.m = self._problem.make_tensor(center_init)
 
         # Store the initial step size
-        self.sigma = self._problem.make_tensor(stepsize_init)
+        self.sigma = self._problem.make_tensor(stdev_init)
 
         if separable:
             # Initialize C as the diagonal vector. Note that when separable, the eigendecomposition is not needed
