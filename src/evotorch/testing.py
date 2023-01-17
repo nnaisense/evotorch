@@ -204,7 +204,7 @@ def assert_dtype_matches(x: Iterable, dtype: Union[str, Type, np.dtype, torch.dt
 
     Args:
         x: An object with `dtype` attribute (e.g. can be numpy array,
-            a torch tensor, an ObjectArray, a SolutionVector, etc.)
+            a torch tensor, an ObjectArray, a Solution, etc.)
         dtype: The dtype which `x` is expected to have.
             Can be given as a string, as a numpy dtype, as a torch dtype,
             or as a native type (e.g. int, float, bool, object).

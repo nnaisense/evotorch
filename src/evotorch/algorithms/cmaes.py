@@ -138,7 +138,7 @@ class CMAES(SearchAlgorithm, SinglePopulationAlgorithmMixin):
                 or can be left as None in which case the CMA-ES rule of thumb is applied:
                 popsize = 4 + floor(3 log d) where d is the dimension
             center_init: Initial center point of the search distribution.
-                Can be given as a SolutionVector or as a 1-D array.
+                Can be given as a Solution or as a 1-D array.
                 If left as None, an initial center point is generated
                 with the help of the problem object's `generate_values(...)`
                 method.

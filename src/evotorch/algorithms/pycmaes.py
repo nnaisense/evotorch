@@ -85,7 +85,7 @@ class PyCMAES(SearchAlgorithm, SinglePopulationAlgorithmMixin):
                 decide the population size according to the length
                 of a solution.
             center_init: Initial center point of the search distribution.
-                Can be given as a SolutionVector or as a 1-D array.
+                Can be given as a Solution or as a 1-D array.
                 If left as None, an initial center point is generated
                 with the help of the problem object's `generate_values(...)`
                 method.

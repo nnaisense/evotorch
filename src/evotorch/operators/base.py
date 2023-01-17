@@ -66,7 +66,7 @@ class Operator:
     @property
     def dtype(self) -> DType:
         """Get the dtype of the bound problem.
-        If the problem does not work with SolutionVectors and
+        If the problem does not work with Solution and
         therefore it does not have a dtype, None is returned.
         """
         return self.problem.dtype

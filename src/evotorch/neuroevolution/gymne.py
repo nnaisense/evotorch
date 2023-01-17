@@ -660,7 +660,7 @@ class GymNE(NEProblem):
         Args:
             x: An sequence of real numbers, containing the parameters
                 of a policy. Can be a PyTorch tensor, a numpy array,
-                or a SolutionVector.
+                or a Solution.
             clip_actions: Whether or not to add an action clipping layer so
                 that the generated actions will always be within an
                 acceptable range for the environment.
