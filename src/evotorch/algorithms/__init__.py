@@ -21,18 +21,22 @@ __all__ = (
     "CMAES",
     "PyCMAES",
     "CEM",
+    "Cosyne",
+    "MAPElites",
     "PGPE",
     "SNES",
     "XNES",
+    "GeneticAlgorithm",
     "SteadyStateGA",
     "SearchAlgorithm",
     "Cosyne",
 )
 
 
-from . import cmaes, distributed, ga, pycmaes, searchalgorithm
+from . import cmaes, distributed, ga, mapelites, pycmaes, searchalgorithm
 from .cmaes import CMAES
 from .distributed import CEM, PGPE, SNES, XNES
-from .ga import Cosyne, SteadyStateGA
+from .ga import Cosyne, GeneticAlgorithm, SteadyStateGA
+from .mapelites import MAPElites
 from .pycmaes import PyCMAES
 from .searchalgorithm import SearchAlgorithm
