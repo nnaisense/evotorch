@@ -23,7 +23,7 @@ from typing import Optional, Tuple
 import numpy as np
 import torch
 
-from ..core import Problem, SolutionBatch
+from ..core import Problem, Solution, SolutionBatch
 from ..tools.misc import Real, Vector
 from .searchalgorithm import SearchAlgorithm, SinglePopulationAlgorithmMixin
 
@@ -231,10 +231,14 @@ class CMAES(SearchAlgorithm, SinglePopulationAlgorithmMixin):
 
         # If `center_init` is not given, generate an initial solution
         # with the help of the problem object.
+        # If it is given as a Solution, then clone the solution's values
+        # as a PyTorch tensor.
         # Otherwise, use the given initial solution as the starting
         # point in the search space.
         if center_init is None:
             center_init = self._problem.generate_values(1)
+        elif isinstance(center_init, Solution):
+            center_init = center_init.values.clone()
 
         # Store the center
         self.m = self._problem.make_tensor(center_init)
