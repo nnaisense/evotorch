@@ -48,6 +48,7 @@ Various evolutionary computation algorithms are available in EvoTorch:
 - **Distribution-based search algorithms:**
     - **PGPE:** Policy Gradients with Parameter-based Exploration.
     - **XNES:** Exponential Natural Evolution Strategies.
+    - **CMAES:** Covariance Matrix Adaption Evolution Strategies.
     - **SNES:** Separable Natural Evolution Strategies.
     - **CEM:** Cross Entropy Method.
 - **Population-based search algorithms:**
