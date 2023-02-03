@@ -1342,6 +1342,7 @@ def make_nan(
 
 def make_I(
     size: Optional[int] = None,
+    *,
     out: Optional[torch.Tensor] = None,
     dtype: Optional[DType] = None,
     device: Optional[Device] = None,
@@ -1359,7 +1360,8 @@ def make_I(
         make_I(out=existing_tensor)
 
     Args:
-        size: A single integer specifying the length of the target square
+        size: A single integer or a tuple containing a single integer,
+            where the integer specifies the length of the target square
             matrix. In this context, "length" means both rowwise length
             and columnwise length, since the target is a square matrix.
             Note that, if the user wishes to fill an existing tensor with
@@ -1383,11 +1385,20 @@ def make_I(
     if size is None:
         if out is None:
             raise ValueError(
-                " When the `size` argument is missing, `make_I(...)` expects an `out` tensor."
+                "When the `size` argument is missing, the function `make_I(...)` expects an `out` tensor."
                 " However, the `out` argument was received as None."
             )
         size = tuple()
     else:
+        if isinstance(size, tuple):
+            if len(size) == 1:
+                size = size[0]
+            else:
+                raise ValueError(
+                    f"When the `size` argument is given as a tuple,"
+                    f" the function `make_I(...)` expects this tuple to contain exactly one element."
+                    f" The received tuple is {size}."
+                )
         n = int(size)
         size = (n, n)
     out = _out_tensor(*size, out=out, dtype=dtype, device=device)
