@@ -2307,7 +2307,6 @@ class Problem(TensorMakerMixin, Serializable):
     def _start_preparations(self) -> None:
         """Prepare the problem for evaluation. Calls self._prepare() if the self._prepared flag is not True."""
         if not self._prepared:
-
             if self.actors is None or self._num_actors == 0:
                 # Call prepare method for any problem class that is expected to do work
                 self._prepare()
@@ -3382,7 +3381,6 @@ class SolutionBatch(Serializable):
         merging_of: Iterable["SolutionBatch"] = None,
         empty: Optional[bool] = None,
     ):
-
         self._num_objs: int
         self._data: Union[torch.Tensor, ObjectArray]
         self._descending: Iterable[bool]

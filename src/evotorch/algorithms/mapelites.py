@@ -23,7 +23,6 @@ def _best_solution_considering_feature(
     evals: torch.Tensor,
     feature_grid: torch.Tensor,
 ) -> tuple:
-
     feature_lb = feature_grid[:, 0]
     feature_ub = feature_grid[:, 1]
 

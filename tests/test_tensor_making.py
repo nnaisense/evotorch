@@ -156,7 +156,6 @@ def test_random_maker(shape: tuple, dtype: DType, using_out: bool):
     ]
 
     for func, kwargs in funcs:  # for each random-making function and its keyword arguments
-
         # The following is a temporary function which samples new tensors using `func`
         def sample(g: Optional[torch.Generator] = None) -> torch.Tensor:
             # Prepare the keyword arguments we will use on the function
@@ -257,7 +256,6 @@ def test_tensor_makers_of_problem(shape: Optional[tuple], dtype: DType, eval_dty
 
     for func, filling_value, further_kwargs in funcs:  # For each function and its filling value
         for use_eval_dtype in (False, True):  # Do without and with use_eval_dtype
-
             if ("center" in further_kwargs) and ("stdev" in further_kwargs) and (not use_eval_dtype) and (not is_float):
                 # If "center" and "stdev" are in further_kwargs, then our function is make_gaussian(...).
                 # If our current dtype is an integer type (i.e. not is_float), then make_gaussian(...) cannot work.

@@ -161,7 +161,6 @@ class NonVectorizedParetoTools:
         crowdsort: bool,
         crowdsort_upto: int,
     ) -> Tuple[List[np.ndarray], np.ndarray]:
-
         if cls.vectorized_crowding:
 
             def crowding_distance_assignment(*args, **kwargs):

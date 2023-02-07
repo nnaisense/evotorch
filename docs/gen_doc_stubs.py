@@ -49,7 +49,6 @@ def add_link_to_github(doc_path: Path):
 def convert_notebooks_in_dir(nav: mkdocs_gen_files.Nav, notebook_dir: Path, target_dir: Path):
     for notebook_path in notebook_dir.rglob("*.ipynb"):
         if notebook_path.name not in SKIP_NOTEBOOKS:
-
             notebook_rel_path = notebook_path.relative_to(notebook_dir).name
             doc_path = Path(target_dir, notebook_rel_path).with_suffix(".md")
 
