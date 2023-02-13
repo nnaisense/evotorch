@@ -362,7 +362,7 @@ class CMAES(SearchAlgorithm, SinglePopulationAlgorithmMixin):
 
         # How often to decompose C
         if limit_C_decomposition:
-            self.decompose_C_freq = max(1, int(1 / np.floor(10 * d * (self.c_1 + self.c_mu))))
+            self.decompose_C_freq = max(1, int(1 / np.floor(10 * d * (self.c_1.cpu() + self.c_mu.cpu()))))
         else:
             self.decompose_C_freq = 1
 
@@ -378,9 +378,9 @@ class CMAES(SearchAlgorithm, SinglePopulationAlgorithmMixin):
         """Get the center of search distribution, m"""
         return self.m
 
-    def _get_sigma(self) -> torch.Tensor:
+    def _get_sigma(self) -> float:
         """Get the step-size of the search distribution, sigma"""
-        return self.sigma
+        return float(self.sigma.cpu())
 
     @property
     def obj_index(self) -> int:
