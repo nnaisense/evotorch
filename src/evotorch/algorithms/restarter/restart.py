@@ -66,7 +66,6 @@ class Restart(SearchAlgorithm):
         return self.search_algorithm.is_terminated
 
     def _step(self):
-
         # Step the search algorithm
         self.search_algorithm.step()
 

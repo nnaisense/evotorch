@@ -107,7 +107,6 @@ Of course, you can also create a custom [NEProblem][evotorch.neuroevolution.nepr
 
 ```python
 class CustomNE(NEProblem):
-
     ...
 
     def _evaluate_network(self, network: torch.nn.Module) -> torch.Tensor:
@@ -284,7 +283,6 @@ The problem class itself can directly pass arguments to any of these methods at 
 ```python
 class CustomNE(NEProblem):
     def __init__(self, network: torch.nn.Module, k: int, d: int):
-
         super().__init__(
             objective_sense="max",  # This is a maximization task
             network=network,  # Pass the network to the super constructor

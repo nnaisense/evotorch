@@ -190,7 +190,6 @@ def test_neuroevolution_for_vecgymne(network):
     ],
 )
 def test_supervised_neuroevolution(network):
-
     N = 100
     X = torch.randn((N, 2))
     Y = X.sum(dim=-1, keepdim=True)

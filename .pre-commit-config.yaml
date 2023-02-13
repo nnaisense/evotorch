@@ -30,12 +30,12 @@ repos:
             - flake8-docstrings==1.6.0
 
   - repo: https://github.com/PyCQA/isort
-    rev: 5.11.4
+    rev: 5.12.0
     hooks:
       - id: isort
 
   - repo: https://github.com/psf/black
-    rev: 22.12.0
+    rev: 23.1.0
     hooks:
       - id: black
         args: [--safe]
@@ -49,5 +49,5 @@ repos:
     rev: 1.13.0
     hooks:
       - id: blacken-docs
-        additional_dependencies: [black==22.12.0]
+        additional_dependencies: [black==23.1.0]
         args: [--skip-string-normalization, --line-length=88]

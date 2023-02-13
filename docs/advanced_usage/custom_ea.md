@@ -11,7 +11,6 @@ from evotorch.algorithms import SearchAlgorithm
 
 class MySearcher(SearchAlgorithm):
     def __init__(self, problem: Problem):
-
         super().__init__(problem)
 
         ...
@@ -72,7 +71,6 @@ class SimpleGA(SearchAlgorithm, SinglePopulationAlgorithmMixin):
         num_parents: int,  # Number of parents from which to generate children
         mutation_power: float  # Scale of gaussian noise used to generate children
     ):
-
         # Call the __init__(...) method of the superclass
         SearchAlgorithm.__init__(
             self,

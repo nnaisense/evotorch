@@ -180,7 +180,6 @@ class GaussianSearchAlgorithm(SearchAlgorithm, SinglePopulationAlgorithmMixin):
     def _initialize_optimizer(
         self, learning_rate: float, optimizer=None, optimizer_config: Optional[dict] = None
     ) -> object:
-
         if optimizer is None:
             return None
         elif isinstance(optimizer, str):

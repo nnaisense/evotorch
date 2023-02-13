@@ -81,6 +81,7 @@ import math
 import matplotlib.pyplot as plt
 import torch
 
+
 # Declare the objective function
 def rastrigin(x: torch.Tensor) -> torch.Tensor:
     A = 10

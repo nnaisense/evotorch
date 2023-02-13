@@ -317,7 +317,6 @@ def main(_config: dict):
 
     # Step the searcher
     for generation in range(1, 1 + _config["num_generations"]):
-
         searcher.step()
 
         # If saving the policy at a fixed interval, check for the interval + save

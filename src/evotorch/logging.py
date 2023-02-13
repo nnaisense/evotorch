@@ -517,7 +517,6 @@ if pandas is not None:
 
 
 if sacred is not None:
-
     ExpOrRun = Union[sacred.Experiment, sacred.run.Run]
 
     class SacredLogger(ScalarLogger):
