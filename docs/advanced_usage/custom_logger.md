@@ -46,7 +46,6 @@ When we initialise our custom logger, `LivePlotter`, we will pass it a `searcher
 ```python
 class LivePlotter(Logger):
     def __init__(self, searcher, target_status: str):
-
         # Call the super constructor
         super().__init__(searcher)
 
@@ -95,7 +94,6 @@ When `_log` gets called from the searcher, we are passed the `status` dictionary
 ```python
 class LivePlotter(Logger):
     def _log(self, status: dict):
-
         # Update the histories of the status
         self._iter_hist.append(status["iter"])
         self._status_hist.append(status[self._target_status])
@@ -137,7 +135,6 @@ plt.ion()
 
 class LivePlotter(Logger):
     def __init__(self, searcher, target_status: str):
-
         # Call the super constructor
         super().__init__(searcher)
 
@@ -162,7 +159,6 @@ class LivePlotter(Logger):
         self._status_hist = []
 
     def _log(self, status: dict):
-
         # Update the histories of the status
         self._iter_hist.append(status["iter"])
         self._status_hist.append(status[self._target_status])

@@ -18,6 +18,7 @@ from evotorch.algorithms import SNES
 from evotorch.logging import StdOutLogger, PandasLogger
 import torch
 
+
 # Create a Problem instance to solve
 def sphere(x: torch.Tensor) -> torch.Tensor:
     return torch.sum(x.pow(2.0))

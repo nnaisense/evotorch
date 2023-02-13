@@ -125,6 +125,7 @@ from evotorch.algorithms import SNES
 from evotorch.logging import StdOutLogger
 import torch
 
+
 # Define a function to minimize
 def sphere(x: torch.Tensor) -> torch.Tensor:
     return torch.sum(x.pow(2.0))

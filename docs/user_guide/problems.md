@@ -109,7 +109,6 @@ import math
 
 class OffsetRastrigin(Problem):
     def __init__(self, d: int = 25, A: int = 10):
-
         super().__init__(
             objective_sense="min",
             solution_length=d,
@@ -161,7 +160,6 @@ from evotorch import SolutionBatch
 
 class VecOffsetRastrigin(Problem):
     def __init__(self, d: int = 25, A: int = 10):
-
         super().__init__(
             objective_sense="min",
             solution_length=d,
@@ -208,7 +206,6 @@ Similarly, we can use different data types and devices within custom [Problem][e
 ```python
 class OffsetRastrigin16(Problem):
     def __init__(self, d: int = 25, A: int = 10):
-
         super().__init__(
             objective_sense="min",
             solution_length=d,
