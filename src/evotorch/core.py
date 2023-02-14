@@ -1802,6 +1802,7 @@ class Problem(TensorMakerMixin, Serializable):
                 )
             result = SolutionBatch(self, popsize, device=self.device, empty=True)
             self.make_gaussian(out=result.access_values(), center=center, stdev=stdev, symmetric=symmetric)
+            return result
         else:
             raise ValueError(
                 f"The arguments `center` and `stdev` were expected to be None or non-None at the same time."
