@@ -177,6 +177,10 @@ problem.visualize(trained_policy)
 
 More examples can be found [here](examples/).
 
+# How to Contribute
+
+Please see our [contribution guidelines](CONTRIBUTING.md).
+
 # Authors
 
 - [Nihat Engin Toklu](https://github.com/engintoklu)
