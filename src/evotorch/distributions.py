@@ -724,8 +724,7 @@ class ExpGaussian(Distribution):
             dtype=dtype,
         )
         # Make identity matrix as this is used throughout in gradient computation
-        self.eye = self.make_zeros((solution_length, solution_length))
-        self.eye[range(self.solution_length), range(self.solution_length)] = 1.0
+        self.eye = self.make_I(solution_length)
 
     @property
     def mu(self) -> torch.Tensor:

@@ -426,7 +426,8 @@ class TensorMakerMixin:
 
     def make_I(
         self,
-        size: Optional[int] = None,
+        size: Optional[Union[int, tuple]] = None,
+        *,
         out: Optional[torch.Tensor] = None,
         dtype: Optional[DType] = None,
         device: Optional[Device] = None,
@@ -440,7 +441,8 @@ class TensorMakerMixin:
         of the resulting tensor is determined by this method's parent object.
 
         Args:
-            size: A single integer specifying the length of the target square
+            size: A single integer or a tuple containing a single integer,
+                where the integer specifies the length of the target square
                 matrix. In this context, "length" means both rowwise length
                 and columnwise length, since the target is a square matrix.
                 Note that, if the user wishes to fill an existing tensor with
@@ -469,22 +471,34 @@ class TensorMakerMixin:
             The created or modified tensor after placing the I matrix values
         """
 
-        if (len(size) == 0) and (out is None):
-            if hasattr(self, "solution_length"):
-                size = self.solution_length
+        if size is None:
+            if out is None:
+                if hasattr(self, "solution_length"):
+                    size_args = (self.solution_length,)
+                else:
+                    raise AttributeError(
+                        "The method `.make_I(...)` was used without any `size`"
+                        " arguments."
+                        " When the `size` argument is missing, the default"
+                        " behavior of this method is to create an identity matrix"
+                        " of size (n, n), n being the length of a solution."
+                        " However, the parent object of this method does not have"
+                        " an attribute name `solution_length`."
+                    )
             else:
-                raise AttributeError(
-                    "The method `.make_I(...)` was used without any `size`"
-                    " arguments."
-                    " When the `size` argument is missing, the default"
-                    " behavior of this method is to create an identity matrix"
-                    " of size (n, n), n being the length of a solution."
-                    " However, the parent object of this method does not have"
-                    " an attribute name `solution_length`."
+                size_args = tuple()
+        elif isinstance(size, tuple):
+            if len(size) != 1:
+                raise ValueError(
+                    f"When the size argument is given as a tuple, the method `make_I(...)` expects the tuple to have"
+                    f" only one element. The given tuple is {size}."
                 )
+            size_args = size
+        else:
+            size_args = (int(size),)
 
         args, kwargs = self.__get_all_args_for_maker(
-            *size,
+            *size_args,
             num_solutions=None,
             out=out,
             dtype=dtype,

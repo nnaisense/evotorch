@@ -127,17 +127,44 @@ def test_targeted_makers(shape: tuple, dtype: DType):
         assert torch.all(torch.isnan(nans))
 
 
-@pytest.mark.parametrize("size,dtype,using_out", product([3, 5, 10], DTYPES, [False, True]))
-def test_identity_maker(size: int, dtype: DType, using_out: bool):
+@pytest.mark.parametrize(
+    "size,give_size_in_tuple,dtype,using_out", product([3, 5, 10], [False, True], DTYPES, [False, True])
+)
+def test_identity_maker(size: int, give_size_in_tuple: bool, dtype: DType, using_out: bool):
     dtype, _ = _prepare_dtype(dtype)
 
     if using_out:
         I_matrix = torch.empty((size, size), dtype=dtype)
         tools.make_I(out=I_matrix)
     else:
-        I_matrix = tools.make_I(size, dtype=dtype)
+        size_input = (size,) if give_size_in_tuple else size
+        I_matrix = tools.make_I(size_input, dtype=dtype)
 
     desired = torch.eye(size, dtype=dtype)
+    _all_must_be_close(I_matrix, desired)
+
+
+@pytest.mark.parametrize(
+    "size,slnlen,give_size_in_tuple,dtype,using_out",
+    product([None, 3, 5, 10], [20], [False, True], FLOAT_DTYPES, [False, True]),
+)
+def test_identity_maker_of_problem(
+    size: Optional[int], slnlen: int, give_size_in_tuple: bool, dtype: DType, using_out: bool
+):
+    dtype, _ = _prepare_dtype(dtype)
+
+    problem = Problem("min", torch.linalg.norm, solution_length=slnlen, initial_bounds=(-1, 1), dtype=dtype)
+
+    desired_size = slnlen if size is None else size
+
+    if using_out:
+        I_matrix = torch.empty((desired_size, desired_size), dtype=dtype)
+        problem.make_I(out=I_matrix)
+    else:
+        size_input = (size,) if (give_size_in_tuple and (size is not None)) else size
+        I_matrix = problem.make_I(size_input, dtype=dtype)
+
+    desired = torch.eye(desired_size, dtype=dtype)
     _all_must_be_close(I_matrix, desired)
 
 

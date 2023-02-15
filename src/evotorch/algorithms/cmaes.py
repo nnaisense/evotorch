@@ -253,7 +253,7 @@ class CMAES(SearchAlgorithm, SinglePopulationAlgorithmMixin):
             self.A = self._problem.make_ones(d)
         else:
             # Initialize C = AA^T all diagonal.
-            self.C = torch.eye(d, dtype=problem.dtype, device=problem.device)
+            self.C = self._problem.make_I(d)
             self.A = self.C.clone()
 
         # === Initialize raw weights ===
