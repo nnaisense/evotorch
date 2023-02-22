@@ -3,6 +3,7 @@
 Thank you for your interest in contributing to EvoTorch!
 The guidelines for contributing are as follows:
 
+- As a first step, it is recommended to create an issue post in the main GitHub repository of EvoTorch, explaining what contribution is being planned, and why such a contribution is desirable. This way, details of the planned contribution can be discussed beforehand.
 - Contributions are expected in the form of pull requests (PR) to the GitHub repository.
 - For acceptance, PRs are expected to contain:
     - A clear summary of the purpose of the PR and the features it brings
