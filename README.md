@@ -177,6 +177,20 @@ problem.visualize(trained_policy)
 
 More examples can be found [here](examples/).
 
+# How to cite
+
+If you use EvoTorch in your research, please consider citing our [paper](https://arxiv.org/abs/2302.12600).
+
+```text
+@article{evotorch2023arxiv,
+  title={{EvoTorch}: Scalable Evolutionary Computation in {Python}},
+  author={Toklu, Nihat Engin and Atkinson, Timothy and Micka, Vojt\v{e}ch and Liskowski, Pawe\l{} and Srivastava, Rupesh Kumar},
+  journal={arXiv preprint},
+  year={2023},
+  note={https://arxiv.org/abs/2302.12600}
+}
+```
+
 # How to Contribute
 
 Please see our [contribution guidelines](CONTRIBUTING.md).
