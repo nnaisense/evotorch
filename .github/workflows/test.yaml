@@ -36,6 +36,9 @@ jobs:
         run: pip install .[dev]
 
       - name: Run PyTest
+        envs:
+          GRPC_VERBOSITY: DEBUG
+          GRPC_TRACE: tcp
         run: pytest --cov-report=xml
 
       - name: Upload coverage to Codecov
