@@ -181,7 +181,7 @@ More examples can be found [here](examples/).
 
 If you use EvoTorch in your research, please consider citing our [paper](https://arxiv.org/abs/2302.12600).
 
-```text
+```bibtex
 @article{evotorch2023arxiv,
   title={{EvoTorch}: Scalable Evolutionary Computation in {Python}},
   author={Toklu, Nihat Engin and Atkinson, Timothy and Micka, Vojt\v{e}ch and Liskowski, Pawe\l{} and Srivastava, Rupesh Kumar},
