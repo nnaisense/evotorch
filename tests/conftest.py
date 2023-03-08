@@ -30,13 +30,12 @@ def pytest_sessionstart(session):
         log_to_driver=False,
         local_mode=True,
         include_dashboard=False,
-        dashboard_port=None,
         object_store_memory=256 * 1024**2,
         _memory=512 * 1024**2,
         _redis_max_memory=256 * 1024**2,
         _system_config={
             "object_timeout_milliseconds": 200,
-            "num_heartbeats_timeout": 10,
+            # "num_heartbeats_timeout": 10,
             "object_store_full_delay_ms": 100,
         },
     )
