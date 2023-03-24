@@ -208,6 +208,7 @@ class SupervisedNE(NEProblem):
 
         self.dataset = dataset
         self.dataloader: DataLoader = None
+        self.dataloader_iterator = None
 
         self._loss_func = loss_func
         self._minibatch_size = None if minibatch_size is None else int(minibatch_size)
@@ -314,16 +315,18 @@ class SupervisedNE(NEProblem):
         if self.dataloader is None:
             self._prepare()
 
+        if self.dataloader_iterator is None:
+            self.dataloader_iterator = iter(self.dataloader)
+
+        batch = None
         try:
             batch = next(self.dataloader_iterator)
-            if batch is None:
-                self.dataloader_iterator = iter(self.dataloader)
-                batch = self.get_minibatch()
-            else:
-                batch = batch
-        except Exception:
+        except StopIteration:
+            pass
+
+        if batch is None:
             self.dataloader_iterator = iter(self.dataloader)
-            batch = self.get_minibatch()
+            batch = next(self.dataloader_iterator)
 
         # Move batch to device of network
         return [var.to(self.network_device) for var in batch]
