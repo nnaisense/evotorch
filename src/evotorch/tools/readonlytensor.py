@@ -96,8 +96,10 @@ class ReadOnlyTensor(torch.Tensor):
         return result
 
     def __mutable_if_independent(self, other: torch.Tensor) -> torch.Tensor:
-        self_ptr = self.storage().data_ptr()
-        other_ptr = other.storage().data_ptr()
+        from .misc import storage_ptr
+
+        self_ptr = storage_ptr(self)
+        other_ptr = storage_ptr(other)
         if self_ptr != other_ptr:
             other = other.as_subclass(torch.Tensor)
         return other

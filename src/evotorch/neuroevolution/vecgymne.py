@@ -19,10 +19,10 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Callable, Iterable, Optional, Union
 
-import gym
+import gymnasium as gym
 import numpy as np
 import torch
-from gym.spaces import Box
+from gymnasium.spaces import Box
 from torch import nn
 
 from ..core import Solution, SolutionBatch

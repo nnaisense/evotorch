@@ -21,7 +21,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Callable, Iterable, List, Optional, Union
 
-import gym
+import gymnasium as gym
 import numpy as np
 import torch
 from packaging.version import Version

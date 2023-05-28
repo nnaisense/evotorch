@@ -12,11 +12,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from copy import deepcopy
 from typing import Any
 
 import torch
-from functorch import make_functional_with_buffers
 from torch import nn
+
+try:
+    from torch.func import functional_call
+except ImportError:
+    from torch.nn.utils.stateless import functional_call
+
+from contextlib import nullcontext
 
 
 def _shape_length(shape: tuple) -> int:
@@ -39,9 +46,6 @@ def _shape_length(shape: tuple) -> int:
 class ModuleExpectingFlatParameters:
     """
     A wrapper which brings a functional interface around a torch module.
-
-    For obtaining the functional interface, this class internally uses
-    the `functorch` library.
 
     Similar to `functorch.FunctionalModule`, `ModuleExpectingFlatParameters`
     turns a `torch.nn.Module` instance to a function which expects a new
@@ -87,18 +91,33 @@ class ModuleExpectingFlatParameters:
     ```
     """
 
-    def __init__(self, module: nn.Module, disable_autograd_tracking: bool = False):
+    @torch.no_grad()
+    def __init__(self, net: nn.Module, *, disable_autograd_tracking: bool = False):
+        """
+        `__init__(...)`: Initialize the `ModuleExpectingFlatParameters` instance.
+
+        Args:
+            net: The module that is to be wrapped by a functional interface.
+            disable_autograd_tracking: If given as True, all operations
+                regarding the wrapped module will be performed in the context
+                `torch.no_grad()`, forcefully disabling the autograd.
+                If given as False, autograd will not be affected.
+                The default is False.
+        """
+
         # Declare the variables which will store information regarding the parameters of the module.
+        self.__param_names = []
         self.__param_shapes = []
         self.__param_length = 0
         self.__param_slices = []
         self.__num_params = 0
-        self.__buffers = []
 
         # Iterate over the parameters of the module and fill the related information.
         i = 0
         j = 0
-        for p in module.parameters():
+        for pname, p in net.named_parameters():
+            self.__param_names.append(pname)
+
             shape = p.shape
             self.__param_shapes.append(shape)
 
@@ -111,11 +130,11 @@ class ModuleExpectingFlatParameters:
 
             self.__num_params += 1
 
-        self.__fmodel, _, self.__buffers = make_functional_with_buffers(
-            module, disable_autograd_tracking=bool(disable_autograd_tracking)
-        )
+        self.__buffer_dict = {bname: b.clone() for bname, b in net.named_buffers()}
 
-        self.__buffers = list(self.__buffers)
+        self.__net = deepcopy(net)
+        self.__net.to("meta")
+        self.__disable_autograd_tracking = bool(disable_autograd_tracking)
 
     def __transfer_buffers(self, x: torch.Tensor):
         """
@@ -124,14 +143,13 @@ class ModuleExpectingFlatParameters:
         Args:
             x: The tensor whose device will also store the buffer tensors.
         """
-        n = len(self.__buffers)
-        for i in range(n):
-            self.__buffers[i] = torch.as_tensor(self.__buffers[i], device=x.device)
+        for bname in self.__buffer_dict.keys():
+            self.__buffer_dict[bname] = torch.as_tensor(self.__buffer_dict[bname], device=x.device)
 
     @property
     def buffers(self) -> tuple:
         """Get the stored buffers"""
-        return self.__buffers
+        return tuple(self.__buffer_dict)
 
     @property
     def parameter_length(self) -> int:
@@ -161,26 +179,30 @@ class ModuleExpectingFlatParameters:
             )
         state_args = [] if h is None else [h]
 
-        params = []
-        for i in range(self.__num_params):
+        params_and_buffers = {}
+        for i, pname in enumerate(self.__param_names):
             param_slice = self.__param_slices[i]
             param_shape = self.__param_shapes[i]
             param = parameter_vector[param_slice].reshape(param_shape)
-            params.append(param)
+            params_and_buffers[pname] = param
 
-        # Make sure that the tensors are in the same device with x
+        # Make sure that the buffer tensors are in the same device with x
         self.__transfer_buffers(x)
 
-        # Run the functional module and return the results
-        return self.__fmodel(params, self.__buffers, x, *state_args)
+        # Add the buffer tensors to the dictionary `params_and_buffers`
+        params_and_buffers.update(self.__buffer_dict)
+
+        # Prepare the no-gradient context if gradient tracking is disabled
+        context = torch.no_grad() if self.__disable_autograd_tracking else nullcontext()
+
+        # Run the module and return the results
+        with context:
+            return functional_call(self.__net, params_and_buffers, tuple([x, *state_args]))
 
 
-def make_functional_module(net: nn.Module) -> ModuleExpectingFlatParameters:
+def make_functional_module(net: nn.Module, *, disable_autograd_tracking: bool = False) -> ModuleExpectingFlatParameters:
     """
     Wrap a torch module so that it has a functional interface.
-
-    For obtaining a functional interface, this function internally uses the
-    `functorch` library.
 
     Similar to `functorch.make_functional(...)`, this function turns a
     `torch.nn.Module` instance to a function which expects a new leftmost
@@ -225,8 +247,13 @@ def make_functional_module(net: nn.Module) -> ModuleExpectingFlatParameters:
     Args:
         net: The `torch.nn.Module` instance to be wrapped by a functional
             interface.
+        disable_autograd_tracking: If given as True, all operations
+            regarding the wrapped module will be performed in the context
+            `torch.no_grad()`, forcefully disabling the autograd.
+            If given as False, autograd will not be affected.
+            The default is False.
     Returns:
         The functional wrapper, as an instance of
         `evotorch.neuroevolution.net.ModuleExpectingFlatParameters`.
     """
-    return ModuleExpectingFlatParameters(net)
+    return ModuleExpectingFlatParameters(net, disable_autograd_tracking=disable_autograd_tracking)

@@ -12,8 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import gym
-from gym.envs.registration import register
+from collections.abc import Mapping
+
+import gym as classical_gym
+import gymnasium as gym
+from gymnasium.envs.registration import register
 
 
 class TinyTrajHumanoidBulletEnv(gym.Env):
@@ -27,7 +30,7 @@ class TinyTrajHumanoidBulletEnv(gym.Env):
         self.__tlimit = trajectory_length
         self.__done = True
         self.__t = 0
-        self.__contained_env = gym.make("pybullet_envs:HumanoidBulletEnv-v0", **kwargs)
+        self.__contained_env = classical_gym.make("pybullet_envs:HumanoidBulletEnv-v0", **kwargs)
 
         self.observation_space = self.__contained_env.observation_space
         self.action_space = self.__contained_env.action_space
@@ -41,6 +44,12 @@ class TinyTrajHumanoidBulletEnv(gym.Env):
 
         if num_step_results == 4:
             observation, reward, done, info = step_results
+            if isinstance(info, Mapping) and ("TimeLimit.truncated" in info):
+                truncated = info["TimeLimit.truncated"]
+                terminated = done and (not truncated)
+            else:
+                truncated = False
+                terminated = done
         elif num_step_results == 5:
             observation, reward, terminated, truncated, info = step_results
             done = terminated or truncated
@@ -56,9 +65,7 @@ class TinyTrajHumanoidBulletEnv(gym.Env):
 
         reward = sum(self.__contained_env.rewards[1:])
 
-        if num_step_results == 4:
-            return observation, reward, done, info
-        elif num_step_results == 5:
+        if num_step_results == 5:
             return observation, reward, terminated, truncated, info
 
     def reset(self, **kwargs):

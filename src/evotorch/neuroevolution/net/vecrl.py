@@ -16,17 +16,22 @@
 This namespace provides various vectorized reinforcement learning utilities.
 """
 
-
+import random
 from collections.abc import Mapping
 from copy import deepcopy
 from typing import Any, Callable, Iterable, Optional, Union
 
-import gym
+import gymnasium as gym
 import numpy as np
 import torch
-from functorch import vmap
-from gym.spaces import Box, Discrete, Space
-from gym.vector import SyncVectorEnv
+
+try:
+    from torch.func import vmap
+except ImportError:
+    from functorch import vmap
+
+from gymnasium.spaces import Box, Discrete, Space
+from gymnasium.vector import SyncVectorEnv
 from torch import nn
 from torch.nn import utils as nnu
 
@@ -475,8 +480,8 @@ def make_brax_env(
         config = {}
         config.update(kwargs)
         if num_envs is not None:
-            config["batch_size"] = num_envs
-        env = brax.envs.create_gym_env(env_name, **config)
+            config["num_envs"] = num_envs
+        env = VectorEnvFromBrax(env_name, **config)
         env = TorchWrapper(
             env,
             force_classic_api=force_classic_api,
@@ -1101,3 +1106,115 @@ class Policy:
             net = deepcopy(self.__module).to(parameter_vector.device)
             nnu.vector_to_parameters(parameter_vector, net.parameters())
         return net
+
+
+if brax is not None:  # noqa: C901
+
+    class VectorEnvFromBrax(gym.vector.VectorEnv):
+        def __init__(self, env_name: str, **kwargs):
+            filtered_kwargs = {}
+
+            auto_reset = None
+            num_envs = None
+            for k, v in kwargs.items():
+                if k in ("batch_size", "num_envs"):
+                    if num_envs is None:
+                        num_envs = int(v)
+                    else:
+                        raise ValueError(
+                            "Among the keyword arguments,"
+                            " encountered both 'batch_size' and 'num_envs', which are redundant."
+                        )
+                elif k in ("autoreset", "auto_reset"):
+                    if auto_reset is None:
+                        auto_reset = bool(v)
+                    else:
+                        raise ValueError(
+                            "Among the keyword arguments,"
+                            " encountered both 'autoreset' and 'auto_reset', which are redundant."
+                        )
+
+            if auto_reset is None:
+                auto_reset = True
+
+            if num_envs is None:
+                raise ValueError(
+                    "Please specify the number of environments via the keyword argument `num_envs` or `batch_size`"
+                )
+
+            if not auto_reset:
+                raise ValueError(
+                    "EvoTorch expects vectorized environments to have the auto-reset behavior."
+                    " It seems that this brax environment is configured to not have the auto-reset behavior,"
+                    " which is not supported."
+                )
+
+            self.__brax_env = brax.envs.create(
+                str(env_name), auto_reset=auto_reset, batch_size=num_envs, **filtered_kwargs
+            )
+            self.__jit_reset = jax.jit(self.__brax_env.reset)
+            self.__jit_step = jax.jit(self.__brax_env.step)
+            self.__jit_convert_to_bool = jax.jit(self.__convert_to_bool)
+            self.__jit_make_terminated_and_truncated = jax.jit(self.__make_terminated_and_truncated)
+            self.__jit_make_terminated_and_truncated2 = jax.jit(self.__make_terminated_and_truncated2)
+            self.__given_seed: Optional[int] = None
+
+            inf = float("inf")
+            observation_space = Box(low=-inf, high=inf, shape=(self.__brax_env.observation_size,), dtype=np.float32)
+            action_space = Box(low=-1.0, high=1.0, shape=(self.__brax_env.action_size,), dtype=np.float32)
+
+            self.__last_state: Optional[Iterable] = None
+            super().__init__(num_envs=num_envs, observation_space=observation_space, action_space=action_space)
+
+        def seed(self, seed: Optional[int] = None):
+            self.__given_seed = None if seed is None else int(seed)
+
+        def reset(self, *, seed: Optional[int] = None, options: Optional[dict] = None) -> tuple:
+            if seed is None:
+                if self.__given_seed is None:
+                    seed = random.randint(0, (2**32) - 1)
+                else:
+                    seed = self.__given_seed
+            else:
+                seed = int(seed)
+
+            kwargs = {} if options is None else options
+
+            self.__given_seed = None
+            key = jax.random.PRNGKey(seed)
+            more_kwargs = {"rng": key}
+
+            state = self.__jit_reset(**kwargs, **more_kwargs)
+            observation = state.obs
+
+            self.__last_state = state
+
+            return observation, {**(state.metrics), **(state.info)}
+
+        @staticmethod
+        def __convert_to_bool(x: jnp.ndarray) -> jnp.ndarray:
+            return jnp.abs(x) > 1e-4
+
+        def __make_terminated_and_truncated(self, done: jnp.ndarray) -> tuple:
+            terminated = self.__jit_convert_to_bool(done)
+            truncated = jnp.zeros_like(terminated)
+            return terminated, truncated
+
+        def __make_terminated_and_truncated2(self, done: jnp.ndarray, truncation: jnp.ndarray) -> tuple:
+            done = self.__jit_convert_to_bool(done)
+            truncated = jnp.zeros_like(done)
+            terminated = done & (~truncated)
+            return terminated, truncated
+
+        def step(self, action: Any) -> tuple:
+            state = self.__jit_step(self.__last_state, action)
+            self.__last_state = state
+            observation = state.obs
+            reward = state.reward
+            done = state.done
+            if "truncation" in state.info:
+                terminated, truncated = self.__jit_make_terminated_and_truncated2(done, state.info["truncation"])
+            else:
+                terminated, truncated = self.__jit_make_terminated_and_truncated(done)
+            info = {**(state.metrics), **(state.info)}
+            return observation, reward, terminated, truncated, info

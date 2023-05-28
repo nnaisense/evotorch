@@ -24,7 +24,7 @@ def test_read_only_tensor():
     y = ett.as_read_only_tensor(x)
 
     # Ensure that x and y are sharing memory (even though x is a regular tensor and y is a read-only tensor)
-    assert x.storage().data_ptr() == y.storage().data_ptr()
+    assert ett.storage_ptr(x) == ett.storage_ptr(y)
 
     clamped = torch.clamp(x, -1.0, 1.0)
     clamped2 = torch.clamp(y, -1.0, 1.0)

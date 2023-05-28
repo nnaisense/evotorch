@@ -335,7 +335,7 @@ def test_batch_cloning(clone_func):
 
 
 def _storage_address(solution_or_batch: Union[et.SolutionBatch, et.Solution]) -> int:
-    return solution_or_batch.access_values(keep_evals=True).storage().data_ptr()
+    return ett.storage_ptr(solution_or_batch.access_values(keep_evals=True))
 
 
 def _share_memory(a: Union[et.SolutionBatch, et.Solution], b: Union[et.SolutionBatch, et.Solution]) -> bool:
