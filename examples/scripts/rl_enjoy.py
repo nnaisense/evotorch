@@ -23,7 +23,6 @@ from typing import Optional, Union
 import gymnasium as gym
 import numpy as np
 import torch
-from packaging.version import Version
 
 from evotorch.neuroevolution.net.rl import reset_env, take_step_in_env
 
