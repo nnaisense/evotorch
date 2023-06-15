@@ -63,7 +63,7 @@ if jax is not None:
 else:
 
     def _jax_is_missing():
-        raise ImportError("The module `jax` is missing.")
+        raise ImportError("The library `jax` is missing, or the attempt to import it failed.")
 
     class JaxArray:
         def __init__(self, *args, **kwargs):
@@ -89,20 +89,51 @@ except ImportError:
 if brax is not None:
     from brax.envs import Env as BraxEnv
 
-    def is_brax_env(env: Any) -> bool:
+    def _is_new_brax_env(env: Any) -> bool:
         return isinstance(env, BraxEnv)
 
 else:
 
     def _brax_is_missing():
-        raise ImportError("The module `brax` is missing.")
+        raise ImportError("The module `brax` is missing, or the attempt to import it failed.")
 
     class BraxEnv:
         def __init__(self, *args, **kwargs):
             _brax_is_missing()
 
-    def is_brax_env(env: Any) -> bool:
+    def _is_new_brax_env(env: Any) -> bool:
         return False
+
+
+try:
+    import brax.v1 as old_brax
+    import brax.v1.envs as old_brax_envs
+except ImportError:
+    old_brax = None
+    old_brax_envs = None
+
+
+if old_brax is not None:
+    from brax.v1.envs import Env as OldBraxEnv
+
+    def _is_old_brax_env(env: Any) -> bool:
+        return isinstance(env, OldBraxEnv)
+
+else:
+
+    def _old_brax_is_missing():
+        raise ImportError("The module `brax.v1` is missing, or the attempt to import it failed.")
+
+    class OldBraxEnv:
+        def __init__(self, *args, **kwargs):
+            _old_brax_is_missing()
+
+    def _is_old_brax_env(env: Any) -> bool:
+        return False
+
+
+def is_brax_env(env: Any) -> bool:
+    return _is_new_brax_env(env) or _is_old_brax_env(env)
 
 
 def array_type(x: Any, fallback: Optional[str] = None) -> str:
@@ -462,6 +493,13 @@ def make_brax_env(
 
     Args:
         env_name: Name of the brax environment, as string (e.g. "humanoid").
+            If the string starts with "old::" (e.g. "old::humanoid", etc.),
+            then the environment will be made using the namespace `brax.v1`
+            (which was introduced in brax version 0.9.0 where the updated
+            implementations of the environments became default and the classical
+            ones moved into `brax.v1`).
+            You can use the prefix "old::" for reproducing previous results
+            that were obtained or reported using an older version of brax.
         force_classic_api: Whether or not the classic gym API is to be used.
         num_envs: Batch size for the vectorized environment.
         discrete_to_continuous_act: Whether or not the the discrete action
@@ -503,10 +541,10 @@ def make_gym_env(
     **kwargs,
 ) -> TorchWrapper:
     """
-    Make gym environments and wrap them via a SyncVectorEnv and a TorchWrapper.
+    Make gymnasium environments and wrap them via SyncVectorEnv and TorchWrapper.
 
     Args:
-        env_name: Name of the gym environment, as string (e.g. "Humanoid-v4").
+        env_name: Name of the gymnasium environment, as string (e.g. "Humanoid-v4").
         force_classic_api: Whether or not the classic gym API is to be used.
         num_envs: Batch size for the vectorized environment.
         discrete_to_continuous_act: Whether or not the the discrete action
@@ -518,7 +556,7 @@ def make_gym_env(
         kwargs: Expected in the form of additional keyword arguments, these
             are passed to the environment.
     Returns:
-        The gym environments, wrapped by a TorchWrapper.
+        The gymnasium environments, wrapped by a TorchWrapper.
     """
 
     def make_the_env():
@@ -548,16 +586,26 @@ def make_vector_env(
     Make a new vectorized environment and wrap it via TorchWrapper.
 
     Args:
-        env_name: Name of the gym environment, as string.
+        env_name: Name of the environment, as string.
             If the string starts with "gym::" (e.g. "gym::Humanoid-v4", etc.),
-            then it is assumed that the target environment is a classical gym
-            environment which will first be wrapped via a SyncVectorEnv and
-            then via a TorchWrapper.
+            then it is assumed that the target environment is a traditional
+            non-vectorized gymnasium environment. This non-vectorized
+            will first be duplicated and wrapped via a `SyncVectorEnv` so that
+            it gains a vectorized interface, and then, it will be wrapped via
+            `TorchWrapper`.
             If the string starts with "brax::" (e.g. "brax::humanoid", etc.),
             then it is assumed that the target environment is a brax
             environment which will be wrapped via TorchWrapper.
+            If the string starts with "brax::old::" (e.g.
+            "brax::old::humanoid", etc.), then the environment will be made
+            using the namespace `brax.v1` (which was introduced in brax
+            version 0.9.0 where the updated implementations of the environments
+            became default and the classical ones moved into `brax.v1`).
+            You can use the prefix "brax::old::" for reproducing previous
+            results that were obtained or reported using an older version of
+            brax.
             If the string does not contain "::" at all (e.g. "Humanoid-v4"),
-            then it is assumed that the target environment is a classical gym
+            then it is assumed that the target environment is a gymnasium
             environment. Therefore, "gym::Humanoid-v4" and "Humanoid-v4"
             are equivalent.
         force_classic_api: Whether or not the classic gym API is to be used.
@@ -571,7 +619,7 @@ def make_vector_env(
         kwargs: Expected in the form of additional keyword arguments, these
             are passed to the environment.
     Returns:
-        The gym environments, wrapped by a TorchWrapper.
+        The vectorized gymnasium environment, wrapped by TorchWrapper.
     """
 
     env_parts = str(env_name).split("::", maxsplit=1)
@@ -1112,6 +1160,14 @@ if brax is not None:  # noqa: C901
 
     class VectorEnvFromBrax(gym.vector.VectorEnv):
         def __init__(self, env_name: str, **kwargs):
+            env_name = str(env_name)
+
+            if env_name.startswith("old::"):
+                env_name = env_name[5:]
+                create = old_brax_envs.create
+            else:
+                create = brax.envs.create
+
             filtered_kwargs = {}
 
             auto_reset = None
@@ -1149,9 +1205,7 @@ if brax is not None:  # noqa: C901
                     " which is not supported."
                 )
 
-            self.__brax_env = brax.envs.create(
-                str(env_name), auto_reset=auto_reset, batch_size=num_envs, **filtered_kwargs
-            )
+            self.__brax_env = create(env_name, auto_reset=auto_reset, batch_size=num_envs, **filtered_kwargs)
             self.__jit_reset = jax.jit(self.__brax_env.reset)
             self.__jit_step = jax.jit(self.__brax_env.step)
             self.__jit_convert_to_bool = jax.jit(self.__convert_to_bool)
