@@ -23,6 +23,7 @@ from datetime import datetime
 from typing import Any, Iterable, Optional, Union
 
 import torch
+from packaging.version import Version
 from torch import nn
 
 from .algorithms.searchalgorithm import SearchAlgorithm
@@ -49,7 +50,10 @@ except ImportError:
 
 
 try:
-    import neptune.new as neptune
+    import neptune
+
+    if hasattr(neptune, "__version__") and (Version(neptune.__version__) < Version("1.0")):
+        import neptune.new as neptune
 except ImportError:
     neptune = None
 
