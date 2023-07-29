@@ -1215,7 +1215,18 @@ if brax is not None:  # noqa: C901
 
             inf = float("inf")
             observation_space = Box(low=-inf, high=inf, shape=(self.__brax_env.observation_size,), dtype=np.float32)
-            action_space = Box(low=-1.0, high=1.0, shape=(self.__brax_env.action_size,), dtype=np.float32)
+
+            if hasattr(self.__brax_env.sys, "actuator"):
+
+                def as_float32_array(arr: Iterable) -> np.ndarray:
+                    return np.array(arr, dtype=np.float32)
+
+                ctrl_range = jax.tree_map(as_float32_array, self.__brax_env.sys.actuator.ctrl_range)
+                ctrl_lb = ctrl_range[:, 0]
+                ctrl_ub = ctrl_range[:, 1]
+                action_space = Box(low=ctrl_lb, high=ctrl_ub, dtype=np.float32)
+            else:
+                action_space = Box(low=-1.0, high=1.0, shape=(self.__brax_env.action_size,), dtype=np.float32)
 
             self.__last_state: Optional[Iterable] = None
             super().__init__(num_envs=num_envs, observation_space=observation_space, action_space=action_space)
