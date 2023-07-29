@@ -13,27 +13,44 @@
 # limitations under the License.
 
 from collections.abc import Mapping
+from typing import Optional
 
 import gym as classical_gym
 import gymnasium as gym
 from gymnasium.envs.registration import register
+from gymnasium.spaces import Box
 
 
-class TinyTrajHumanoidBulletEnv(gym.Env):
-    ID = "TinyTrajHumanoidBulletEnv-v0"
-    ENTRY_POINT = __name__ + ":TinyTrajHumanoidBulletEnv"
-    MAX_EPISODE_STEPS = 200
+class WrappedHumanoidBulletEnv(gym.Env):
+    ID = "WrappedHumanoidBulletEnv-v0"
+    ENTRY_POINT = __name__ + ":WrappedHumanoidBulletEnv"
+    MAX_EPISODE_STEPS = 1000
 
-    def __init__(self, trajectory_length=200, **kwargs):
+    def __init__(self, trajectory_length: Optional[int] = None, render_mode: Optional[str] = None, **kwargs):
         gym.Env.__init__(self)
+
+        if trajectory_length is None:
+            trajectory_length = self.MAX_EPISODE_STEPS
 
         self.__tlimit = trajectory_length
         self.__done = True
         self.__t = 0
-        self.__contained_env = classical_gym.make("pybullet_envs:HumanoidBulletEnv-v0", **kwargs)
+        self.__contained_env = classical_gym.make(
+            "pybullet_envs:HumanoidBulletEnv-v0", render=(render_mode == "human"), **kwargs
+        )
 
-        self.observation_space = self.__contained_env.observation_space
-        self.action_space = self.__contained_env.action_space
+        self.__render_mode = None if render_mode is None else str(render_mode)
+
+        self.observation_space = Box(
+            low=self.__contained_env.observation_space.low,
+            high=self.__contained_env.observation_space.high,
+            dtype=self.__contained_env.observation_space.dtype,
+        )
+        self.action_space = Box(
+            low=self.__contained_env.action_space.low,
+            high=self.__contained_env.action_space.high,
+            dtype=self.__contained_env.action_space.dtype,
+        )
         self.reward_range = (float("-inf"), float("inf"))
 
     def step(self, action):
@@ -65,16 +82,22 @@ class TinyTrajHumanoidBulletEnv(gym.Env):
 
         reward = sum(self.__contained_env.rewards[1:])
 
-        if num_step_results == 5:
-            return observation, reward, terminated, truncated, info
+        return observation, reward, terminated, truncated, info
 
     def reset(self, **kwargs):
         self.__done = False
         self.__t = 0
-        return self.__contained_env.reset(**kwargs)
+        contained_obs = self.__contained_env.reset(**kwargs)
+        if isinstance(contained_obs, tuple):
+            result = contained_obs
+        else:
+            result = contained_obs, {}
+        return result
 
-    def render(self, mode="human", **kwargs):
-        self.__contained_env.render(mode=mode, **kwargs)
+    def render(self, mode: Optional[str] = None, **kwargs):
+        if mode is None:
+            mode = self.__render_mode
+        return self.__contained_env.render(mode=mode, **kwargs)
 
     def close(self):
         return self.__contained_env.close()
@@ -116,6 +139,19 @@ class TinyTrajHumanoidBulletEnv(gym.Env):
     @property
     def robot(self):
         return self.__contained_env
+
+
+class TinyTrajHumanoidBulletEnv(WrappedHumanoidBulletEnv):
+    ID = "TinyTrajHumanoidBulletEnv-v0"
+    ENTRY_POINT = __name__ + ":TinyTrajHumanoidBulletEnv"
+    MAX_EPISODE_STEPS = 200
+
+
+register(
+    id=WrappedHumanoidBulletEnv.ID,
+    entry_point=WrappedHumanoidBulletEnv.ENTRY_POINT,
+    max_episode_steps=WrappedHumanoidBulletEnv.MAX_EPISODE_STEPS,
+)
 
 
 register(

@@ -256,7 +256,9 @@ if __name__ == "__main__":
         help=(
             "When provided, this is expected as a Python dictionary."
             " Each item in this Python dictionary will be set as an attribute of the gym environment."
-            " For example, for a PyBullet environment (e.g. bullet_envs:HumanoidBulletEnv-v0),"
+            " For example, for a PyBullet environment"
+            " (like wrapped_humanoid_bullet:WrappedHumanoidBulletEnv-v0"
+            " or wrapped_humanoid_bullet:TinyTrajHumanoidBulletEnv-v0)"
             ' one might want to give the argument --set \'{"_render_width": 640, "_render_height": 480}\''
             " to set the attributes _render_width and _render_height as 640 and 480 respectively,"
             " therefore configuring the render size to 640x480 while recording."
