@@ -18,7 +18,7 @@
 This namespace contains the CMAES class
 """
 
-from typing import Optional, Tuple
+from typing import Optional, Tuple, Union
 
 import numpy as np
 import torch
@@ -78,6 +78,13 @@ def _limit_stdev(sigma: torch.Tensor, C: torch.Tensor, stdev_min: Optional[float
         torch.diagonal(C)[:] = unscaled_stdevs.pow(2.0)
 
     return C
+
+
+def _safe_divide(a: Union[Real, torch.Tensor], b: Union[Real, torch.Tensor]) -> Union[torch.Tensor]:
+    tolerance = 1e-8
+    if abs(b) < tolerance:
+        b = (-tolerance) if b < 0 else tolerance
+    return a / b
 
 
 class CMAES(SearchAlgorithm, SinglePopulationAlgorithmMixin):
@@ -360,9 +367,11 @@ class CMAES(SearchAlgorithm, SinglePopulationAlgorithmMixin):
         # Note that we could use the exact formulation with Gamma functions, but we'll retain this form for consistency
         self.unbiased_expectation = np.sqrt(d) * (1 - (1 / (4 * d)) + 1 / (21 * d**2))
 
+        self.last_ex = None
+
         # How often to decompose C
         if limit_C_decomposition:
-            self.decompose_C_freq = max(1, int(1 / np.floor(10 * d * (self.c_1.cpu() + self.c_mu.cpu()))))
+            self.decompose_C_freq = max(1, int(np.floor(_safe_divide(1, 10 * d * (self.c_1.cpu() + self.c_mu.cpu())))))
         else:
             self.decompose_C_freq = 1
 
