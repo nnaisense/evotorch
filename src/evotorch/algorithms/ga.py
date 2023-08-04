@@ -754,6 +754,13 @@ class SteadyStateGA(GeneticAlgorithm):
                 then `re_evaluate_parents_first` will be internally set as
                 True; otherwise `re_evaluate_parents_first` will be internally
                 set as False.
+                Additional note specific to `SteadyStateGA`: if the argument
+                `operators` is not given (or is given as an empty list), and
+                also `re_evaluate_parents_first` is left as None, then
+                `SteadyStateGA` will assume that the operators will be later
+                given via the `use(...)` method, and that these operators will
+                require the parents to be evaluated first (equivalent to
+                setting `re_evaluate_parents_first` as True).
         """
         if operators is None:
             operators = []
@@ -762,6 +769,9 @@ class SteadyStateGA(GeneticAlgorithm):
         self._mutation_op: Optional[Callable] = None
         self._forbid_use_method: bool = False
         self._prepare_ops: bool = False
+
+        if (len(operators) == 0) and re_evaluate and (re_evaluate_parents_first is None):
+            re_evaluate_parents_first = True
 
         super().__init__(
             problem,
