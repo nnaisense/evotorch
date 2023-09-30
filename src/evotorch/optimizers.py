@@ -18,6 +18,7 @@ search algorithms.
 """
 
 import logging
+from collections.abc import Mapping
 from typing import Callable, Optional, Type
 
 import torch
@@ -88,6 +89,13 @@ class TorchOptimizer:
         result = -1.0 * self._data
 
         return result
+
+    @property
+    def contained_optimizer(self) -> torch.optim.Optimizer:
+        """
+        Get the PyTorch optimizer contained by this wrapper
+        """
+        return self._optim
 
 
 class Adam(TorchOptimizer):
@@ -224,10 +232,6 @@ class ClipUp:
     """
     The ClipUp optimizer.
 
-    Although this optimizer has the very same interface with SGD and Adam,
-    it is not a PyTorch optimizer. Therefore, it does not inherit from
-    TorchOptimizer.
-
     Reference:
 
         Toklu, N. E., Liskowski, P., & Srivastava, R. K. (2020, September).
@@ -235,6 +239,10 @@ class ClipUp:
         In International Conference on Parallel Problem Solving from Nature (pp. 515-527).
         Springer, Cham.
     """
+
+    _param_group_items = {"lr": "_stepsize", "max_speed": "_max_speed", "momentum": "_momentum"}
+    _param_group_item_lb = {"lr": 0.0, "max_speed": 0.0, "momentum": 0.0}
+    _param_group_item_ub = {"momentum": 1.0}
 
     def __init__(
         self,
@@ -288,6 +296,8 @@ class ClipUp:
         self._stepsize = stepsize
         self._momentum = momentum
         self._max_speed = max_speed
+
+        self._param_groups = (ClipUpParameterGroup(self),)
 
         self._velocity: Optional[torch.Tensor] = torch.zeros(
             solution_length, dtype=to_torch_dtype(dtype), device=device
@@ -345,6 +355,67 @@ class ClipUp:
             result = result.clone()
 
         return result
+
+    @property
+    def contained_optimizer(self) -> "ClipUp":
+        """
+        Get this `ClipUp` instance itself.
+        """
+        return self
+
+    @property
+    def param_groups(self) -> tuple:
+        """
+        Returns a single-element tuple representing a parameter group.
+
+        The tuple contains a dictionary-like object in which the keys are the
+        hyperparameter names, and the values are the values of those
+        hyperparameters. The hyperparameter names are `lr` (the step size, or
+        the learning rate), `max_speed` (the maximum speed), and `momentum`
+        (the momentum coefficient). The values of these hyperparameters can be
+        read and also be written if one wishes to adjust the behavior of ClipUp
+        during the optimization.
+        """
+        return self._param_groups
+
+
+class ClipUpParameterGroup(Mapping):
+    """
+    A dictionary-like object storing the hyperparameters of a ClipUp instance.
+
+    The values of the hyperparameters within this container can be read and
+    can also be written if one wishes to adjust the behavior of ClipUp during
+    the optimization.
+    """
+
+    def __init__(self, clipup: "ClipUp"):
+        self.clipup = clipup
+
+    def __getitem__(self, key: str) -> float:
+        attrname = ClipUp._param_group_items[key]
+        return getattr(self.clipup, attrname)
+
+    def __setitem__(self, key: str, value: float):
+        attrname = ClipUp._param_group_items[key]
+        value = float(value)
+        if attrname in ClipUp._param_group_item_lb:
+            lb = ClipUp._param_group_item_lb[key]
+            if value < lb:
+                raise ValueError(f"Invalid value for {repr(key)}: {value}")
+        if attrname in ClipUp._param_group_item_ub:
+            ub = ClipUp._param_group_item_ub[key]
+            if value > ub:
+                raise ValueError(f"Invalid value for {repr(key)}: {value}")
+        setattr(self.clipup, attrname, value)
+
+    def __iter__(self):
+        return ClipUp._param_group_items.__iter__()
+
+    def __len__(self) -> int:
+        return len(ClipUp._param_group_items)
+
+    def __repr__(self) -> str:
+        return f"<{type(self).__name__}: {dict(self)}>"
 
 
 def get_optimizer_class(s: str, optimizer_config: Optional[dict] = None) -> Callable:

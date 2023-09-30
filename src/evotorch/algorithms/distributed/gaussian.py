@@ -440,6 +440,45 @@ class GaussianSearchAlgorithm(SearchAlgorithm, SinglePopulationAlgorithmMixin):
         return 0 if self._population is None else len(self._population)
 
     @property
+    def optimizer(self):
+        """
+        Get the optimizer used by this search algorithm.
+
+        If an optimizer is not being used, the result will be `None`.
+        If a PyTorch optimizer is being used, the result will be an instance of
+        `torch.optim.Optimizer`.
+        If the returned optimizer is "clipup", then the returned object will be
+        an instance of `evotorch.optimizers.ClipUp`.
+
+        The returned optimizer object can be used for reading/writing the
+        hyperparameters. For example, to read the learning of the optimizer,
+        one can do:
+
+        ```python
+        learning_rate = my_search_algorithm.optimizer.param_groups[0]["lr"]
+        ```
+
+        One can also update the learning rate like this:
+
+        ```python
+        my_search_algorithm.optimizer.param_groups[0]["lr"] = new_learning_rate
+        ```
+
+        **Note for when updating the learning rate of ClipUp.**
+        At the moment of initialization, if one provides `center_learning_rate`
+        but the maximum speed is not specified (i.e. the search algorithm is not
+        given something like `optimizer_config={"max_speed": ...}`), then, the
+        maximum speed is initialized as `2*center_learning_rate`. However, when
+        this `center_learning_rate` is later modified (via
+        `my_search_algorithm.optimizer.param_groups[0]["lr"] = new_center_learning_rate`
+        the maximum speed will NOT be automatically adjusted.
+        Therefore, when updating the center learning rate of ClipUp, consider
+        also adjusting the maximum speed of ClipUp via:
+        `my_search_algorithm.optimizer.param_groups[0]["max_speed"] = ...`
+        """
+        return None if self._optimizer is None else self._optimizer.contained_optimizer
+
+    @property
     def population(self) -> Optional[SolutionBatch]:
         """
         The population, represented by a SolutionBatch.
