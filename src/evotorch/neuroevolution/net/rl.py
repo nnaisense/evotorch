@@ -17,11 +17,6 @@
 from copy import deepcopy
 from typing import Any, Iterable, Optional, Union
 
-try:
-    import gym as classic_gym
-except ImportError:
-    classic_gym = None
-
 
 import gymnasium as gym
 import torch

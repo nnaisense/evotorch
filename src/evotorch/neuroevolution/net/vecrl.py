@@ -63,7 +63,7 @@ if jax is not None:
 else:
 
     def _jax_is_missing():
-        raise ImportError("The library `jax` is missing, or the attempt to import it failed.")
+        raise ImportError("`jax` is missing, or the attempt to import it failed.")
 
     class JaxArray:
         def __init__(self, *args, **kwargs):
@@ -95,7 +95,7 @@ if brax is not None:
 else:
 
     def _brax_is_missing():
-        raise ImportError("The module `brax` is missing, or the attempt to import it failed.")
+        raise ImportError("`brax` is missing, or the attempt to import it failed.")
 
     class BraxEnv:
         def __init__(self, *args, **kwargs):
@@ -122,7 +122,7 @@ if old_brax is not None:
 else:
 
     def _old_brax_is_missing():
-        raise ImportError("The module `brax.v1` is missing, or the attempt to import it failed.")
+        raise ImportError("`brax.v1` is missing, or the attempt to import it failed.")
 
     class OldBraxEnv:
         def __init__(self, *args, **kwargs):

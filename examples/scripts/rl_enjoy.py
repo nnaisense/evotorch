@@ -39,7 +39,7 @@ def make_env_for_rendering(*args, **kwargs):
     Returns:
         The newly made gym environment.
     """
-    env_config = {**kwargs, **{"render_mode": "human"}}
+    env_config = {**kwargs, "render_mode": "human"}
     return gym.make(*args, **env_config)
 
 
@@ -55,7 +55,7 @@ def make_env_for_recording(*args, **kwargs):
     Returns:
         The newly made gym environment.
     """
-    env_config = {**kwargs, **{"render_mode": "rgb_array"}}
+    env_config = {**kwargs, "render_mode": "rgb_array"}
     return gym.make(*args, **env_config)
 
 
