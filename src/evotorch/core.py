@@ -1463,8 +1463,8 @@ class Problem(TensorMakerMixin, Serializable):
         if (self._num_actors >= 2) and (self._device != torch.device("cpu")):
             detailed_error_msg = (
                 f"The number of actors that will be allocated for parallelized evaluation is {self._num_actors}."
-                f" When the number of actors is at least 2,"
-                f' the only supported value for the `device` argument is "cpu".'
+                " When the number of actors is at least 2,"
+                ' the only supported value for the `device` argument is "cpu".'
                 f" However, `device` was received as {self._device}."
                 "\n\n---- Possible ways to fix the error: ----"
                 "\n\n"
