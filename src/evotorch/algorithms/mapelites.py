@@ -2,7 +2,11 @@ import itertools
 from typing import Callable, Iterable, Optional, Union
 
 import torch
-from functorch import vmap
+
+try:
+    from torch.func import vmap
+except ImportError:
+    from functorch import vmap
 
 from ..core import Problem, SolutionBatch
 from ..operators import CosynePermutation, CrossOver, GaussianMutation, OnePointCrossOver, SimulatedBinaryCrossOver

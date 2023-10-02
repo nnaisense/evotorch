@@ -92,6 +92,7 @@ from .tools import (
     rank,
     rowwise_sum,
     split_workload,
+    storage_ptr,
     to_torch_dtype,
 )
 from .tools.cloning import Serializable, deep_clone
@@ -3422,7 +3423,7 @@ class SolutionBatch(Serializable):
             self._slice = slice_info
             self._descending = source._descending
 
-            shares_storage = self._data.storage().data_ptr() == source._data.storage().data_ptr()
+            shares_storage = storage_ptr(self._data) == storage_ptr(source._data)
 
             if not shares_storage:
                 self._descending = deepcopy(self._descending)

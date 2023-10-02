@@ -19,7 +19,7 @@ import pytest
 
 from evotorch.tools import clone
 from evotorch.tools import immutable as imm
-from evotorch.tools import make_tensor
+from evotorch.tools import make_tensor, storage_ptr
 from evotorch.tools.objectarray import ObjectArray
 
 
@@ -47,7 +47,7 @@ def test_sharing_memory():
     y = x[3:5]
 
     # The two tensors should be sharing memory
-    assert x.storage().data_ptr() == y.storage().data_ptr()
+    assert storage_ptr(x) == storage_ptr(y)
 
     # Change the elements of y
     y[:] = [0, 0]
@@ -166,7 +166,7 @@ def test_read_only_object_tensor():
     ro = objs.get_read_only_view()
 
     # The two ObjectArray must share memory
-    assert objs.storage().data_ptr() == ro.storage().data_ptr()
+    assert storage_ptr(objs) == storage_ptr(ro)
 
     # The two ObjectArray instances must be equal, elementwise
     assert len(objs) == len(ro)

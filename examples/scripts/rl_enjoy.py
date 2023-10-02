@@ -20,24 +20,16 @@ from pathlib import Path
 from time import sleep
 from typing import Optional, Union
 
-import gym
+import gymnasium as gym
 import numpy as np
 import torch
-from packaging.version import Version
 
 from evotorch.neuroevolution.net.rl import reset_env, take_step_in_env
-
-new_render_api = Version(gym.__version__) >= Version("0.26")
 
 
 def make_env_for_rendering(*args, **kwargs):
     """
-    Initialize a new gym environment with human-mode rendering.
-
-    Beginning with gym 0.26, it is required to specify the rendering mode
-    while initializing the environment. If the gym version is newer than
-    or equal to 0.26, this function passes the keyword argument
-    `render_mode="human"` to `gym.make(...)`.
+    Initialize a new gymnasium environment with human-mode rendering.
 
     Args:
         args: Expected in the form of positional arguments. These are
@@ -47,23 +39,13 @@ def make_env_for_rendering(*args, **kwargs):
     Returns:
         The newly made gym environment.
     """
-    if new_render_api:
-        env_config = {"render_mode": "human"}
-    else:
-        env_config = {}
-
-    env_config.update(kwargs)
+    env_config = {**kwargs, "render_mode": "human"}
     return gym.make(*args, **env_config)
 
 
 def make_env_for_recording(*args, **kwargs):
     """
-    Initialize a new gym environment with human-mode rendering.
-
-    Beginning with gym 0.26, it is required to specify the rendering mode
-    while initializing the environment. If the gym version is newer than
-    or equal to 0.26, this function passes the keyword argument
-    `render_mode="rgb_array"` to `gym.make(...)`.
+    Initialize a new gymnasium environment for recording.
 
     Args:
         args: Expected in the form of positional arguments. These are
@@ -73,26 +55,8 @@ def make_env_for_recording(*args, **kwargs):
     Returns:
         The newly made gym environment.
     """
-    if new_render_api:
-        env_config = {"render_mode": "rgb_array"}
-    else:
-        env_config = {}
-
-    env_config.update(kwargs)
+    env_config = {**kwargs, "render_mode": "rgb_array"}
     return gym.make(*args, **env_config)
-
-
-def rgb_array_from_env(env: gym.Env) -> np.ndarray:
-    """
-    Render the current state of the environment into numpy array.
-
-    Returns:
-        The newly made numpy array containing the rendering result.
-    """
-    if new_render_api:
-        return env.render()
-    else:
-        return env.render(mode="rgb_array")
 
 
 def str_if_non_empty(s: Optional[str]) -> Optional[str]:
@@ -158,8 +122,6 @@ def main(
         env_name = loaded["env_name"]
     policy = loaded["policy"]
     kwargs = {}
-    if ("BulletEnv" in env_name) and (record_prefix is None) and (not new_render_api):
-        kwargs["render"] = True
     if config is not None:
         kwargs.update(config)
 
@@ -195,7 +157,7 @@ def main(
             from matplotlib import pyplot as plt
 
             if scene_index % record_period == 0:
-                img = rgb_array_from_env(env)
+                img = env.render()
                 if extract is not None:
                     extract_parts = extract.split(",")
                     x1 = int(extract_parts[0])
@@ -294,7 +256,9 @@ if __name__ == "__main__":
         help=(
             "When provided, this is expected as a Python dictionary."
             " Each item in this Python dictionary will be set as an attribute of the gym environment."
-            " For example, for a PyBullet environment (e.g. bullet_envs:HumanoidBulletEnv-v0),"
+            " For example, for a PyBullet environment"
+            " (like wrapped_humanoid_bullet:WrappedHumanoidBulletEnv-v0"
+            " or wrapped_humanoid_bullet:TinyTrajHumanoidBulletEnv-v0)"
             ' one might want to give the argument --set \'{"_render_width": 640, "_render_height": 480}\''
             " to set the attributes _render_width and _render_height as 640 and 480 respectively,"
             " therefore configuring the render size to 640x480 while recording."

@@ -11,7 +11,7 @@ The scripts provided here demonstrate key features of EvoTorch for new users and
 ---
 ## Reinforcement Learning
 
-- [rl_gym.py](./rl_gym.py): demonstrates how to solve a simple [Gym](https://www.gymlibrary.ml/) problem using the PGPE algorithm and ClipUp optimizer.
+- [rl_gym.py](./rl_gym.py): demonstrates how to solve a simple [Gymnasium](https://gymnasium.farama.org/) problem using the PGPE algorithm and ClipUp optimizer.
 
 ---
 ## Paper re-implementation (RL)
@@ -23,7 +23,7 @@ Nihat Engin Toklu, Paweł Liskowski, and Rupesh Kumar Srivastava.
 International Conference on Parallel Problem Solving from Nature. Springer, Cham, 2020.
 https://arxiv.org/abs/2008.02387
 ```
-It allows you to train policies for the Lunar Lander, Walker-2D and Humanoid environments from [Gym](https://www.gymlibrary.ml/) as well as the [PyBullet](https://pybullet.org/) Humanoid.
+It allows you to train policies for the Lunar Lander, Walker-2D and Humanoid environments from [Gymnasium](https://gymnasium.farama.org/) as well as the [PyBullet](https://pybullet.org/) Humanoid.
 
 
 ### Requirements
@@ -32,9 +32,9 @@ It allows you to train policies for the Lunar Lander, Walker-2D and Humanoid env
 # Necessary: Used for configs and logging results to files or databases
 pip install sacred
 # Optional: box2d for Lunar Lander, mujoco for Walker-2D and Humanoid
-pip install 'gym[box2d,mujoco]'
+pip install 'gymnasium[box2d,mujoco]'
 # Optional: For PyBullet Humanoid
-pip install pybullet
+pip install pybullet 'gym<0.26'
 ```
 
 ### Running experiments
@@ -88,7 +88,7 @@ Also, the following command:
 python rl_clipup.py -F RESULTS_DIR with pybullet_humanoid save_interval=50
 ```
 
-...starts an evolutionary computation run for solving `pybullet_envs:HumanoidBulletEnv-v0`, and saves the policy at every 50 generations. Such an explicit `save_interval` value is recommended for pybullet humanoid, since the computational experiments for this environment last long, and one might want to look at how the current agent is behaving without having to wait until the end of the run.
+...starts an evolutionary computation run for solving [`wrapped_humanoid_bullet:WrappedHumanoidBulletEnv-v0`](./wrapped_humanoid_bullet.py) (which is a wrapper around the classical gym environment `pybullet_envs:HumanoidBulletEnv-v0` to make the environment available to gymnasium), and saves the policy at every 50 generations. Such an explicit `save_interval` value is recommended for pybullet humanoid, since the computational experiments for this environment last long, and one might want to look at how the current agent is behaving without having to wait until the end of the run.
 
 Other available pre-configurations are `walker` (for the MuJoCo environment `Walker-v4`) and `humanoid` (for the MuJoCo environment `Humanoid-v4`).
 

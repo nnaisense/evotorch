@@ -196,8 +196,8 @@ def humanoid():
 
 @ex.named_config
 def pybullet_humanoid():
-    env_name = "tinytraj_humanoid_bullet:TinyTrajHumanoidBulletEnv-v0"
-    actual_env_name = "pybullet_envs:HumanoidBulletEnv-v0"
+    env_name = "wrapped_humanoid_bullet:TinyTrajHumanoidBulletEnv-v0"
+    actual_env_name = "wrapped_humanoid_bullet:WrappedHumanoidBulletEnv-v0"
     policy = "Linear(obs_length, 64) >> Tanh() >> Linear(64, act_length)"
     max_speed = 0.15
     adam_alpha = 6e-4  # No experiment was ever done with adam for this problem

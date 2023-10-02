@@ -21,10 +21,9 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Callable, Iterable, List, Optional, Union
 
-import gym
+import gymnasium as gym
 import numpy as np
 import torch
-from packaging.version import Version
 from torch import nn
 
 from ..core import BoundsPairLike, Solution, SolutionBatch
@@ -40,11 +39,6 @@ from .net.rl import (
     take_step_in_env,
 )
 from .net.statefulmodule import ensure_stateful
-
-# Determine the gym version without failing when __version__ has an unexpected value.
-# Perhaps such unexpected values could be encountered when using a custom/modified version
-# of gym, and we do not wish this module to fail in those scenarios.
-_gym_older_than_0_26 = Version(gym.__version__) < Version("0.26")
 
 
 def ensure_space_types(env: gym.Env) -> None:
@@ -381,14 +375,13 @@ class GymNE(NEProblem):
         policy = ensure_stateful(policy)
         policy.reset()
 
-        if visualize and (not _gym_older_than_0_26):
-            # Beginning with gym 0.26, we need to specify the render mode when instantiating the environment.
+        if visualize:
             env = self._instantiate_new_env(render_mode="human")
         else:
             env = self._get_env()
 
         observation = self._normalize_observation(reset_env(env), update_stats=update_stats)
-        if visualize and _gym_older_than_0_26:
+        if visualize:
             env.render()
         t = 0
 

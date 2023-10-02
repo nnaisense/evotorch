@@ -24,7 +24,7 @@ from typing import Any, Iterable, Optional
 import numpy as np
 import torch
 
-from .misc import Device, DType, Size, clone, is_integer, is_sequence
+from .misc import Device, DType, Size, clone, is_integer, is_sequence, storage_ptr
 from .recursiveprintable import RecursivePrintable
 
 
@@ -126,9 +126,9 @@ class ObjectArray(Sequence, RecursivePrintable):
 
     An interesting feature of PyTorch: if one slices a tensor A and the
     result is a new tensor B, and if B is sharing storage memory with A,
-    then A.storage().data_ptr() and B.storage().data_ptr() will return
-    the same pointer. This means, one can compare the storage pointers of
-    A and B and see whether or not the two are sharing memory.
+    then A.untyped_storage().data_ptr() and B.untyped_storage().data_ptr()
+    will return the same pointer. This means, one can compare the storage
+    pointers of A and B and see whether or not the two are sharing memory.
     ObjectArray was designed to have this exact behavior, so that one
     can understand if two ObjectArray instances are sharing memory.
     Note that NumPy does NOT have such a behavior. In more details,
@@ -194,7 +194,7 @@ class ObjectArray(Sequence, RecursivePrintable):
             self._indices = source._indices[slicing]
             self._objects = source._objects
 
-            if self._indices.storage().data_ptr() != source._indices.storage().data_ptr():
+            if storage_ptr(self._indices) != storage_ptr(source._indices):
                 self._objects = clone(self._objects)
 
         self._device = torch.device("cpu")
@@ -322,7 +322,7 @@ class ObjectArray(Sequence, RecursivePrintable):
         else:
             indices = self._indices[i]
 
-            same_ptr = indices.storage().data_ptr() == self._indices.storage().data_ptr()
+            same_ptr = storage_ptr(indices) == storage_ptr(self._indices)
 
             result = ObjectArray(len(indices))
 
@@ -477,6 +477,9 @@ class ObjectArray(Sequence, RecursivePrintable):
         return self._read_only
 
     def storage(self) -> ObjectArrayStorage:
+        return ObjectArrayStorage(self)
+
+    def untyped_storage(self) -> ObjectArrayStorage:
         return ObjectArrayStorage(self)
 
     def numpy(self, *, memo: Optional[dict] = None) -> np.ndarray:

@@ -17,9 +17,9 @@
 from copy import deepcopy
 from typing import Any, Iterable, Optional, Union
 
-import gym
+import gymnasium as gym
 import torch
-from gym.spaces import Box
+from gymnasium.spaces import Box
 from torch import nn
 
 from .misc import device_of_module
@@ -62,27 +62,15 @@ def _accumulate_all_across_dicts(dicts: Iterable[dict], keys_and_methods: dict):
 
 def reset_env(env: gym.Env) -> Iterable:
     """
-    Reset a gym environment.
+    Reset a gymnasium environment.
 
-    For gym 1.0, the plan is to have a `reset(...)` method which returns
-    a two-element tuple `(observation, info)` where `info` is an object
-    providing any additional information regarding the initial state of
-    the agent. However, the old (pre 1.0) gym API (and some environments
-    which were written with old gym compatibility in mind) has (or have)
-    a `reset(...)` method which returns a single object that is the
-    initial observation.
-    With the assumption that the observation space of the environment
-    is NOT tuple, this function can work with both pre-1.0 and (hopefully)
-    after-1.0 versions of gym, and always returns the initial observation.
-
-    Please do not use this function on environments whose observation
-    spaces or tuples, because then this function cannot distinguish between
-    environments whose `reset(...)` methods return a tuple and environments
-    whose `reset(...)` methods return a single observation object but that
-    observation object is a tuple.
+    Even though the `gymnasium` library switched to a new API where the
+    `reset()` method returns a tuple `(observation, info)`, this function
+    follows the conventions of the classical `gym` library and returns
+    only the observation of the newly reset environment.
 
     Args:
-        env: The gym environment which will be reset.
+        env: The gymnasium environment which will be reset.
     Returns:
         The initial observation
     """
@@ -94,25 +82,18 @@ def reset_env(env: gym.Env) -> Iterable:
 
 def take_step_in_env(env: gym.Env, action: Iterable) -> tuple:
     """
-    Take a step in the gym environment.
+    Take a step in the gymnasium environment.
     Taking a step means performing the action provided via the arguments.
 
-    For gym 1.0, the plan is to have a `step(...)` method which returns a
-    5-elements tuple containing `observation`, `reward`, `terminated`,
-    `truncated`, `info` where `terminated` is a boolean indicating whether
-    or not the episode is terminated because of the actions taken within the
-    environment, and `truncated` is a boolean indicating whether or not the
-    episode is finished because the time limit is reached.
-    However, the old (pre 1.0) gym API (and some environments which were
-    written with old gym compatibility in mind) has (or have) a `step(...)`
-    method which returns 4 elements: `observation`, `reward`, `done`, `info`
-    where `done` is a boolean indicating whether or not the episode is
-    "done", either because of termination or because of truncation.
-    This function can work with both pre-1.0 and (hopefully) after-1.0
-    versions of gym, and always returns the 4-element tuple as its result.
+    Even though the `gymnasium` library switched to a new API where the
+    `step()` method returns a 5-element tuple of the form
+    `(observation, reward, terminated, truncated, info)`, this function
+    follows the conventions of the classical `gym` library and returns
+    a 4-element tuple `(observation, reward, done, info)`.
 
     Args:
-        env: The gym environment in which the given action will be performed.
+        env: The gymnasium environment in which the action will be performed.
+        action: The action to be performed.
     Returns:
         A tuple in the form `(observation, reward, done, info)` where
         `observation` is the observation received after performing the action,

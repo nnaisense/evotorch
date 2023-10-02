@@ -2066,3 +2066,28 @@ def message_from(sender: object, message: Any) -> str:
     sender_id = id(sender)
 
     return f"Instance of `{sender_type}` (id:{sender_id}) -- {message}"
+
+
+if hasattr(torch.Tensor, "untyped_storage"):
+
+    def _storage_ptr(x: Iterable) -> int:
+        return x.untyped_storage().data_ptr()
+
+else:
+
+    def _storage_ptr(x: Iterable) -> int:
+        return x.storage().data_ptr()
+
+
+def storage_ptr(x: Iterable) -> int:
+    """
+    Get the pointer to the underlying storage of a tensor of an ObjectArray.
+
+    Calling `storage_ptr(x)` is equivalent to `x.untyped_storage().data_ptr()`.
+
+    Args:
+        x: A regular PyTorch tensor, or a ReadOnlyTensor, or an ObjectArray.
+    Returns:
+        The address of the underlying storage.
+    """
+    return _storage_ptr(x)
