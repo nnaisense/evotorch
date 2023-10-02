@@ -139,6 +139,7 @@ plt.show()
     from evotorch.logging import StdOutLogger, PandasLogger
     import torch
 
+
     # Create a Problem instance to solve
     def sphere(x: torch.Tensor) -> torch.Tensor:
         return torch.sum(x.pow(2.0))
@@ -209,6 +210,7 @@ _ = MlflowLogger(searcher, client=client, run=run)
     from evotorch.algorithms import SNES
     from evotorch.logging import StdOutLogger, MlflowLogger
     import torch
+
 
     # Create a Problem instance to solve
     def sphere(x: torch.Tensor) -> torch.Tensor:

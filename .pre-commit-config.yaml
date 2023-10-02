@@ -23,7 +23,7 @@ repos:
         args: ['--fix=no']
 
   - repo: https://github.com/PyCQA/flake8
-    rev: '6.0.0'
+    rev: '6.1.0'
     hooks:
       - id: flake8
         additional_dependencies:
@@ -35,7 +35,7 @@ repos:
       - id: isort
 
   - repo: https://github.com/psf/black
-    rev: 23.3.0
+    rev: 23.9.1
     hooks:
       - id: black
         args: [--safe]
@@ -46,8 +46,8 @@ repos:
       - id: nbstripout
 
   - repo: https://github.com/adamchainz/blacken-docs
-    rev: 1.13.0
+    rev: 1.16.0
     hooks:
       - id: blacken-docs
-        additional_dependencies: [black==23.3.0]
+        additional_dependencies: [black==23.9.1]
         args: [--skip-string-normalization, --line-length=88]
