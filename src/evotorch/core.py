@@ -426,7 +426,46 @@ class Problem(TensorMakerMixin, Serializable):
     "cuda:0"), one can do:
 
     ```python
-    problem = Problem("min", f, ..., device="cuda:0")
+    from evotorch.decorators import vectorized
+
+
+    @vectorized
+    def vf(solutions: torch.Tensor) -> torch.Tensor:
+        return ...
+
+
+    problem = Problem("min", vf, ..., device="cuda:0")
+    ```
+
+    **Exploiting multiple GPUs in parallel.**
+    One can also keep the entire population on the CPU, and split and distribute
+    it to multiple GPUs for GPU-accelerated and parallelized fitness evaluation.
+    For this, the main device of the problem is set as CPU, but the fitness
+    function is decorated with `evotorch.decorators.on_cuda`.
+
+    ```python
+    from evotorch.decorators import on_cuda, vectorized
+
+
+    @on_cuda
+    @vectorized
+    def vf(solutions: torch.Tensor) -> torch.Tensor:
+        return ...
+
+
+    problem = Problem(
+        "min",
+        vf,
+        ...,
+        num_actors=N,  # where N>1 and equal to the number of GPUs
+        # Note: if you are on a computer or on a ray cluster with multiple
+        # GPUs, you might prefer to use the string "num_gpus" instead of an
+        # integer N, which will cause the number of available GPUs to be
+        # counted, and the number of actors to be configured as that count.
+        #
+        num_gpus_per_actor=1,  # each GPU is assigned to an actor
+        device="cpu",
+    )
     ```
 
     **Defining problems via inheritance.**
@@ -502,6 +541,52 @@ class Problem(TensorMakerMixin, Serializable):
 
             # Compute the fitnesses
             fitnesses = torch.sum(x ** (2 * self.q), dim=-1)
+
+            # Register the fitness into the Solution object
+            solutions.set_evals(fitnesses)
+    ```
+
+    **Using multiple GPUs from a problem defined via inheritance.**
+    The previous example demonstrating the use of multiple GPUs showed how
+    an independent fitness function can be decorated via
+    `evotorch.decorators.on_cuda`. Instead of using an independent fitness
+    function, if one wishes to define a problem by subclassing `Problem`,
+    the overriden method `_evaluate_batch(...)` has to be decorated by
+    `evotorch.decorators.on_cuda`. Like in the previous multi-GPU example,
+    let us assume that we want to parallelize the fitness evaluation
+    across N GPUs (where N>1). The inheritance-based code to achieve this
+    can look like this:
+
+    ```python
+    from evotorch import Problem, SolutionBatch
+    from evotorch.decorators import on_cuda
+
+
+    class MyMultiGPUProblem(Problem):
+        def __init__(self):
+            ...
+            super().__init__(
+                objective_sense="min",  # the goal is to minimize
+                solution_length=10,  # a solution has the length 10
+                initial_bounds=(-5.0, 5.0),  # sample new solutions from within [-5, 5]
+                dtype=torch.float32,  # the dtype of a solution is float32
+                num_actors=N,  # allocate N actors
+                # Note: if you are on a computer or on a ray cluster with multiple
+                # GPUs, you might prefer to use the string "num_gpus" instead of an
+                # integer N, which will cause the number of available GPUs to be
+                # counted, and the number of actors to be configured as that count.
+                #
+                num_gpus_per_actor=1,  # for each actor, assign a cuda device
+                device="cpu",  # keep the main population on the CPU
+            )
+
+        @on_cuda
+        def _evaluate_batch(self, solutions: SolutionBatch):
+            # Get the decision values of all the solutions in a 2D PyTorch tensor:
+            xs = solutions.values
+
+            # Compute the fitnesses
+            fitnesses = ...
 
             # Register the fitness into the Solution object
             solutions.set_evals(fitnesses)
@@ -790,6 +875,9 @@ class Problem(TensorMakerMixin, Serializable):
                 generated. For non-numeric problems, this must be "cpu".
                 For numeric problems, this can be any device supported
                 by PyTorch (e.g. "cuda").
+                Note that, if the number of actors of the problem is configured
+                to be more than 1, `device` has to be "cpu" (or, equivalently,
+                left as None).
             eval_data_length: In addition to evaluation results
                 (which are (un)fitnesses, or scores, or costs, or losses),
                 each solution can store extra evaluation data.
@@ -1372,6 +1460,70 @@ class Problem(TensorMakerMixin, Serializable):
                 self, f"The number of actors that will be allocated for parallelized evaluation is {self._num_actors}"
             )
         )
+
+        if (self._num_actors >= 2) and (self._device != torch.device("cpu")):
+            detailed_error_msg = (
+                f"The number of actors that will be allocated for parallelized evaluation is {self._num_actors}."
+                " When the number of actors is at least 2,"
+                ' the only supported value for the `device` argument is "cpu".'
+                f" However, `device` was received as {self._device}."
+                "\n\n---- Possible ways to fix the error: ----"
+                "\n\n"
+                "(1)"
+                " If both the population and the fitness evaluation operations can fit into the same device,"
+                f" try setting `device={self._device}` and `num_actors=0`."
+                "\n\n"
+                "(2)"
+                " If you would like to use N number of GPUs in parallel for fitness evaluation (where N>1),"
+                ' set `device="cpu"` (so that the main process will keep the population on the cpu), set'
+                " `num_actors=N` and `num_gpus_per_actor=1` (to allocate an actor for each of the `N` GPUs),"
+                " and then, decorate your fitness function using `evotorch.decorators.on_cuda`"
+                " so that the fitness evaluation will be performed on the cuda device assigned to the actor."
+                " The code for achieving this can look like this:"
+                "\n\n"
+                "    from evotorch import Problem\n"
+                "    from evotorch.decorators import on_cuda, vectorized\n"
+                "    import torch\n"
+                "\n"
+                "    @on_cuda\n"
+                "    @vectorized\n"
+                "    def f(x: torch.Tensor) -> torch.Tensor:\n"
+                "        ...\n"
+                "\n"
+                '    problem = Problem("min", f, device="cpu", num_actors=N, num_gpus_per_actor=1)\n'
+                "\n"
+                "Or, it can look like this:\n"
+                "\n"
+                "    from evotorch import Problem, SolutionBatch\n"
+                "    from evotorch.decorators import on_cuda\n"
+                "    import torch\n"
+                "\n"
+                "    class MyProblem(Problem):\n"
+                "        def __init__(self, ...):\n"
+                "            super().__init__(\n"
+                '                objective_sense="min", device="cpu", num_actors=N, num_gpus_per_actor=1, ...\n'
+                "            )\n"
+                "\n"
+                "        @on_cuda\n"
+                "        def _evaluate_batch(self, batch: SolutionBatch):\n"
+                "            ...\n"
+                "\n"
+                "    problem = MyProblem(...)\n"
+                "\n"
+                "\n"
+                "(3)"
+                " Similarly to option (2), for when you wish to use N number of GPUs for fitness evaluation,"
+                ' set `device="cpu"`, set `num_actors=N` and `num_gpus_per_actor=1`, then, within the evaluation'
+                ' function, manually use the device `"cuda"` to accelerate the computation.'
+                "\n\n"
+                "--------------\n"
+                "Note for cases (2) and (3): if you are on a computer or on a ray cluster with multiple GPUs, you"
+                ' might prefer to set `num_actors` as the string "num_gpus" instead of an integer N,'
+                " which will cause the number of available GPUs to be counted, and the number of actors to be"
+                " configured as that count."
+            )
+
+            raise ValueError(detailed_error_msg)
 
         # Annotate the variable which will determine how many GPUs are to be assigned to each actor.
         self._num_gpus_per_actor: Optional[Union[str, int, float]]
