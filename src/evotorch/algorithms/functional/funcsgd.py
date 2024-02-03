@@ -101,7 +101,7 @@ def sgd_ask(state: SGDState) -> torch.Tensor:
     return state.center
 
 
-def sgd_tell(state: SGDState, *, follow_grad: BatchableVector) -> torch.Tensor:
+def sgd_tell(state: SGDState, *, follow_grad: BatchableVector) -> SGDState:
     """
     Tell the gradient ascent/descent the current gradient to get its next state.
 

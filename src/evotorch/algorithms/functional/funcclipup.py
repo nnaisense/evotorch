@@ -121,7 +121,7 @@ def clipup_ask(state: ClipUpState) -> torch.Tensor:
     return state.center
 
 
-def clipup_tell(state: ClipUpState, *, follow_grad: BatchableVector) -> torch.Tensor:
+def clipup_tell(state: ClipUpState, *, follow_grad: BatchableVector) -> ClipUpState:
     """
     Tell the ClipUp optimizer the current gradient to get its next state.
 
