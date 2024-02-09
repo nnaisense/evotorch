@@ -23,8 +23,7 @@ __all__ = (
     "CEM",
     "Cosyne",
     "MAPElites",
-    "RegularMAPElites"
-    "PGPE",
+    "RegularMAPElites" "PGPE",
     "SNES",
     "XNES",
     "GeneticAlgorithm",

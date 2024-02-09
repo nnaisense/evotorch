@@ -112,6 +112,7 @@ ActorSeeds = NamedTuple("ActorSeeds", py_global=int, np_global=int, torch_global
 
 RegularFeatureGrid = NamedTuple("RegularFeatureGrid", lower_bounds=list, upper_bounds=list, num_bins=list)
 
+
 @ray.remote
 class EvaluationActor:
     """An actor class for remotely evaluating solutions"""

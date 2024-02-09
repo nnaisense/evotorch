@@ -1,15 +1,17 @@
-import math
 import itertools
+import math
 from typing import Iterable, Optional, Union
 
 import torch
+
 try:
     from torch.func import vmap
 except ImportError:
     from functorch import vmap
+
 from torch_scatter import scatter_max, scatter_min
 
-from ..core import Problem, SolutionBatch, RegularFeatureGrid
+from ..core import Problem, RegularFeatureGrid, SolutionBatch
 from ..tools import Device, DType, to_torch_dtype
 from .ga import ExtendedPopulationMixin
 from .searchalgorithm import SearchAlgorithm, SinglePopulationAlgorithmMixin
@@ -506,7 +508,6 @@ class MAPElites(SearchAlgorithm, SinglePopulationAlgorithmMixin, ExtendedPopulat
 
 
 class RegularMAPElites(MAPElites):
-
     def __init__(
         self,
         problem: Problem,
@@ -528,7 +529,7 @@ class RegularMAPElites(MAPElites):
 
         self._population = problem.generate_batch(self._popsize)
         self._filled = torch.zeros(self._popsize, dtype=torch.bool, device=self._population.device)
-        
+
         ExtendedPopulationMixin.__init__(
             self,
             re_evaluate=re_evaluate,
@@ -538,7 +539,7 @@ class RegularMAPElites(MAPElites):
         )
 
         SinglePopulationAlgorithmMixin.__init__(self)
-    
+
     def _step(self):
         # Form an extended population from the parents and from the children
         extended_population = self._make_extended_population(split=False)
@@ -565,7 +566,7 @@ class RegularMAPElites(MAPElites):
             feat = torch.clamp_max(feat, max_)
             feat -= min_
 
-            hypervolume_index += (feat.long() * math.prod(widths))
+            hypervolume_index += feat.long() * math.prod(widths)
             widths.append(n_bins)
 
         # Find the best population members for each hypervolume
@@ -591,7 +592,7 @@ class RegularMAPElites(MAPElites):
 
         # If there was a suitable solution for the i-th cell, fill[i] is to be set as True.
         self._filled[:] = suitable
-    
+
     @staticmethod
     def make_feature_grid(
         lower_bounds: list[float],
