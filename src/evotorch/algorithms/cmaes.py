@@ -217,6 +217,9 @@ class CMAES(SearchAlgorithm, SinglePopulationAlgorithmMixin):
         # Ensure that the problem is numeric
         problem.ensure_numeric()
 
+        # CMAES can't handle problem bounds. Ensure that it is unbounded
+        problem.ensure_unbounded()
+
         # Store the objective index
         self._obj_index = problem.normalize_obj_index(obj_index)
 
