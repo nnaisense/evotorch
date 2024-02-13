@@ -17,6 +17,7 @@ from copy import copy
 from typing import Any, Callable, Iterable, NamedTuple, Optional, Type, Union
 
 import torch
+from torch.func import vmap
 
 from .tools import (
     Device,
@@ -42,6 +43,8 @@ class Distribution(TensorMakerMixin, Serializable):
     MANDATORY_PARAMETERS = set()
     OPTIONAL_PARAMETERS = set()
     PARAMETER_NDIMS = {}
+
+    functional_sample = NotImplemented
 
     def __init__(
         self, *, solution_length: int, parameters: dict, dtype: Optional[DType] = None, device: Optional[Device] = None
@@ -412,6 +415,49 @@ class SeparableGaussian(Distribution):
     OPTIONAL_PARAMETERS = {"divide_mu_grad_by", "divide_sigma_grad_by", "parenthood_ratio"}
     PARAMETER_NDIMS = {"mu": 1, "sigma": 1}
 
+    @classmethod
+    def _unbatched_functional_sample(cls, num_solutions: int, mu: torch.Tensor, sigma: torch.Tensor) -> torch.Tensor:
+        [L] = mu.shape
+        [sigma_L] = sigma.shape
+        if L != sigma_L:
+            raise ValueError(f"The lengths of `mu` ({L}) and `sigma` ({sigma_L}) do not match.")
+        mu = mu.expand(int(num_solutions), L)
+        return torch.normal(mu, sigma)
+
+    @classmethod
+    def functional_sample(cls, num_solutions: int, parameters: dict) -> torch.Tensor:
+        """
+        Sample and return separable Gaussian noise
+
+        This is a static utility method, which allows one to sample separable
+        Gaussian noise, without having to instantiate the distribution class
+        `SeparableGaussian`.
+
+        Args:
+            num_solutions: Number of solutions (or 1-dimensional tensors)
+                that will be sampled.
+            parameters: A parameter dictionary. Within this parameter
+                dictionary, the item `mu` is expected to store the mean, and
+                the item `sigma` is expected to store the standard deviation,
+                each in the form of a 1-dimensional tensor.
+        Returns:
+            Sampled separable Gaussian noise, as a PyTorch tensor.
+            If `mu` and/or `sigma` was given as tensors with 2 or more
+            dimensions (instead of only 1 dimension), the extra leftmost
+            dimensions will be interpreted as batch dimensions, and therefore,
+            this returned tensor will also have batch dimensions.
+        """
+        from .decorators import expects_ndim
+
+        for k in parameters.keys():
+            if (k not in cls.MANDATORY_PARAMETERS) and (k not in cls.OPTIONAL_PARAMETERS):
+                raise ValueError(f"{cls.__name__} encountered an unrecognized parameter: {repr(k)}")
+        mu = parameters["mu"]
+        sigma = parameters["sigma"]
+        return expects_ndim(cls._unbatched_functional_sample, (None, 1, 1), randomness="different")(
+            num_solutions, mu, sigma
+        )
+
     def __init__(
         self,
         parameters: dict,
@@ -566,14 +612,93 @@ class SeparableGaussian(Distribution):
 
 
 class SymmetricSeparableGaussian(SeparableGaussian):
-    """
-    Symmetric (antithetic) separable Gaussian distribution
-    as used by PGPE.
+    r"""
+    Symmetric (antithetic) separable Gaussian distribution as used by PGPE.
+
+    For example, if the desired number of samples (or number of solutions,
+    provided via the argument `num_solutions`) is 6, 3 "directions" will
+    be sampled. Each direction is a pair of solutions, where one of the
+    solutions is the center vector plus perturbation, and the other
+    solution is the center vector minus the same perturbation. Therefore,
+    such a symmetric population of size 6 looks like this:
+
+    ```
+                                                   ___
+    solution[0]: center + sampled_perturbation[0]     \
+                                                       >  direction0
+    solution[1]: center - sampled_perturbation[1]  ___/
+
+                                                   ___
+    solution[2]: center + sampled_perturbation[2]     \
+                                                       >  direction1
+    solution[3]: center - sampled_perturbation[3]  ___/
+
+                                                   ___
+    solution[4]: center + sampled_perturbation[4]     \
+                                                       >  direction2
+    solution[5]: center - sampled_perturbation[5]  ___/
+    ```
     """
 
     MANDATORY_PARAMETERS = {"mu", "sigma"}
     OPTIONAL_PARAMETERS = {"divide_mu_grad_by", "divide_sigma_grad_by", "parenthood_ratio"}
     PARAMETER_NDIMS = {"mu": 1, "sigma": 1}
+
+    @classmethod
+    def _unbatched_functional_sample(cls, num_solutions: int, mu: torch.Tensor, sigma: torch.Tensor) -> torch.Tensor:
+        zeros = torch.zeros_like(mu)
+        num_solutions = int(num_solutions)
+        if (num_solutions % 2) != 0:
+            raise ValueError(
+                f"Number of solutions to be sampled from {cls.__name__} must be an even number."
+                f" However, the encountered `num_solutions` is {num_solutions}."
+            )
+        num_directions = num_solutions // 2
+
+        positive_ends = SeparableGaussian._unbatched_functional_sample(num_directions, zeros, sigma)
+        negative_ends = -positive_ends
+
+        positive_ends += mu
+        negative_ends += mu
+
+        combined_samples = vmap(torch.stack)([positive_ends, negative_ends]).reshape(-1, positive_ends.shape[-1])
+
+        return combined_samples
+
+    @classmethod
+    def functional_sample(cls, num_solutions: int, parameters: dict) -> torch.Tensor:
+        """
+        Sample and return symmetric separable Gaussian noise
+
+        This is a static utility method, which allows one to sample symmetric
+        separable Gaussian noise, without having to instantiate the
+        distribution class `SymmetricSeparableGaussian`.
+
+        Args:
+            num_solutions: Number of solutions (or 1-dimensional tensors)
+                that will be sampled. Note that, since this distribution is
+                symmetric, `num_solutions` must be even.
+            parameters: A parameter dictionary. Within this parameter
+                dictionary, the item `mu` is expected to store the mean, and
+                the item `sigma` is expected to store the standard deviation,
+                each in the form of a 1-dimensional tensor.
+        Returns:
+            Sampled symmetric separable Gaussian noise, as a PyTorch tensor.
+            If `mu` and/or `sigma` was given as tensors with 2 or more
+            dimensions (instead of only 1 dimension), the extra leftmost
+            dimensions will be interpreted as batch dimensions, and therefore,
+            this returned tensor will also have batch dimensions.
+        """
+        from .decorators import expects_ndim
+
+        for k in parameters.keys():
+            if (k not in cls.MANDATORY_PARAMETERS) and (k not in cls.OPTIONAL_PARAMETERS):
+                raise ValueError(f"{cls.__name__} encountered an unrecognized parameter: {repr(k)}")
+        mu = parameters["mu"]
+        sigma = parameters["sigma"]
+        return expects_ndim(cls._unbatched_functional_sample, (None, 1, 1), randomness="different")(
+            num_solutions, mu, sigma
+        )
 
     def _fill(self, out: torch.Tensor, *, generator: Optional[torch.Generator] = None):
         self.make_gaussian(out=out, center=self.mu, stdev=self.sigma, symmetric=True, generator=generator)
@@ -647,7 +772,7 @@ class SymmetricSeparableGaussian(SeparableGaussian):
 
 
 class ExpSeparableGaussian(SeparableGaussian):
-    """exponentialseparable Multivariate Gaussian, as used by SNES"""
+    """Exponential Separable Multivariate Gaussian, as used by SNES"""
 
     MANDATORY_PARAMETERS = {"mu", "sigma"}
     OPTIONAL_PARAMETERS = set()
@@ -684,7 +809,7 @@ class ExpSeparableGaussian(SeparableGaussian):
 
 
 class ExpGaussian(Distribution):
-    """exponential Multivariate Gaussian, as used by XNES"""
+    """Exponential Multivariate Gaussian, as used by XNES"""
 
     # Corresponding to mu and A in symbols used in xNES paper
     MANDATORY_PARAMETERS = {"mu", "sigma"}
@@ -924,8 +1049,11 @@ class FunctionalSampler:
 
     def __sample(self, num_solutions: int, *parameters) -> torch.Tensor:
         parameters = {**dict(zip(self.__required_parameters, parameters)), **(self.__fixed_parameters)}
-        distribution = self.__distribution_class(parameters)
-        return distribution.sample(num_solutions)
+        if self.__distribution_class.functional_sample is NotImplemented:
+            distribution = self.__distribution_class(parameters)
+            return distribution.sample(num_solutions)
+        else:
+            return self.__distribution_class.functional_sample(num_solutions, parameters)
 
     def __call__(self, num_samples: int, *parameter_args, **parameter_kwargs) -> torch.Tensor:
         num_parameter_args = len(parameter_args)
@@ -1032,6 +1160,18 @@ def make_functional_sampler(
     # or like this:
     # my_samples2 = get_samples2(number_of_samples, mu=mu)
     ```
+
+    **How the functional sampler uses its wrapped distribution.**
+    If the wrapped distribution class has a static method with the signature
+    `functional_sample(num_solutions: int, parameters: dict) -> torch.Tensor`
+    (which expects `num_solutions` as the number of solutions/samples
+    and `parameters` as the parameter dictionary), this functional sampler
+    will use that static method to obtain and return the samples.
+    On the other hand, if the wrapped distribution class declares its class
+    attribute `functional_sample = NotImplemented`, then, the wrapped
+    distribution class will be temporarily instantiated, and then, the
+    `sample()` method of this instance will be used to generate and return
+    the samples.
 
     Args:
         distribution_class: A class that inherits from the base class
