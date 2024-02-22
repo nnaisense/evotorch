@@ -34,7 +34,7 @@ def violation(
             left-hand-side values.
         comparison: The operator used for comparing the left-hand-side and the
             right-hand-side. Expected as a string. Acceptable values are:
-            '<=', '==', '=>'.
+            '<=', '==', '>='.
         rhs: The right-hand-side of the constraint. In the non-batched case,
             this is expected as a scalar. If it is given as an n-dimensional
             tensor where n is at least 1, this is considered as a batch of
@@ -65,8 +65,7 @@ def _log_barrier(
         log_input = relu(rhs - lhs)
     else:
         raise ValueError(
-            f"Unrecognized comparison operator: {repr(comparison)}."
-            " Supported comparison operators are: '>=', '<=', '=='"
+            f"Unrecognized comparison operator: {repr(comparison)}. Supported comparison operators are: '>=', '<='"
         )
 
     log_input = log_input
@@ -81,7 +80,7 @@ def _log_barrier(
     elif penalty_sign == "+":
         result = -result
     else:
-        raise ValueError(f"Unrecognized penalty sign: {repr(penalty_sign)}." "Supported penalty signs are: '+', '-'")
+        raise ValueError(f"Unrecognized penalty sign: {repr(penalty_sign)}. Supported penalty signs are: '+', '-'")
 
     return result
 
@@ -112,7 +111,7 @@ def log_barrier(
             left-hand-side values.
         comparison: The operator used for comparing the left-hand-side and the
             right-hand-side. Expected as a string. Acceptable values are:
-            '<=', '==', '=>'.
+            '<=', '>='.
         rhs: The right-hand-side of the constraint. In the non-batched case,
             this is expected as a scalar. If it is given as an n-dimensional
             tensor where n is at least 1, this is considered as a batch of
@@ -217,7 +216,7 @@ def penalty(
             left-hand-side values.
         comparison: The operator used for comparing the left-hand-side and the
             right-hand-side. Expected as a string. Acceptable values are:
-            '<=', '==', '=>'.
+            '<=', '==', '>='.
         rhs: The right-hand-side of the constraint. In the non-batched case,
             this is expected as a scalar. If it is given as an n-dimensional
             tensor where n is at least 1, this is considered as a batch of
