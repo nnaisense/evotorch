@@ -33,6 +33,8 @@ DTypeAndDevice = NamedTuple("DTypeAndDevice", dtype=DType, device=Device)
 Size = Union[int, torch.Size]
 RealOrVector = Union[float, Iterable[float], torch.Tensor]
 Vector = Union[Iterable[float], torch.Tensor]
+BatchableScalar = Union[Number, np.ndarray, torch.Tensor]
+BatchableVector = Union[torch.Tensor, np.ndarray]
 
 
 try:
@@ -814,6 +816,98 @@ def modify_tensor(
             return result
 
 
+def _modify_vector_using_bounds(
+    target: torch.Tensor,
+    lb: torch.Tensor,
+    ub: torch.Tensor,
+) -> torch.Tensor:
+    # Strictly expect `target` as a 1-dimensional tensor, and get its length
+    [target_length] = target.shape
+
+    # Ensure that `lb` and `ub` are 1-dimensional tensors, and get their lengths
+    if lb.ndim == 0:
+        lb = lb.expand(target.shape)
+    if ub.ndim == 0:
+        ub = ub.expand(target.shape)
+    [lb_length] = lb.shape
+    [ub_length] = ub.shape
+
+    # Verify that the lengths of the vectors match
+    if target_length != lb_length:
+        raise ValueError("The lower bound (`lb`) has a different length than the given `target`")
+    if target_length != ub_length:
+        raise ValueError("The upper bound (`ub`) has a different length than the given `target`")
+
+    return torch.min(torch.max(target, lb), ub)
+
+
+def _modify_vector_using_max_change(
+    original: torch.Tensor,
+    target: torch.Tensor,
+    max_change: torch.Tensor,
+) -> torch.Tensor:
+    # Strictly expect `original` and `target` as 1-dimensional tensors, and get their lengths
+    [original_length] = original.shape
+    [target_length] = target.shape
+
+    # Ensure that `max_change` is a 1-dimensional tensor, and get its length
+    if max_change.ndim == 0:
+        max_change = max_change.expand(target.shape)
+    [max_change_length] = max_change.shape
+
+    # Verify that the lengths of the vectors match
+    if target_length != original_length:
+        raise ValueError("The `target` vector and the `original` vector have different lengths")
+    if original_length != max_change_length:
+        raise ValueError("The length of `max_change` is different than the length of `original`")
+
+    max_diff = torch.abs(original) * max_change
+    return torch.min(torch.max(target, original - max_diff), original + max_diff)
+
+
+def modify_vector(
+    original: torch.Tensor,
+    target: torch.Tensor,
+    *,
+    lb: Optional[Union[float, torch.Tensor]] = None,
+    ub: Optional[Union[float, torch.Tensor]] = None,
+    max_change: Optional[Union[float, torch.Tensor]] = None,
+) -> torch.Tensor:
+    """
+    Return the modified version(s) of the vector(s), with bounds checking.
+
+    This function is similar to `modify_tensor`, but it has the following
+    different behaviors:
+
+    - Assumes that all of its arguments are either vectors, or are batches
+      of vectors. If some or more of its arguments have 2 or more dimensions,
+      those arguments will be considered as batches, and the computation will
+      be vectorized to return a batch of results.
+    - Designed to be `vmap`-friendly.
+    - Designed for functional programming paradigm, and therefore lacks the
+      in-place modification option.
+    """
+    from ..decorators import expects_ndim
+
+    if max_change is None:
+        result = target
+    else:
+        result = expects_ndim(_modify_vector_using_max_change, (1, 1, 1), allow_smaller_ndim=True)(
+            original, target, max_change
+        )
+
+    if (lb is None) and (ub is None):
+        pass  # no strict boundaries, so, nothing more to do
+    elif (lb is not None) and (ub is not None):
+        result = expects_ndim(_modify_vector_using_bounds, (1, 1, 1), allow_smaller_ndim=True)(result, lb, ub)
+    else:
+        raise ValueError(
+            "`modify_vector` expects either with `lb` and `ub` given together, or with both of them omitted."
+            " Having only `lb` or only `ub` is not supported."
+        )
+    return result
+
+
 def empty_tensor_like(
     source: Any,
     *,
@@ -1179,6 +1273,25 @@ def _out_tensor(
     return out
 
 
+def _out_tensor_for_random_operation(
+    *size: Size,
+    out: Optional[torch.Tensor] = None,
+    dtype: Optional[DType] = None,
+    device: Optional[Device] = None,
+) -> torch.Tensor:
+    if out is None:
+        out = torch.empty(tuple(), dtype=dtype, device=device).expand(*size)
+        out = out + make_batched_false_for_vmap(out.device)
+    else:
+        if len(size) >= 1:
+            raise ValueError(
+                f"When `out` is provided (i.e. not None), the positional `size` arguments were not expected."
+                f" However, `size` arguments were received as {repr(size)}."
+            )
+        expect_none("when `out` is provided (i.e. not None)", dtype=dtype, device=device)
+    return out
+
+
 def _scalar_requested(*size: Size) -> bool:
     return (len(size) == 1) and isinstance(size[0], tuple) and (len(size[0]) == 0)
 
@@ -1489,7 +1602,7 @@ def make_uniform(
             f" ub: {repr(ub)}."
         )
 
-    out = _out_tensor(*size, out=out, dtype=dtype, device=device)
+    out = _out_tensor_for_random_operation(*size, out=out, dtype=dtype, device=device)
     gen_kwargs = _generator_kwargs(generator)
 
     def _cast_bounds():
@@ -1606,7 +1719,7 @@ def make_gaussian(
     if scalar_requested:
         size = (1,)
 
-    out = _out_tensor(*size, out=out, dtype=dtype, device=device)
+    out = _out_tensor_for_random_operation(*size, out=out, dtype=dtype, device=device)
     gen_kwargs = _generator_kwargs(generator)
 
     if symmetric:
@@ -1690,7 +1803,7 @@ def make_randint(
 
     if (dtype is None) and (out is None):
         dtype = torch.int64
-    out = _out_tensor(*size, out=out, dtype=dtype, device=device)
+    out = _out_tensor_for_random_operation(*size, out=out, dtype=dtype, device=device)
     gen_kwargs = _generator_kwargs(generator)
     out.random_(**gen_kwargs)
     out %= n
@@ -2091,3 +2204,107 @@ def storage_ptr(x: Iterable) -> int:
         The address of the underlying storage.
     """
     return _storage_ptr(x)
+
+
+def make_batched_false_for_vmap(device: Device) -> torch.Tensor:
+    """
+    Get `False`, properly batched if inside `vmap(..., randomness='different')`.
+
+    **Reasoning.**
+    Imagine we have the following function:
+
+    ```python
+    import torch
+
+
+    def sample_and_shift(target_shape: tuple, shift: torch.Tensor) -> torch.Tensor:
+        result = torch.empty(target_shape, device=x.device)
+        result.normal_()
+        result += shift
+        return result
+    ```
+
+    which allocates an empty tensor, then fills it with samples from the
+    standard normal distribution, then shifts the samples and returns the
+    result. An important implementation detail regarding this example function
+    is that all of its operations are in-place (i.e. the method `normal_()`
+    and the operator `+=` work on the given pre-allocated tensor).
+
+    Let us now imagine that we have a batch of shift tensors, and we would like
+    to generate multiple shifted sample tensors. Ideally, such a batched
+    operation could be done by transforming the example function with the help
+    of `vmap`:
+
+    ```python
+    from torch.func import vmap
+
+    batched_sample_and_shift = vmap(sample_and_shift, in_dims=0, randomness="different")
+    ```
+
+    where the argument `randomness="different"` tells PyTorch that for each
+    batch item, we want to generate different samples (instead of just
+    duplicating the same samples across the batch dimension(s)).
+    Such a re-sampling approach is usually desired in applications where
+    preserving stochasticity is crucial, evolutionary computation being one
+    of such case.
+
+    Now let us call our transformed function:
+
+    ```python
+    batch_of_shifts = ...  # a tensor like `shift`, but with an extra leftmost
+    # dimension for the batches
+
+    # Will fail:
+    batched_results = batched_sample_and_shift(shape_goes_here, batch_of_shifts)
+    ```
+
+    At this point, we observe that `batched_sample_and_shift` fails.
+    The reason for this failure is that the function first allocates an empty
+    tensor, then tries to perform random sampling in an in-place manner.
+    The first allocation via `empty` is not properly batched (it is not aware
+    of the active `vmap`), so, when we later call `.normal_()` on it,
+    there is no room for the data that would be re-sampled for each batch item.
+    To remedy this, we could modify our original function slightly:
+
+    ```python
+    import torch
+
+
+    def sample_and_shift2(target_shape: tuple, shift: torch.Tensor) -> torch.Tensor:
+        result = torch.empty(target_shape, device=x.device)
+        result = result + result.make_batched_false_for_vmap(x.device)
+        result.normal_()
+        result += shift
+        return result
+    ```
+
+    In this modified function, right after making an initial allocation, we add
+    onto it a batched false, and re-assign the result to the variable `result`.
+    Thanks to being the result of an interaction with a batched false, the new
+    `result` variable is now properly batched (if we are inside
+    `vmap(..., randomness="different")`. Now, let us transform our function:
+
+    ```python
+    from torch.func import vmap
+
+    batched_sample_and_shift2 = vmap(sample_and_shift2, in_dims=0, randomness="different")
+    ```
+
+    The following code should now work:
+
+    ```python
+    batch_of_shifts = ...  # a tensor like `shift`, but with an extra leftmost
+    # dimension for the batches
+
+    # Should work:
+    batched_results = batched_sample_and_shift2(shape_goes_here, batch_of_shifts)
+    ```
+
+    Args:
+        device: The target device on which the batched `False` will be created
+    Returns:
+        A scalar tensor having the value `False`. This returned tensor will be
+        a batch of scalar tensors (i.e. a `BatchedTensor`) if we are inside
+        `vmap(..., randomness="different")`.
+    """
+    return torch.randint(0, 1, tuple(), dtype=torch.bool, device=device)

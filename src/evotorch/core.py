@@ -86,6 +86,7 @@ from .tools import (
     is_dtype_object,
     is_real,
     is_sequence,
+    make_batched_false_for_vmap,
     message_from,
     modify_tensor,
     multiply_rows_by_scalars,
@@ -1856,7 +1857,12 @@ class Problem(TensorMakerMixin, Serializable):
             A PyTorch tensor for numeric problems, an ObjectArray for
             non-numeric problems.
         """
-        result = self.make_empty(num_solutions=num_solutions)
+        if self.dtype is object:
+            result = self.make_empty(num_solutions=num_solutions)
+        else:
+            result = torch.empty(tuple(), dtype=self.dtype, device=self.device)
+            result = result.expand(num_solutions, self.solution_length)
+            result = result + make_batched_false_for_vmap(result.device)
         self._fill(result)
         return result
 
@@ -3294,6 +3300,100 @@ class Problem(TensorMakerMixin, Serializable):
         Whether or not the Problem object has its device set as "cpu".
         """
         return str(self.device) == "cpu"
+
+    def make_callable_evaluator(self, *, obj_index: Optional[int] = None) -> "ProblemBoundEvaluator":
+        """
+        Get a callable evaluator for evaluating the given solutions.
+
+        Let us assume that we have a [Problem][evotorch.core.Problem]
+        declared like this:
+
+        ```python
+        from evotorch import Problem
+
+        my_problem = Problem(
+            "min",
+            fitness_function_goes_here,
+            ...,
+        )
+        ```
+
+        Using the regular API of EvoTorch, one has to generate solutions for this
+        problem as follows:
+
+        ```python
+        population_size = ...
+        my_solutions = my_problem.generate_batch(population_size)
+        ```
+
+        For editing the decision values within the
+        [SolutionBatch][evotorch.core.SolutionBatch] `my_solutions`, one has to
+        do the following:
+
+        ```python
+        new_decision_values = ...
+        my_solutions.set_values(new_decision_values)
+        ```
+
+        Finally, to evaluate `my_solutions`, one would have to do these:
+
+        ```python
+        my_problem.evaluate(my_solutions)
+        fitnesses = my_problem.evals
+        ```
+
+        One could desire a different interface which is more compatible with
+        functional programming paradigm, especially when planning to use the
+        functional algorithms (such as, for example, the functional
+        [cem][evotorch.algorithms.functional.funccem.cem]).
+        To achieve this, one can do the following:
+
+        ```python
+        f = my_problem.make_callable_evaluator()
+        ```
+
+        Now, we have a new object `f`, which behaves like a function.
+        This function-like object expects a tensor of decision values, and
+        returns fitnesses, as shown below:
+
+        ```python
+        random_decision_values = torch.randn(
+            population_size,
+            my_problem.solution_length,
+            dtype=my_problem.dtype,
+        )
+
+        fitnesses = f(random_decision_values)
+        ```
+
+        **Parallelized fitness evaluation.**
+        If a `Problem` object is condifured to use parallelized evaluation with
+        the help of multiple actors, a callable evaluator made out of that
+        `Problem` object will also make use of those multiple actors.
+
+        **Additional batch dimensions.**
+        If a callable evaluator receives a tensor with 3 or more dimensions,
+        those extra leftmost dimensions will be considered as batch
+        dimensions. The returned fitness tensor will also preserve those batch
+        dimensions.
+
+        **Notes on vmap.**
+        `ProblemBoundEvaluator` is a shallow wrapper around a `Problem` object.
+        It does NOT transform the underlying problem object to its stateless
+        counterpart, and therefore it does NOT conform to pure functional
+        programming paradigm. Being stateful, it will NOT work correctly with
+        `vmap`. For batched evaluations, it is recommended to use extra batch
+        dimensions, instead of using `vmap`.
+
+        Args:
+            obj_index: The index of the objective according to which the
+                evaluations will be done. If the problem is single-objective,
+                this is not required. If the problem is multi-objective, this
+                needs to be given as an integer.
+        Returns:
+            A callable fitness evaluator, bound to this problem object.
+        """
+        return ProblemBoundEvaluator(self, obj_index=obj_index)
 
 
 SolutionBatchSliceInfo = NamedTuple("SolutionBatchSliceInfo", source="SolutionBatch", slice=IndicesOrSlice)
@@ -4990,3 +5090,81 @@ class Solution(Serializable):
             The SolutionBatch counterpart of the Solution.
         """
         return self._batch
+
+
+class ProblemBoundEvaluator:
+    """
+    A callable fitness evaluator, bound to the given `Problem`.
+
+    A callable evaluator returned by the method
+    `Problem.make_callable_evaluator` is an instance of this class.
+    For details, please see the documentation of
+    [Problem][evotorch.core.Problem], and of its method
+    `make_callable_evaluator`.
+    """
+
+    def __init__(self, problem: Problem, *, obj_index: Optional[int] = None):
+        """
+        `__init__(...)`: Initialize the `ProblemBoundEvaluator`.
+
+        Args:
+            problem: The problem object to be wrapped.
+            obj_index: The objective index. Optional if the problem being
+                wrapped is single-objective. If the problem being wrapped
+                is multi-objective, this is expected as an integer.
+        """
+        self._problem = problem
+        if not isinstance(self._problem, Problem):
+            clsname = type(self).__name__
+            raise TypeError(
+                f"In its initialization phase, {clsname} expected a `Problem` object,"
+                f" but found: {repr(self._problem)} (of type {repr(type(self._problem))})"
+            )
+        self._obj_index = self._problem.normalize_obj_index(obj_index)
+        self._problem.ensure_numeric()
+        if problem.dtype != problem.eval_dtype:
+            raise TypeError(
+                "The dtype of the decision values is not the same with the dtype of the evaluations."
+                " Currently, it is not supported to make callable evaluators out of problems whose"
+                " decision value dtypes are different than their evaluation dtypes."
+            )
+
+    def _make_empty_solution_batch(self, popsize: int) -> SolutionBatch:
+        return SolutionBatch(self._problem, popsize=popsize, empty=True, device="meta")
+
+    def _prepare_evaluated_solution_batch(self, values_2d: torch.Tensor) -> SolutionBatch:
+        num_solutions, solution_length = values_2d.shape
+        batch = self._make_empty_solution_batch(num_solutions)
+        batch._data = values_2d
+        batch._evdata = torch.empty_like(batch._evdata, device=values_2d.device)
+        self._problem.evaluate(batch)
+        return batch
+
+    def __call__(self, values: torch.Tensor) -> torch.Tensor:
+        """
+        Evaluate the solutions expressed by the given `values` tensor.
+
+        Args:
+            values: Decision values. Expected as a tensor with at least
+                2 dimensions. If the number of dimensions is more than 2,
+                the extra leftmost dimensions will be considered as batch
+                dimensions.
+        Returns:
+            The fitnesses, as a tensor.
+        """
+        ndim = values.ndim
+        if ndim == 0:
+            clsname = type(self).__name__
+            raise ValueError(
+                f"{clsname} was expecting a tensor with at least 1 dimension for solution evaluation."
+                f" However, it received a scalar: {values}"
+            )
+
+        solution_length = values.shape[-1]
+        original_batch_shape = values.shape[:-1]
+
+        values = values.reshape(-1, solution_length)
+        evaluated_batch = self._prepare_evaluated_solution_batch(values)
+        evals = evaluated_batch.evals[:, self._obj_index]
+
+        return evals.reshape(original_batch_shape).as_subclass(torch.Tensor)

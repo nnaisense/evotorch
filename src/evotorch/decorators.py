@@ -14,11 +14,18 @@
 
 """Module defining decorators for evotorch."""
 
+from numbers import Number
 from typing import Callable, Iterable, Optional, Union
 
+import numpy as np
 import torch
 
 from .tools import Device
+
+try:
+    from torch.func import vmap
+except ImportError:
+    from functorch import vmap
 
 
 def _simple_decorator(
@@ -604,3 +611,361 @@ def vectorized(*args) -> Callable:
     and will send it `n` solutions, and will receive and process `n` fitnesses.
     """
     return _simple_decorator("__evotorch_vectorized__", args, decorator_name="vectorized")
+
+
+def expects_ndim(  # noqa: C901
+    *expected_ndims,
+    allow_smaller_ndim: bool = False,
+    randomness: str = "error",
+) -> Callable:
+    """
+    Decorator to declare the number of dimensions for each positional argument.
+
+    Let us imagine that we have a function `f(a, b)`, where `a` and `b` are
+    PyTorch tensors. Let us also imagine that the function `f` is implemented
+    in such a way that `a` is assumed to be a 2-dimensional tensor, and `b`
+    is assumed to be a 1-dimensional tensor. In this case, the function `f`
+    can be decorated as follows:
+
+    ```python
+    from evotorch.decorators import expects_ndim
+
+
+    @expects_ndim(2, 1)
+    def f(a: torch.Tensor, b: torch.Tensor) -> torch.Tensor:
+        ...
+    ```
+
+    Once decorated like this, the function `f` will gain the following
+    additional behaviors:
+
+    - If less-than-expected number of dimensions are provided either for
+      `a` or for `b`, an error will be raised (unless the decorator
+      is provided with the keyword argument `allow_smaller_ndim=True`)
+    - If either `a` or `b` are given as tensors that have extra leftmost
+      dimensions, those dimensions will be assumed as batch dimensions,
+      and therefore, the function `f` will run in a vectorized manner
+      (with the help of `vmap` behind the scene), and the result will be
+      a tensor with extra leftmost dimension(s), representing a batch
+      of resulting tensors.
+    - For convenience, numpy arrays and scalar data that are subclasses
+      of `numbers.Number` will be converted to PyTorch tensors first, and
+      then will be processed.
+
+    To be able to take advantage of this decorator, please ensure that the
+    decorated function is a `vmap`-friendly function. Please also ensure
+    that the decorated function expects positional arguments only.
+
+    **Randomness.**
+    Like in `torch.func.vmap`, the behavior of the decorated function in
+    terms of randomness can be configured via a keyword argument named
+    `randomness`:
+
+    ```python
+    @expects_ndim(2, 1, randomness="error")
+    def f(a: torch.Tensor, b: torch.Tensor) -> torch.Tensor:
+        ...
+    ```
+
+    If `randomness` is set as "error", then, when there is batching, any
+    attempt to generate random data using PyTorch will raise an error.
+    If `randomness` is set as "different", then, a random generation
+    operation such as `torch.randn(...)` will produce a `BatchedTensor`,
+    where each batch item has its own re-sampled data.
+    If `randomness` is set as "same", then, a random generation operation
+    such as `torch.randn(...)` will produce a non-batched tensor containing
+    random data that is sampled only once.
+
+    **Alternative usage.**
+    `expects_ndim` has an alternative interface that allows one to use it
+    as a tool for temporarily wrapping/transforming other functions. Let us
+    consider again our example function `f`. Instead of using the decorator
+    syntax, one can do:
+
+    ```python
+    result = expects_ndim(f, (2, 1))(a, b)
+    ```
+
+    which will temporarily wrap the function `f` with the additional behaviors
+    mentioned above, and immediately call it with the arguments `a` and `b`.
+    """
+
+    if (len(expected_ndims) == 2) and isinstance(expected_ndims[0], Callable) and isinstance(expected_ndims[1], tuple):
+        func_to_wrap, expected_ndims = expected_ndims
+        return expects_ndim(*expected_ndims, allow_smaller_ndim=allow_smaller_ndim, randomness=randomness)(func_to_wrap)
+
+    expected_ndims = tuple(
+        (None if expected_arg_ndim is None else int(expected_arg_ndim)) for expected_arg_ndim in expected_ndims
+    )
+
+    def expects_ndim_decorator(fn: Callable):
+        def expects_ndim_decorated(*args):
+            # The inner class below is responsible for accumulating the dtype and device info of the tensors
+            # encountered across the arguments received by the decorated function.
+            # Such dtype and device information will be used if one of the considered arguments is given as a native
+            # scalar object (i.e. float), when converting that native scalar object to a PyTorch tensor.
+            class tensor_info:
+                # At first, we initialize the set of encountered dtype and device info as None.
+                # They will be lazily filled if we ever need such information.
+                encountered_dtypes: Optional[set] = None
+                encountered_devices: Optional[set] = None
+
+                @classmethod
+                def update(cls):
+                    # Collect and fill the dtype and device information if it is not filled yet.
+                    if (cls.encountered_dtypes is None) or (cls.encountered_devices is None):
+                        cls.encountered_dtypes = set()
+                        cls.encountered_devices = set()
+                        for expected_arg_ndim, arg in zip(expected_ndims, args):
+                            if (expected_arg_ndims is not None) and isinstance(arg, torch.Tensor):
+                                # If the argument has a declared expected ndim, and also if it is a PyTorch tensor,
+                                # then we add its dtype and device information to the sets `encountered_dtypes` and
+                                # `encountered_devices`.
+                                cls.encountered_dtypes.add(arg.dtype)
+                                cls.encountered_devices.add(arg.device)
+
+                @classmethod
+                def _get_unique_dtype(cls, error_msg: str) -> torch.dtype:
+                    # Ensure that there is only one `dtype` and return it.
+                    # If there is not exactly one dtype, then raise an error.
+                    if len(cls.encountered_dtypes) == 1:
+                        [dtype] = cls.encountered_dtypes
+                        return dtype
+                    else:
+                        raise TypeError(error_msg)
+
+                @classmethod
+                def _get_unique_device(cls, error_msg: str) -> torch.device:
+                    # Ensure that there is only one `device` and return it.
+                    # If there is not exactly one device, then raise an error.
+                    if len(cls.encountered_devices) == 1:
+                        [device] = cls.encountered_devices
+                        return device
+                    else:
+                        raise TypeError(error_msg)
+
+                @classmethod
+                def convert_scalar_to_tensor(cls, scalar: Number) -> torch.Tensor:
+                    # This class method aims to convert a scalar to a PyTorch tensor.
+                    # The dtype and device of the tensor counterpart of the scalar will be taken from the dtype and
+                    # device information of the other tensors encountered so far.
+
+                    # First, we update the dtype and device information that can be collected from the arguments.
+                    cls.update()
+
+                    # Get the device used by the tensor arguments.
+                    device = cls._get_unique_device(
+                        f"The function decorated with `expects_ndim` received the scalar argument {scalar}."
+                        f" However, this scalar argument cannot be converted to a PyTorch tensor, because it is not"
+                        " clear to which device should this scalar be moved."
+                        " This might happen when none of the other considered arguments is a tensor,"
+                        " or when there are multiple tensor arguments with conflicting devices."
+                        f" Devices encountered across all the considered arguments are: {cls.encountered_devices}."
+                        " To make this error go away, please consider making sure that other tensor arguments have a"
+                        " consistent device, or passing this scalar as a PyTorch tensor so that no conversion is"
+                        " needed."
+                    )
+
+                    if isinstance(scalar, (bool, np.bool_)):
+                        # If the given scalar argument is a boolean, we declare the dtype of its tensor counterpart as
+                        # torch.bool.
+                        dtype = torch.bool
+                    else:
+                        # If the given scalar argument is not a boolean, we declare the dtype of its tensor counterpart
+                        # as the dtype that is observed across the other arguments.
+                        dtype = cls._get_unique_dtype(
+                            f" The function decorated with `expects_ndim` received the scalar argument {scalar}."
+                            " However, this scalar argument cannot be converted to a PyTorch tensor, because it is not"
+                            " clear by which dtype should this scalar be represented in its tensor form."
+                            " This might happen when none of the other considered arguments is a tensor,"
+                            " or when there are multiple tensor arguments with different dtypes."
+                            f" dtypes encountered across all the considered arguments are {cls.encountered_dtypes}."
+                            " To make this error go away, please consider making sure that other tensor arguments have"
+                            " a consistent dtype, or passing this scalar as a PyTorch tensor so that no conversion is"
+                            " needed."
+                        )
+
+                    # Finally, using our new dtype and new device, we convert the scalar to a tensor.
+                    return torch.as_tensor(scalar, dtype=dtype, device=device)
+
+            # First, we want to make sure that each positional argument is a PyTorch tensor.
+            # So, we initialize `new_args` as an empty list, which will be filled with the tensor counterparts
+            # of the original positional arguments.
+            new_args = []
+
+            for i_arg, (expected_arg_ndims, arg) in enumerate(zip(expected_ndims, args)):
+                if (expected_arg_ndims is None) or isinstance(arg, torch.Tensor):
+                    # In this case, either the expected number of dimensions is given as None (indicating that the user
+                    # does not wish any batching nor any conversion for this argument), or the argument is already
+                    # a PyTorch tensor (so, no conversion to tensor needs to be done).
+                    # We do not have to do anything in this case.
+                    pass
+                elif isinstance(arg, (Number, np.bool_)):
+                    # If the argument is a scalar `Number`, we convert it to a PyTorch tensor, the dtype and the device
+                    # of it being determined with the help of the inner class `tensor_info`.
+                    arg = tensor_info.convert_scalar_to_tensor(arg)
+                elif isinstance(arg, np.ndarray):
+                    # If the argument is a numpy array, we convert it to a PyTorch tensor.
+                    arg = torch.as_tensor(arg)
+                else:
+                    # This is the case where an object of an unrecognized type is received. We do not know how to
+                    # process this argument, and, naively trying to convert it to a PyTorch tensor could fail, or
+                    # could generate an unexpected result. So, we raise an error.
+                    raise TypeError(f"Received an argument of unexpected type: {arg} (of type {type(arg)})")
+
+                if (expected_arg_ndims is not None) and (arg.ndim < expected_arg_ndims) and (not allow_smaller_ndim):
+                    # This is the case where the currently analyzed positional argument has less-than-expected number
+                    # of dimensions, and we are not in the allow-smaller-ndim mode. So, we raise an error.
+                    raise ValueError(
+                        f"The argument with index {i_arg} has the shape {arg.shape}, having {arg.ndim} dimensions."
+                        f" However, it was expected as a tensor with {expected_arg_ndims} dimensions."
+                    )
+
+                # At this point, we know that `arg` is a proper PyTorch tensor. So, we add it into `new_args`.
+                new_args.append(arg)
+
+            wrapped_fn = fn
+            num_args = len(new_args)
+            wrapped_ndims = [
+                (None if expected_arg_ndim is None else arg.ndim)
+                for expected_arg_ndim, arg in zip(expected_ndims, new_args)
+            ]
+
+            # The following loop will run until we know that no `vmap` is necessary.
+            while True:
+                # Within each iteration, at first, we assume that `vmap` is not necessary, and therefore, for each
+                # positional argument, the batching dimension is `None` (which means no argument will be batched).
+                needs_vmap = False
+                in_dims = [None for _ in new_args]
+
+                for i_arg in range(num_args):
+                    # For each positional argument with index `i_arg`, we check whether or not there are extra leftmost
+                    # dimensions.
+
+                    if (wrapped_ndims[i_arg] is not None) and (wrapped_ndims[i_arg] > expected_ndims[i_arg]):
+                        # This is the case where the number of dimensions associated with this positional argument is
+                        # greater than its expected number of dimensions.
+
+                        # We take note that there is at least one positional argument which requires `vmap`.
+                        needs_vmap = True
+
+                        # We declare that this argument's batching dimension is 0 (i.e. its leftmost dimension).
+                        in_dims[i_arg] = 0
+
+                        # Now that we marked the leftmost dimension of this argument as the batching dimension, we
+                        # should not consider this dimension in the next iteration of this `while` loop. So, we
+                        # decrease its number of not-yet-handled dimensions by 1.
+                        wrapped_ndims[i_arg] -= 1
+
+                if needs_vmap:
+                    # This is the case where there was at least one positional argument that needs `vmap`.
+                    # Therefore, we wrap the function via `vmap`.
+                    # Note that, after this `vmap` wrapping, if some of the positional arguments still have extra
+                    # leftmost dimensions, another level of `vmap`-wrapping will be done by the next iteration of this
+                    # `while` loop.
+                    wrapped_fn = vmap(wrapped_fn, in_dims=tuple(in_dims), randomness=randomness)
+                else:
+                    # This is the case where no positional argument with extra leftmost dimension was found.
+                    # Either the positional arguments were non-batched to begin with, or the `vmap`-wrapping of the
+                    # previous iterations of this `while` loop were sufficient. Therefore, we are now ready to quit
+                    # this loop.
+                    break
+
+            # Run the `vmap`-wrapped counterpart of the function and return its result
+            return wrapped_fn(*new_args)
+
+        return expects_ndim_decorated
+
+    return expects_ndim_decorator
+
+
+def rowwise(*args, randomness: str = "error") -> Callable:
+    """
+    Decorate a vector-expecting function to make it support batch dimensions.
+
+    To be able to decorate a function via `@rowwise`, the following conditions
+    are required to be satisfied:
+    (i) the function expects a single positional argument, which is a PyTorch
+    tensor;
+    (ii) the function is implemented with the assumption that the tensor it
+    receives is a vector (i.e. is 1-dimensional).
+
+    Let us consider the example below:
+
+    ```python
+    @rowwise
+    def f(x: torch.Tensor) -> torch.Tensor:
+        return torch.sum(x**2)
+    ```
+
+    Notice how the implementation of the function `f` assumes that its argument
+    `x` is 1-dimensional, and based on that assumption, omits the `dim`
+    keyword argument when calling `torch.sum(...)`.
+
+    Upon receiving a 1-dimensional tensor, this decorated function `f` will
+    perform its operations on the vector `x`, like how it would work without
+    the decorator `@rowwise`.
+    Upon receiving a 2-dimensional tensor, this decorated function `f` will
+    perform its operations on each row of `x`.
+    Upon receiving a tensor with 3 or more dimensions, this decorated function
+    `f` will interpret its input as a batch of matrices, and perform its
+    operations on each matrix within the batch.
+
+    **Defining fitness functions for Problem objects.**
+    The decorator `@rowwise` can be used for defining a fitness function for a
+    [Problem][evotorch.core.Problem] object. The advantage of doing so is to be
+    able to implement the fitness function with the simple assumption that the
+    input is a vector (that stores decision values for a single solution),
+    and the output is a scalar (that represents the fitness of the solution).
+    The decorator `@rowwise` also flags the decorated function (like
+    `@vectorized` does), so, the fitness function is used correctly by the
+    `Problem` instance, in a vectorized manner. See the example below:
+
+    ```python
+    @rowwise
+    def fitness(decision_values: torch.Tensor) -> torch.Tensor:
+        return torch.sqrt(torch.sum(decision_values**2))
+
+
+    my_problem = Problem("min", fitness, ...)
+    ```
+
+    In the example above, thanks to the decorator `@rowwise`, `my_problem` will
+    use `fitness` in a vectorized manner when evaluating a `SolutionBatch`,
+    even though `fitness` is defined in terms of a single solution.
+
+    **Randomness.**
+    Like in `torch.func.vmap`, the behavior of the decorated function in
+    terms of randomness can be configured via a keyword argument named
+    `randomness`:
+
+    ```python
+    @rowwise(randomness="error")
+    def f(x: torch.Tensor) -> torch.Tensor:
+        ...
+    ```
+
+    If `randomness` is set as "error", then, when there is batching, any
+    attempt to generate random data using PyTorch will raise an error.
+    If `randomness` is set as "different", then, a random generation
+    operation such as `torch.randn(...)` will produce a `BatchedTensor`,
+    where each batch item has its own re-sampled data.
+    If `randomness` is set as "same", then, a random generation operation
+    such as `torch.randn(...)` will produce a non-batched tensor containing
+    random data that is sampled only once.
+    """
+    num_args = len(args)
+
+    if num_args == 0:
+        immediately_decorate = False
+    elif num_args == 1:
+        immediately_decorate = True
+    else:
+        raise TypeError("`rowwise` received invalid number of positional arguments")
+
+    def decorator(fn: Callable) -> Callable:  # <- inner decorator
+        decorated = expects_ndim(fn, (1,), randomness=randomness)
+        decorated.__evotorch_vectorized__ = True
+        return decorated
+
+    return decorator(args[0]) if immediately_decorate else decorator
