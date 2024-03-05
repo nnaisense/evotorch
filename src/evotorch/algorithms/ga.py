@@ -25,6 +25,7 @@ from .searchalgorithm import SearchAlgorithm, SinglePopulationAlgorithmMixin
 
 def _use_operator(batch: SolutionBatch, operator: Callable) -> SolutionBatch:
     from ..operators import CopyingOperator, Operator
+    from ..tools import is_dtype_object
 
     if isinstance(operator, CopyingOperator):
         result = operator(batch)
@@ -32,9 +33,22 @@ def _use_operator(batch: SolutionBatch, operator: Callable) -> SolutionBatch:
         result = batch.clone()
         operator(result)
     else:
-        result = batch.clone()
-        old_values = result.access_values()
-        result.set_values(operator(old_values))
+        cloned_batch = batch.clone()
+        original_values = cloned_batch.access_values(keep_evals=True)
+        new_values = operator(original_values)
+        if not is_dtype_object(new_values.dtype):
+            if new_values.ndim != 2:
+                raise ValueError(
+                    "The tensor returned by the given operator was expected to have 2 dimensions."
+                    f" However, it has {new_values.ndim} dimensions, with shape {new_values.shape}."
+                )
+        n = len(new_values)
+        if n == len(cloned_batch):
+            cloned_batch.set_values(new_values)
+            result = cloned_batch
+        else:
+            result = SolutionBatch(popsize=n, like=batch, empty=True)
+            result.set_values(new_values)
 
     return result
 
