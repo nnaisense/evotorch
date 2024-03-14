@@ -387,9 +387,9 @@ class CMAES(SearchAlgorithm, SinglePopulationAlgorithmMixin):
         """Get the center of search distribution, m"""
         return self.m
 
-    def _get_sigma(self) -> float:
+    def _get_sigma(self) -> torch.Tensor:
         """Get the step-size of the search distribution, sigma"""
-        return float(self.sigma.cpu())
+        return self.sigma.to(device="cpu", dtype=torch.float)
 
     @property
     def obj_index(self) -> int:
