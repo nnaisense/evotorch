@@ -19,19 +19,22 @@ This namespace provides various vectorized reinforcement learning utilities.
 import random
 from collections.abc import Mapping
 from copy import deepcopy
-from typing import Any, Callable, Iterable, Optional, Union
+from numbers import Number
+from typing import Any, Callable, Iterable, Optional, Sequence, Union
 
 import gymnasium as gym
 import numpy as np
 import torch
+from packaging.version import Version
 
 try:
     from torch.func import vmap
 except ImportError:
     from functorch import vmap
 
-from gymnasium.spaces import Box, Discrete, Space
-from gymnasium.vector import SyncVectorEnv
+from gymnasium.spaces import Box, Discrete, MultiDiscrete, Space
+
+# from gymnasium.vector import SyncVectorEnv
 from torch import nn
 from torch.nn import utils as nnu
 
@@ -248,26 +251,141 @@ def convert_to_torch_bool(x: Any) -> torch.Tensor:
     return x
 
 
-class TorchWrapper(gym.Wrapper):
+def _unbatch_space(space: Space) -> Space:
+    def _space_shape_and_ndim(spc: Space) -> tuple:
+        shape = spc.shape
+        if not isinstance(shape, tuple):
+            raise TypeError(
+                f"The shape of the space {spc} was expected as a tuple, but it was encountered as {spc.shape}."
+            )
+        ndim = len(shape)
+        return shape, ndim
+
+    if isinstance(space, Box):
+        shape, ndim = _space_shape_and_ndim(space)
+        if ndim <= 1:
+            raise ValueError(
+                f"While trying to obtain the unbatched counterpart of the space {space}:"
+                f" a shape with at least two dimensions was expected, but the encountered shape is {shape}."
+            )
+        unbatched_shape = shape[1:]
+        return Box(low=space.low[0], high=space.high[0], dtype=space.dtype, shape=unbatched_shape)
+    elif isinstance(space, MultiDiscrete):
+        shape, ndim = _space_shape_and_ndim(space)
+        if ndim != 1:
+            raise ValueError(
+                f"While trying to obtain the unbatched counterpart of the space {space}:"
+                f" a one-dimensional shape was expected, but the encountered shape is {shape}."
+            )
+        if len(np.unique(space.nvec)) != 1:
+            raise ValueError(
+                f"While trying to obtain the unbatched counterpart of the space {space}:"
+                " it was expected that the received MultiDiscrete space consists of the same integer repeated"
+                " b times, b being the batch size. but the integers within the `nvec` attribute of the space"
+                " are not consistent."
+            )
+        return Discrete(space.nvec[0])
+    else:
+        raise TypeError(
+            f"While trying to obtain the unbatched counterpart of the space {space}:"
+            f" Expected to receive a space of type Box or MultiDiscrete, but got {space}, of type {type(space)}."
+        )
+
+
+def _batch_space(space: Space, num_envs: int) -> Space:
+    if isinstance(space, Box):
+        shape = space.shape
+        batched_shape = (num_envs,) + tuple(shape)
+        broadcast_shape = (num_envs,) + tuple(1 for _ in shape)
+        dtype = space.dtype
+        broadcaster = np.ones(broadcast_shape, dtype=dtype)
+        return Box(low=(broadcaster * space.low), high=(broadcaster * space.high), shape=batched_shape, dtype=dtype)
+    elif isinstance(space, Discrete):
+        return MultiDiscrete(np.ones(num_envs) * space.n)
+    else:
+        raise TypeError(
+            f"While attempting to get the batched counterpart of the space {space}:"
+            f" expected to receive a space of type Box or Discrete, but got {space}, of type {type(space)}."
+        )
+
+
+_OLD_GYMNASIUM = Version(gym.__version__).major == 0
+
+
+if _OLD_GYMNASIUM:
+    BaseVectorEnv = gym.vector.VectorEnv
+else:
+
+    class BaseVectorEnv(gym.vector.VectorEnv):
+        """
+        A base class for vectorized gymnasium environments.
+
+        In gymnasium 0.29.x, the `__init__(...)` method of the base class
+        `gymnasium.vector.VectorEnv` expects the arguments `num_envs`,
+        `observation_space`, and `action_space`, and then prepares the instance
+        attributes `num_envs`, `single_observation_space`, `single_action_space`,
+        `observation_space`, and `action_space` according to the initialization
+        arguments it receives.
+
+        It appears that with gymnasium 1.x, this API is changing, and
+        `gymnasium.vector.VectorEnv` strictly expects no positional arguments.
+        This `BaseVectorEnv` class is meant as a base class which preserves
+        the behavior of gymnasium 0.29.x, meaning that it will expects the
+        arguments, and prepare the attributes mentioned above.
+
+        Please note, however, that this `BaseVectorEnv` implementation
+        can only work with environments whose single observation and single
+        action spaces are either `Box` or `Discrete`.
+        """
+
+        def __init__(self, num_envs: int, observation_space: Space, action_space: Space):
+            """
+            `__init__(...)`: Initialize the vectorized environment.
+
+            Args:
+                num_envs: Number of sub-environments handled by this `BaseVectorEnv`.
+                observation_space: Observation space of a single sub-environment.
+                    This can only be given as an instance of type
+                    `gymnasium.spaces.Box` or `gymnasium.spaces.Discrete`.
+                action_space: Action space of a single sub-environment.
+                    This can only be given as an instance of type
+                    `gymnasium.spaces.Box` or `gymnasium.spaces.Discrete`.
+            """
+            super().__init__()
+            self.num_envs = int(num_envs)
+            self.single_observation_space = observation_space
+            self.single_action_space = action_space
+            self.observation_space = _batch_space(self.single_observation_space, self.num_envs)
+            self.action_space = _batch_space(self.single_action_space, self.num_envs)
+
+
+class TorchWrapper:
     """
-    A gym wrapper which ensures that the actions, observations, rewards, and
+    A wrapper for vectorized or non-vectorized gymnasium environments.
+
+    This wrapper ensures that the actions, observations, rewards, and
     the 'done' values are expressed as PyTorch tensors.
+
+    Please note that `TorchWrapper` does not inherit neither from
+    `gymnasium.Wrapper`, nor from `gymnasium.vector.VectorEnvWrapper`.
+    Once an environment is wrapped via `TorchWrapper`, it is NOT
+    recommended to further wrap it via other types of wrappers.
     """
 
     def __init__(
         self,
-        env: Union[gym.Env],
+        env: Union[gym.Env, gym.vector.VectorEnv, "TorchWrapper"],
         *,
         force_classic_api: bool = False,
         discrete_to_continuous_act: bool = False,
         clip_actions: bool = False,
-        **kwargs,
+        # **kwargs,
     ):
         """
         `__init__(...)`: Initialize the TorchWrapper.
 
         Args:
-            env: The gym environment to be wrapped.
+            env: The gymnasium environment to be wrapped.
             force_classic_api: Set this as True if you would like to enable
                 the classic API. In the classic API, the `reset(...)` method
                 returns only the observation and the `step(...)` method
@@ -282,23 +400,26 @@ class TorchWrapper(gym.Wrapper):
             clip_actions: Set this as True if you would like to clip the given
                 actions so that they conform to the declared boundaries of the
                 action space.
-            kwargs: Expected in the form of additional keyword arguments.
-                These additional keyword arguments are passed to the
-                superclass.
         """
-        super().__init__(env, **kwargs)
+        # super().__init__(env, **kwargs)
+        self.env = env
+        self.observation_space = env.observation_space
+        self.action_space = env.action_space
 
         # Declare the variable that will store the array type of the underlying environment.
         self.__array_type: Optional[str] = None
 
-        if hasattr(env, "single_observation_space"):
+        if hasattr(env.unwrapped, "single_observation_space"):
             # If the underlying environment has the attribute "single_observation_space",
             # then this is a vectorized environment.
             self.__vectorized = True
 
             # Get the observation and action spaces.
-            obs_space = env.single_observation_space
-            act_space = env.single_action_space
+            obs_space = _unbatch_space(env.observation_space)
+            act_space = _unbatch_space(env.action_space)
+            self.single_observation_space = obs_space
+            self.single_action_space = act_space
+            self.num_envs = env.unwrapped.num_envs
         else:
             # If the underlying environment has the attribute "single_observation_space",
             # then this is a non-vectorized environment.
@@ -446,7 +567,7 @@ class TorchWrapper(gym.Wrapper):
             # `done2` indicates whether or not the episode(s) got truncated because of the timestep limit.
             observation, reward, done, done2, info = result
         elif len(result) == 4:
-            # If the result is a tuple of 5 elements, then we note that we are not using the new API.
+            # If the result is a tuple of 4 elements, then we note that we are not using the new API.
             using_new_api = False
             # Take the observation, reward, the done boolean flag, and additional info.
             observation, reward, done, info = result
@@ -477,6 +598,19 @@ class TorchWrapper(gym.Wrapper):
             else:
                 # If we are using the new API, then we return the 4-element result.
                 return observation, reward, done, info
+
+    def seed(self, *args, **kwargs) -> Any:
+        return self.env.seed(*args, **kwargs)
+
+    def render(self, *args, **kwargs) -> Any:
+        return self.env.render(*args, **kwargs)
+
+    def close(self, *args, **kwargs) -> Any:
+        return self.env.close(*args, **kwargs)
+
+    @property
+    def unwrapped(self) -> Union[gym.Env, gym.vector.VectorEnv]:
+        return self.env.unwrapped
 
 
 def make_brax_env(
@@ -538,21 +672,48 @@ def make_gym_env(
     num_envs: Optional[int] = None,
     discrete_to_continuous_act: bool = False,
     clip_actions: bool = False,
+    empty_info: bool = False,
+    num_episodes: Optional[int] = None,
+    device: Optional[Union[str, torch.device]] = None,
     **kwargs,
 ) -> TorchWrapper:
     """
-    Make gymnasium environments and wrap them via SyncVectorEnv and TorchWrapper.
+    Make gymnasium environment(s) and wrap them via a TorchWrapper.
 
     Args:
         env_name: Name of the gymnasium environment, as string (e.g. "Humanoid-v4").
         force_classic_api: Whether or not the classic gym API is to be used.
-        num_envs: Batch size for the vectorized environment.
+        num_envs: Optionally a batch size for the vectorized environment.
+            If given as an integer, the environment will be instantiated multiple
+            times, and then wrapped via `SyncVectorEnv`.
         discrete_to_continuous_act: Whether or not the the discrete action
             space of the environment is to be converted to a continuous one.
             This does nothing if the environment's action space is not
             discrete.
         clip_actions: Whether or not the actions should be explicitly clipped
             so that they stay within the declared action boundaries.
+        empty_info: Whether or not to ignore the info dictionaries of the
+            sub-environments and always return an empty dictionary for the
+            extra info. This feature is only available when `num_envs` is given
+            as an integer. If `num_envs` is None, `empty_info` should be left as
+            False.
+        num_episodes: Optionally an integer which specifies the number of
+            episodes each sub-environment will run for. Until its number of
+            episodes run out, each sub-environment will be subject to
+            auto-reset. Alternatively, `num_episodes` can be left as None,
+            which means that the sub-environments will be subject to auto-reset
+            indefinitely.
+            Please note that this feature can be used only when `num_envs` is
+            given as an integer (i.e. when we work with a batch of
+            environments). When `num_envs` is None, `num_episodes` is expected
+            as None as well.
+        device: Optionally the device on which the state(s) of the environment(s)
+            will be reported. If None, the reported arrays of the underlying
+            environment(s) will be unchanged. If given as a `torch.device` or as
+            a string, the reported arrays will be converted to PyTorch tensors
+            and then moved to this specified device.
+            This feature is only available when `num_envs` is given as an
+            integer. If `num_envs` is None, `device` should also be None.
         kwargs: Expected in the form of additional keyword arguments, these
             are passed to the environment.
     Returns:
@@ -562,9 +723,36 @@ def make_gym_env(
     def make_the_env():
         return gym.make(env_name, **kwargs)
 
-    env_fns = [make_the_env for _ in range(num_envs)]
+    if num_envs is None:
+        if empty_info:
+            raise ValueError(
+                f"The argument `empty_info` was received as {repr(empty_info)}."
+                " The `empty_info` behavior can be turned on only when `num_envs` is not None."
+                " However, `num_envs` was received as None."
+            )
+        if num_episodes is not None:
+            raise ValueError(
+                f"The argument `num_episodes` was received as {repr(num_episodes)}."
+                " The `num_episodes` behavior can be turned on only when `num_envs` is not None."
+                " However, `num_envs` was received as None."
+            )
+        if device is not None:
+            raise ValueError(
+                f"The argument `device` was received as {repr(device)}."
+                " Having a target device is supported only when `num_envs` is not None."
+                " However, `num_envs` was received as None."
+            )
+        to_be_wrapped = make_the_env()
+    else:
+        to_be_wrapped = SyncVectorEnv(
+            [make_the_env for _ in range(num_envs)],
+            empty_info=empty_info,
+            num_episodes=num_episodes,
+            device=device,
+        )
+
     vec_env = TorchWrapper(
-        SyncVectorEnv(env_fns),
+        to_be_wrapped,
         force_classic_api=force_classic_api,
         discrete_to_continuous_act=discrete_to_continuous_act,
         clip_actions=clip_actions,
@@ -580,6 +768,8 @@ def make_vector_env(
     num_envs: Optional[int] = None,
     discrete_to_continuous_act: bool = False,
     clip_actions: bool = False,
+    gym_kwargs: Optional[dict] = None,
+    brax_kwargs: Optional[dict] = None,
     **kwargs,
 ) -> TorchWrapper:
     """
@@ -616,6 +806,10 @@ def make_vector_env(
             discrete.
         clip_actions: Whether or not the actions should be explicitly clipped
             so that they stay within the declared action boundaries.
+        gym_kwargs: Keyword arguments to pass only if the environment is a
+            classical gymnasium environment.
+        brax_kwargs: Keyword arguments to pass only if the environment is a
+            brax environment.
         kwargs: Expected in the form of additional keyword arguments, these
             are passed to the environment.
     Returns:
@@ -624,16 +818,27 @@ def make_vector_env(
 
     env_parts = str(env_name).split("::", maxsplit=1)
 
+    if gym_kwargs is None:
+        gym_kwargs = {}
+    if brax_kwargs is None:
+        brax_kwargs = {}
+
+    kwargs_to_pass = {}
+    kwargs_to_pass.update(kwargs)
+
     if len(env_parts) == 0:
         raise ValueError(f"Invalid value for `env_name`: {repr(env_name)}")
     elif len(env_parts) == 1:
         fn = make_gym_env
+        kwargs_to_pass.update(gym_kwargs)
     elif len(env_parts) == 2:
         env_name = env_parts[1]
         if env_parts[0] == "gym":
             fn = make_gym_env
+            kwargs_to_pass.update(gym_kwargs)
         elif env_parts[0] == "brax":
             fn = make_brax_env
+            kwargs_to_pass.update(brax_kwargs)
         else:
             invalid_value = env_parts[0] + "::"
             raise ValueError(
@@ -651,7 +856,7 @@ def make_vector_env(
         num_envs=num_envs,
         discrete_to_continuous_act=discrete_to_continuous_act,
         clip_actions=clip_actions,
-        **kwargs,
+        **kwargs_to_pass,
     )
 
 
@@ -1158,7 +1363,7 @@ class Policy:
 
 if brax is not None:  # noqa: C901
 
-    class VectorEnvFromBrax(gym.vector.VectorEnv):
+    class VectorEnvFromBrax(BaseVectorEnv):
         def __init__(self, env_name: str, **kwargs):
             env_name = str(env_name)
 
@@ -1283,3 +1488,425 @@ if brax is not None:  # noqa: C901
                 terminated, truncated = self.__jit_make_terminated_and_truncated(done)
             info = {**(state.metrics), **(state.info)}
             return observation, reward, terminated, truncated, info
+
+
+def _batch_info_dicts(infos: Sequence[dict]) -> dict:  # noqa: C901
+    all_keys = set()
+    for info_dict in infos:
+        all_keys.update(info_dict.keys())
+
+    def shape_of(obj: object) -> Optional[tuple]:
+        if isinstance(obj, np.ndarray):
+            return obj.shape
+        elif isinstance(obj, (np.generic, Number)):
+            return tuple()
+        else:
+            return None
+
+    combined = {k: [] for k in all_keys}
+    stackable = {k: True for k in all_keys}
+    single_shape = {}
+    for i_dict, info_dict in enumerate(infos):
+        if i_dict == 0:
+            for k, v in info_dict.items():
+                shape_of_v = shape_of(v)
+                if shape_of_v is not None:
+                    single_shape[k] = shape_of_v
+                else:
+                    stackable[k] = False
+
+        for k in all_keys:
+            if k in info_dict:
+                v = info_dict[k]
+                combined[k].append(v)
+                if isinstance(v, (np.ndarray, np.generic, Number)):
+                    if shape_of(v) != single_shape.get(k):
+                        stackable[k] = False
+                else:
+                    stackable[k] = False
+            else:
+                combined[k].append(None)
+                stackable[k] = False
+
+    stacked = {}
+    for k in all_keys:
+        if stackable[k]:
+            stacked[k] = np.stack(combined[k])
+        else:
+            stacked[k] = combined[k]
+
+    return stacked
+
+
+class SyncVectorEnv(BaseVectorEnv):
+    """
+    A vectorized gymnasium environment for handling multiple sub-environments.
+
+    This is an alternative implementation to the class `gymnasium.vector.SyncVectorEnv`.
+    This alternative SyncVectorEnv implementation has _eager_ auto-reset.
+
+    After taking a step(), any sub-environment whose terminated or truncated
+    signal is True will be immediately subject to resetting, and the returned
+    observation and info will immediately reflect the first state of the new
+    episode. This is compatible with the auto-reset behavior of gymnasium 0.29.x,
+    and is different from the auto-reset behavior introduced in gymnasium 1.x.
+    """
+
+    def __init__(
+        self,
+        env_makers: Iterable[gym.Env],
+        *,
+        empty_info: bool = False,
+        num_episodes: Optional[int] = None,
+        device: Optional[Union[str, torch.device]] = None,
+    ):
+        """
+        `__init__(...)`: Initialize the `SyncVectorEnv`.
+
+        Args:
+            env_makers: An iterable object which stores functions that make
+                the sub-environments to be managed by this `SyncVectorEnv`.
+                The number of functions within this iterable object
+                determines the number of sub-environments that will be
+                managed.
+            empty_info: Whether or not to ignore the actual `info` dictionaries
+                of the sub-environments and report empty `info` dictionaries
+                instead. The default is False. Set this as True if you are not
+                interested in additional `info`s, and if you wish to save some
+                computational cycles by not merging the separate `info`
+                dictionaries into a single dictionary.
+            num_episodes: Optionally an integer which represents the number
+                of episodes one wishes to run for each sub-environment.
+                If this `num_episodes` is given as a positive integer `n`,
+                each sub-environment will be subject to auto-reset `n-1` times.
+                After its number of environments is run out, a sub-environment
+                will keep reporting that it is both terminated and truncated,
+                its observations will consist of dummy values (`nan` for
+                `float`-typed observations, 0 for `int`-typed observations),
+                and its rewards will be `nan`. The internal episode counter
+                for the sub-environments will be reset when the `reset()`
+                method of `SyncVectorEnv` is called.
+                If `num_episodes` is left as None, auto-reset behavior will
+                be enabled indefinitely.
+            device: Optionally the device on which the observations, rewards,
+                terminated and truncated booleans and info arrays will be
+                reported. Please note that the sub-environments are always
+                expected with a numpy interface. This argument is used only for
+                optionally converting the sub-environments' state arrays to
+                PyTorch tensors on the target device. If this is left as None,
+                the reported arrays will be numpy arrays. If this is given as a
+                string or as a `torch.device`, the reported arrays will be
+                PyTorch tensors on the specified device.
+        """
+        self.__envs: Sequence[gym.Env] = [env_maker() for env_maker in env_makers]
+        num_envs = len(self.__envs)
+        if num_envs == 0:
+            raise ValueError(
+                "At least one sub-environment was expected, but got an empty collection of sub-environments."
+            )
+
+        self.__empty_info = bool(empty_info)
+        self.__device = device
+
+        single_observation_space = None
+        single_action_space = None
+        for i_env, env in enumerate(self.__envs):
+            if i_env == 0:
+                single_observation_space = env.observation_space
+                if not isinstance(single_observation_space, Box):
+                    raise TypeError(
+                        f"Expected a Box-typed observation space, but encountered {single_observation_space}."
+                    )
+                single_action_space = env.action_space
+                _must_be_supported_space(single_action_space)
+            else:
+                if env.observation_space.shape != single_observation_space.shape:
+                    raise ValueError("The observation shapes of the sub-environments do not match")
+                if isinstance(env.action_space, Discrete):
+                    if not isinstance(single_action_space.Discrete):
+                        raise TypeError("The action space types of the sub-environments do not match")
+                    if env.action_space.n != single_action_space.n:
+                        raise ValueError("The discrete numbers of actions of the sub-environments do not match")
+                elif isinstance(env.action_space, Box):
+                    if not isinstance(single_action_space, Box):
+                        raise TypeError("The action space types of the sub-environments do not match")
+                    if env.observation_space.shape != single_observation_space.shape:
+                        raise ValueError("The action space shapes of the sub-environments do not match")
+                else:
+                    assert False, "Code execution should not have reached here. This is most probably a bug."
+
+        self.__batched_obs_shape = (num_envs,) + single_observation_space.shape
+        self.__batched_obs_dtype = single_observation_space.dtype
+        self.__random_state: Optional[np.random.RandomState] = None
+
+        if num_episodes is None:
+            self.__num_episodes = None
+            self.__num_episodes_counter = None
+            self.__dummy_observation = None
+        else:
+            self.__num_episodes = int(num_episodes)
+            if self.__num_episodes <= 0:
+                raise ValueError(f"Expected `num_episodes` as a positive integer, but its value is {num_episodes}")
+            self.__dummy_observation = np.zeros(single_observation_space.shape, dtype=single_observation_space.dtype)
+            if "float" in str(self.__dummy_observation.dtype):
+                self.__dummy_observation[:] = float("nan")
+            self.__num_episodes_counter = np.ones(num_envs, dtype=int)
+
+        super().__init__(num_envs, single_observation_space, single_action_space)
+
+    def __pop_seed_kwargs(self) -> list:
+        if self.__random_state is None:
+            return [{} for _ in range(self.num_envs)]
+        else:
+            seeds = self.__random_state.randint(0, 2**32, self.num_envs)
+            result = [{"seed": int(seed_integer)} for seed_integer in seeds]
+            self.__random_state = None
+            return result
+
+    def __move_to_target_device(
+        self,
+        data: Union[np.ndarray, torch.Tensor, dict],
+    ) -> Union[np.ndarray, torch.Tensor, dict]:
+        from numbers import Real
+
+        if self.__device is None:
+            return data
+
+        def move(x: object) -> object:
+            if isinstance(x, (Real, bool, np.bool_, torch.Tensor, np.ndarray)):
+                return torch.as_tensor(x, device=self.__device)
+            else:
+                return x
+
+        if isinstance(data, dict):
+            return {k: move(v) for k, v in data.items()}
+        else:
+            return move(data)
+
+    def __move_each_to_target_device(self, *args) -> tuple:
+        return tuple(self.__move_to_target_device(x) for x in args)
+
+    def seed(self, seed_integer: Optional[int] = None):
+        """
+        Prepare an internal random number generator to be used by the next `reset()`.
+
+        In more details, if an integer is given via the argument `seed_integer`,
+        an internal random number generator (of type `numpy.random.RandomState`)
+        will be instantiated with `seed_integer` as its seed. Then, the next time
+        `reset()` is called, each sub-environment will be given a sub-seed, each
+        sub-seed being a new integer generated from this internal random number
+        generator. Once this operation is complete, the internal random generator
+        is destroyed, so that the remaining reset operations will continue to
+        be randomized according to the sub-environment-specific generators.
+
+        On the other hand, if the argument `seed_integer` is given as `None`,
+        the internal random number generator will be destroyed, meaning that the
+        next call to `reset()` will reset each sub-environment without specifying
+        any sub-seed at all.
+
+        As an alternative, one can also provide a seed as a positional argument
+        to `reset()`. The following two usages are equivalent:
+
+        ```python
+        vec_env = SyncVectorEnv(
+            [function_to_make_a_single_env() for _ in range(number_of_sub_envs)]
+        )
+
+        # Usage 1 (calling seed and reset separately):
+        vec_env.seed(an_integer)
+        vec_env.reset()
+
+        # Usage 2 (calling reset with a seed argument):
+        vec_env.reset(seed=an_integer)
+        ```
+
+        Args:
+            seed_integer: An integer if you wish each sub-environment to be
+                randomized via a pseudo-random generator seeded by this given
+                integer. Otherwise, this can be left as None.
+        """
+        if seed_integer is None:
+            self.__random_state = None
+        else:
+            self.__random_state = np.random.RandomState(seed_integer)
+
+    def reset(self, **kwargs) -> tuple:
+        """
+        Reset each sub-environment.
+
+        Any keyword argument other than `seed` will be sent directly to the
+        `reset(...)` methods of the underlying sub-environments.
+
+        If, among the keyword arguments, there is `seed`, the value for this
+        `seed` keyword argument will be expected either as None, or as an integer.
+        The setting `seed=None` can be used if the user wishes to ensure that
+        there will be no explicit seeding when resetting the sub-environments
+        (even when the `seed(...)` method of `SyncVectorEnv` was called
+        previously with an explicit seed integer).
+        The setting `seed=S`, where `S` is an integer, causes the following
+        steps to be executed:
+        (i) prepare a temporary random number generator with seed `S`;
+        (ii) from the temporary random number generator, generate `N` sub-seed
+        integers where `N` is the number of sub-environments;
+        (iii) reset each sub-environment with a sub-seed;
+        (iv) destroy the temporary random number generator.
+
+        Args:
+            kwargs: Keyword arguments to be passed to the `reset()` methods
+                of the underlying sub-environments. The keyword `seed` will be
+                intercepted and treated specially.
+        Returns:
+            A tuple of the form `(observation, info)`, where `observation` is
+            a numpy array storing the observations of all the sub-environments
+            (where the leftmost dimension is the batch dimension), and `info`
+            is the `info` dictionary. If possible, the values within the
+            `info` dictionary will be combined to single numpy arrays as well.
+            If this `SyncVectorEnv` was initialized with a `device`, the
+            results will be in the form of PyTorch tensors on the specified device.
+        """
+        if "seed" in kwargs:
+            self.seed(kwargs["seed"])
+            remaining_kwargs = {k: v for k, v in kwargs.items() if k != "seed"}
+        else:
+            remaining_kwargs = kwargs
+
+        if self.__num_episodes is not None:
+            self.__num_episodes_counter[:] = self.__num_episodes
+
+        seed_kwargs_list = self.__pop_seed_kwargs()
+        observations = []
+        infos = []
+        for env, seed_kwargs in zip(self.__envs, seed_kwargs_list):
+            observation, info = env.reset(**seed_kwargs, **remaining_kwargs)
+            observations.append(observation)
+            if not self.__empty_info:
+                infos.append(info)
+
+        if self.__empty_info:
+            batched_info = {}
+        else:
+            batched_info = _batch_info_dicts(infos)
+
+        return self.__move_each_to_target_device(np.stack(observations), batched_info)
+
+    def step(self, action: Union[torch.Tensor, np.ndarray]) -> tuple:  # noqa: C901
+        """
+        Take a step within each sub-environment.
+
+        Args:
+            action: A numpy array or a PyTorch tensor that contains the action.
+                The size of the leftmost dimension of this array or tensor
+                is expected to be equal to the number of sub-environments.
+        Returns:
+            A tuple of the form (`observation`, `reward`, `terminated`,
+            `truncated`, `info`) where `observation` is an array or tensor
+            storing the observations of the sub-environments, `reward`
+            is an array or tensor storing the rewards, `terminated` is an
+            array or tensor of booleans stating whether or not the
+            sub-environments got reset because of termination,
+            `truncated` is an array or tensor of booleans stating whether or
+            not the sub-environments got reset because of truncation, and
+            `info` is a dictionary storing any additional information
+            regarding the states of the sub-environments.
+            If this `SyncVectorEnv` was initialized with a `device`, the
+            results will be in the form of PyTorch tensors on the specified
+            device.
+        """
+        if isinstance(action, torch.Tensor):
+            action = action.cpu().numpy()
+        else:
+            action = np.asarray(action)
+
+        if action.ndim == 0:
+            raise ValueError("The action array must be at least 1-dimensional")
+
+        batch_size = action.shape[0]
+        if batch_size != self.num_envs:
+            raise ValueError("The leftmost dimension of the action array does not match the number of sub-environments")
+
+        batched_obs_shape = self.__batched_obs_shape
+        batched_obs_dtype = self.__batched_obs_dtype
+        num_envs = self.num_envs
+
+        if self.__empty_info:
+            initialized_info = {}
+        else:
+            initialized_info = [None for _ in range(num_envs)]
+
+        class per_env:
+            observation = np.zeros(batched_obs_shape, dtype=batched_obs_dtype)
+            reward = np.zeros(num_envs, dtype=float)
+            terminated = np.zeros(num_envs, dtype=bool)
+            truncated = np.zeros(num_envs, dtype=bool)
+            info = initialized_info
+
+        def is_active_env(env_index: int) -> bool:
+            if self.__num_episodes is None:
+                return True
+            return self.__num_episodes_counter[env_index] > 0
+
+        def is_last_episode(env_index: int) -> bool:
+            if self.__num_episodes is None:
+                return False
+            return self.__num_episodes_counter[env_index] == 1
+
+        def decrement_episode_counter(env_index: int):
+            if self.__num_episodes is None:
+                return
+            self.__num_episodes_counter[env_index] -= 1
+
+        def apply_step(env_index: int, single_action: Union[np.ndarray, np.generic, Number, bool]) -> tuple:
+            if not is_active_env(env_index):
+                return self.__dummy_observation, float("nan"), True, True, {}
+
+            env = self.__envs[env_index]
+
+            observation, reward, terminated, truncated, info = env.step(single_action)
+
+            if terminated or truncated:
+                was_last_episode = is_last_episode(env_index)
+                decrement_episode_counter(env_index)
+                obs_after_reset, info_after_reset = env.reset()
+                if not was_last_episode:
+                    observation = obs_after_reset
+                    info = info_after_reset
+
+            return observation, reward, terminated, truncated, info
+
+        for i_env in range(len(self.__envs)):
+            # observation, reward, terminated, truncated, info = self.__envs[i_env].step(action[i_env])
+            # done = terminated | truncated
+            # if done:
+            #     observation, info = self.__envs[i_env].reset()
+            observation, reward, terminated, truncated, info = apply_step(i_env, action[i_env])
+
+            per_env.observation[i_env] = observation
+            per_env.reward[i_env] = reward
+            per_env.terminated[i_env] = terminated
+            per_env.truncated[i_env] = truncated
+            if not self.__empty_info:
+                per_env.info[i_env] = info
+
+        if not self.__empty_info:
+            per_env.info = _batch_info_dicts(per_env.info)
+
+        return self.__move_each_to_target_device(
+            per_env.observation,
+            per_env.reward,
+            per_env.terminated,
+            per_env.truncated,
+            per_env.info,
+        )
+
+    def render(self, *args, **kwargs):
+        """
+        Does not do anything, ignores its arguments, and returns None.
+        """
+        pass
+
+    def close(self):
+        """
+        Close each sub-environment.
+        """
+        for env in self.__envs:
+            env.close()

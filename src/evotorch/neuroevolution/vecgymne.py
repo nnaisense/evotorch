@@ -400,6 +400,27 @@ class VecGymNE(BaseNEProblem):
         self._interaction_count: int = 0
         self._episode_count: int = 0
 
+        device_is_cpu = (device is None) or (str(device) == "cpu")
+        actors_use_gpu = (
+            (num_actors is not None)
+            and (num_actors > 1)
+            and (num_gpus_per_actor is not None)
+            and (num_gpus_per_actor > 0)
+        )
+
+        if not device_is_cpu:
+            # In the case where the device is something other than the cpu, we tell SyncVectorEnv to use this device.
+            self._device_for_sync_vector_env = device
+            self._sync_vector_env_uses_aux_device = False
+        elif actors_use_gpu:
+            # In the case where this problem instance is configured to use multiple actors and the actors are
+            # configured to use the available gpu(s), we tell SyncVectorEnv to use the `aux_device`.
+            self._device_for_sync_vector_env = None
+            self._sync_vector_env_uses_aux_device = True
+        else:
+            self._device_for_sync_vector_env = None
+            self._sync_vector_env_uses_aux_device = False
+
         # Call the superclass
         super().__init__(
             objective_sense="max",
@@ -483,10 +504,22 @@ class VecGymNE(BaseNEProblem):
                 clip_actions=True,
             )
 
+            # Keyword arguments to use only when the underlying environment is a classical gymnasium environment
+            gym_cfg = dict(empty_info=True, num_episodes=self._num_episodes)
+
+            if self._sync_vector_env_uses_aux_device:
+                gym_cfg["device"] = self.aux_device
+            elif self._device_for_sync_vector_env is not None:
+                gym_cfg["device"] = self._device_for_sync_vector_env
+
             if isinstance(self._env_maker, str):
                 # If the environment is specified via a string, then we use our `make_vector_env` function.
                 self._env = make_vector_env(
-                    self._env_maker, num_envs=num_policies, **torch_wrapper_cfg, **(self._env_config)
+                    self._env_maker,
+                    num_envs=num_policies,
+                    gym_kwargs=gym_cfg,
+                    **torch_wrapper_cfg,
+                    **(self._env_config),
                 )
             else:
                 # If the environment is specified via a Callable, then we call it.
@@ -781,8 +814,20 @@ class VecGymNE(BaseNEProblem):
             # the running solutions. So, we declare the following variable.
             t_per_env = torch.zeros(num_envs, dtype=torch.int64, device=self._simulator_device)
 
+        def normalize(observations: torch.Tensor, *, mask: torch.Tensor) -> torch.Tensor:
+            original_observations = observations
+            observations = observations[mask]
+            if observations.shape[0] == 0:
+                return observations
+            else:
+                normalized = self._normalize_observation(observations)
+                modified_observations = original_observations.clone()
+                modified_observations[mask] = normalized
+                return modified_observations
+
         # We normalize the initial observation.
-        obs_per_env = self._normalize_observation(obs_per_env, mask=active_per_env)
+        # obs_per_env = self._normalize_observation(obs_per_env, mask=active_per_env)
+        obs_per_env = normalize(obs_per_env, mask=active_per_env)
 
         while True:
             # Pass the observations through the policy and get the actions to perform.
@@ -840,14 +885,18 @@ class VecGymNE(BaseNEProblem):
             num_eps_per_env[done_per_env] += 1
 
             # Solutions with number of completed episodes larger than the number of allowed episodes become inactive.
-            active_per_env[:num_solutions] = num_eps_per_env[:num_solutions] < self._num_episodes
+            # active_per_env[:num_solutions] = num_eps_per_env[:num_solutions] < self._num_episodes
+            active_per_env[:num_solutions] = active_per_env[:num_solutions] & (
+                num_eps_per_env[:num_solutions] < self._num_episodes
+            )
 
             if not torch.any(active_per_env[:num_solutions]):
                 # If there is not a single active solution left, then we exit this loop.
                 break
 
             # For the next iteration of this loop, we normalize the observation.
-            obs_per_env = self._normalize_observation(obs_per_env, mask=active_per_env)
+            # obs_per_env = self._normalize_observation(obs_per_env, mask=active_per_env)
+            obs_per_env = normalize(obs_per_env, mask=active_per_env)
 
         # Update the interaction count and the episode count stored by this VecGymNE instance.
         self._interaction_count += total_timesteps
