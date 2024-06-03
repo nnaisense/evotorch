@@ -1623,7 +1623,7 @@ class SyncVectorEnv(BaseVectorEnv):
                 if env.observation_space.shape != single_observation_space.shape:
                     raise ValueError("The observation shapes of the sub-environments do not match")
                 if isinstance(env.action_space, Discrete):
-                    if not isinstance(single_action_space.Discrete):
+                    if not isinstance(single_action_space, Discrete):
                         raise TypeError("The action space types of the sub-environments do not match")
                     if env.action_space.n != single_action_space.n:
                         raise ValueError("The discrete numbers of actions of the sub-environments do not match")
