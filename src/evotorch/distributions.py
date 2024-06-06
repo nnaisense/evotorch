@@ -14,11 +14,19 @@
 
 import math
 from copy import copy
-from typing import Any, Callable, Iterable, Optional, Union
+from typing import Any, Callable, Iterable, NamedTuple, Optional, Type, Union
 
 import torch
+from torch.func import vmap
 
-from .tools import Device, DType, cast_tensors_in_container, device_of_container, dtype_of_container
+from .tools import (
+    Device,
+    DType,
+    cast_tensors_in_container,
+    device_of_container,
+    dtype_of_container,
+    make_batched_false_for_vmap,
+)
 from .tools import multiply_rows_by_scalars as dot
 from .tools import rowwise_sum as total
 from .tools import to_torch_dtype
@@ -34,6 +42,9 @@ class Distribution(TensorMakerMixin, Serializable):
 
     MANDATORY_PARAMETERS = set()
     OPTIONAL_PARAMETERS = set()
+    PARAMETER_NDIMS = {}
+
+    functional_sample = NotImplemented
 
     def __init__(
         self, *, solution_length: int, parameters: dict, dtype: Optional[DType] = None, device: Optional[Device] = None
@@ -179,6 +190,7 @@ class Distribution(TensorMakerMixin, Serializable):
         elif (num_solutions is not None) and (out is None):
             num_solutions = int(num_solutions)
             out = self.make_empty(num_solutions=num_solutions)
+            out = out + make_batched_false_for_vmap(out.device)
         elif (num_solutions is None) and (out is not None):
             if out.ndim != 2:
                 raise ValueError(
@@ -401,6 +413,50 @@ class SeparableGaussian(Distribution):
 
     MANDATORY_PARAMETERS = {"mu", "sigma"}
     OPTIONAL_PARAMETERS = {"divide_mu_grad_by", "divide_sigma_grad_by", "parenthood_ratio"}
+    PARAMETER_NDIMS = {"mu": 1, "sigma": 1}
+
+    @classmethod
+    def _unbatched_functional_sample(cls, num_solutions: int, mu: torch.Tensor, sigma: torch.Tensor) -> torch.Tensor:
+        [L] = mu.shape
+        [sigma_L] = sigma.shape
+        if L != sigma_L:
+            raise ValueError(f"The lengths of `mu` ({L}) and `sigma` ({sigma_L}) do not match.")
+        mu = mu.expand(int(num_solutions), L)
+        return torch.normal(mu, sigma)
+
+    @classmethod
+    def functional_sample(cls, num_solutions: int, parameters: dict) -> torch.Tensor:
+        """
+        Sample and return separable Gaussian noise
+
+        This is a static utility method, which allows one to sample separable
+        Gaussian noise, without having to instantiate the distribution class
+        `SeparableGaussian`.
+
+        Args:
+            num_solutions: Number of solutions (or 1-dimensional tensors)
+                that will be sampled.
+            parameters: A parameter dictionary. Within this parameter
+                dictionary, the item `mu` is expected to store the mean, and
+                the item `sigma` is expected to store the standard deviation,
+                each in the form of a 1-dimensional tensor.
+        Returns:
+            Sampled separable Gaussian noise, as a PyTorch tensor.
+            If `mu` and/or `sigma` was given as tensors with 2 or more
+            dimensions (instead of only 1 dimension), the extra leftmost
+            dimensions will be interpreted as batch dimensions, and therefore,
+            this returned tensor will also have batch dimensions.
+        """
+        from .decorators import expects_ndim
+
+        for k in parameters.keys():
+            if (k not in cls.MANDATORY_PARAMETERS) and (k not in cls.OPTIONAL_PARAMETERS):
+                raise ValueError(f"{cls.__name__} encountered an unrecognized parameter: {repr(k)}")
+        mu = parameters["mu"]
+        sigma = parameters["sigma"]
+        return expects_ndim(cls._unbatched_functional_sample, (None, 1, 1), randomness="different")(
+            num_solutions, mu, sigma
+        )
 
     def __init__(
         self,
@@ -556,13 +612,93 @@ class SeparableGaussian(Distribution):
 
 
 class SymmetricSeparableGaussian(SeparableGaussian):
-    """
-    Symmetric (antithetic) separable Gaussian distribution
-    as used by PGPE.
+    r"""
+    Symmetric (antithetic) separable Gaussian distribution as used by PGPE.
+
+    For example, if the desired number of samples (or number of solutions,
+    provided via the argument `num_solutions`) is 6, 3 "directions" will
+    be sampled. Each direction is a pair of solutions, where one of the
+    solutions is the center vector plus perturbation, and the other
+    solution is the center vector minus the same perturbation. Therefore,
+    such a symmetric population of size 6 looks like this:
+
+    ```
+                                                   ___
+    solution[0]: center + sampled_perturbation[0]     \
+                                                       >  direction0
+    solution[1]: center - sampled_perturbation[1]  ___/
+
+                                                   ___
+    solution[2]: center + sampled_perturbation[2]     \
+                                                       >  direction1
+    solution[3]: center - sampled_perturbation[3]  ___/
+
+                                                   ___
+    solution[4]: center + sampled_perturbation[4]     \
+                                                       >  direction2
+    solution[5]: center - sampled_perturbation[5]  ___/
+    ```
     """
 
     MANDATORY_PARAMETERS = {"mu", "sigma"}
     OPTIONAL_PARAMETERS = {"divide_mu_grad_by", "divide_sigma_grad_by", "parenthood_ratio"}
+    PARAMETER_NDIMS = {"mu": 1, "sigma": 1}
+
+    @classmethod
+    def _unbatched_functional_sample(cls, num_solutions: int, mu: torch.Tensor, sigma: torch.Tensor) -> torch.Tensor:
+        zeros = torch.zeros_like(mu)
+        num_solutions = int(num_solutions)
+        if (num_solutions % 2) != 0:
+            raise ValueError(
+                f"Number of solutions to be sampled from {cls.__name__} must be an even number."
+                f" However, the encountered `num_solutions` is {num_solutions}."
+            )
+        num_directions = num_solutions // 2
+
+        positive_ends = SeparableGaussian._unbatched_functional_sample(num_directions, zeros, sigma)
+        negative_ends = -positive_ends
+
+        positive_ends += mu
+        negative_ends += mu
+
+        combined_samples = vmap(torch.stack)([positive_ends, negative_ends]).reshape(-1, positive_ends.shape[-1])
+
+        return combined_samples
+
+    @classmethod
+    def functional_sample(cls, num_solutions: int, parameters: dict) -> torch.Tensor:
+        """
+        Sample and return symmetric separable Gaussian noise
+
+        This is a static utility method, which allows one to sample symmetric
+        separable Gaussian noise, without having to instantiate the
+        distribution class `SymmetricSeparableGaussian`.
+
+        Args:
+            num_solutions: Number of solutions (or 1-dimensional tensors)
+                that will be sampled. Note that, since this distribution is
+                symmetric, `num_solutions` must be even.
+            parameters: A parameter dictionary. Within this parameter
+                dictionary, the item `mu` is expected to store the mean, and
+                the item `sigma` is expected to store the standard deviation,
+                each in the form of a 1-dimensional tensor.
+        Returns:
+            Sampled symmetric separable Gaussian noise, as a PyTorch tensor.
+            If `mu` and/or `sigma` was given as tensors with 2 or more
+            dimensions (instead of only 1 dimension), the extra leftmost
+            dimensions will be interpreted as batch dimensions, and therefore,
+            this returned tensor will also have batch dimensions.
+        """
+        from .decorators import expects_ndim
+
+        for k in parameters.keys():
+            if (k not in cls.MANDATORY_PARAMETERS) and (k not in cls.OPTIONAL_PARAMETERS):
+                raise ValueError(f"{cls.__name__} encountered an unrecognized parameter: {repr(k)}")
+        mu = parameters["mu"]
+        sigma = parameters["sigma"]
+        return expects_ndim(cls._unbatched_functional_sample, (None, 1, 1), randomness="different")(
+            num_solutions, mu, sigma
+        )
 
     def _fill(self, out: torch.Tensor, *, generator: Optional[torch.Generator] = None):
         self.make_gaussian(out=out, center=self.mu, stdev=self.sigma, symmetric=True, generator=generator)
@@ -636,10 +772,11 @@ class SymmetricSeparableGaussian(SeparableGaussian):
 
 
 class ExpSeparableGaussian(SeparableGaussian):
-    """exponentialseparable Multivariate Gaussian, as used by SNES"""
+    """Exponential Separable Multivariate Gaussian, as used by SNES"""
 
     MANDATORY_PARAMETERS = {"mu", "sigma"}
     OPTIONAL_PARAMETERS = set()
+    PARAMETER_NDIMS = {"mu": 1, "sigma": 1}
 
     def _compute_gradients(self, samples: torch.Tensor, weights: torch.Tensor, ranking_used: Optional[str]) -> dict:
         if ranking_used != "nes":
@@ -672,13 +809,15 @@ class ExpSeparableGaussian(SeparableGaussian):
 
 
 class ExpGaussian(Distribution):
-    """exponential Multivariate Gaussian, as used by XNES"""
+    """Exponential Multivariate Gaussian, as used by XNES"""
 
     # Corresponding to mu and A in symbols used in xNES paper
     MANDATORY_PARAMETERS = {"mu", "sigma"}
 
     # Inverse of sigma, numerically more stable to track this independently to sigma
     OPTIONAL_PARAMETERS = {"sigma_inv"}
+
+    PARAMETER_NDIMS = {"mu": 1, "sigma": 2, "sigma_inv": 2}
 
     def __init__(
         self,
@@ -873,3 +1012,611 @@ class ExpGaussian(Distribution):
 
         # Return modified distribution
         return self.modified_copy(mu=new_mu, sigma=new_A, sigma_inv=new_A_inv)
+
+
+def _get_param_ndim(distribution_class: Type, param_name: str) -> int:
+    return distribution_class.PARAMETER_NDIMS.get(param_name, None)
+
+
+class FunctionalSampler:
+    """
+    Represents a sampler returned by `make_functional_sampler`.
+
+    Please see the documentation of
+    [make_functional_sampler][evotorch.distributions.make_functional_sampler].
+    """
+
+    def __init__(
+        self, distribution_class: Type, *, required_parameters: Iterable, fixed_parameters: Optional[dict] = None
+    ):
+        from .decorators import expects_ndim
+
+        self.__distribution_class = distribution_class
+        self.__required_parameters = [str(element) for element in required_parameters]
+        if len(self.__required_parameters) == 0:
+            raise TypeError("`required_parameters` cannot be empty")
+        self.__required_param_pos = {
+            required_parameter: i_parameter for i_parameter, required_parameter in enumerate(self.__required_parameters)
+        }
+        self.__num_required_parameters = len(self.__required_parameters)
+
+        self.__fixed_parameters = {} if fixed_parameters is None else fixed_parameters
+        self.__sample_batch = expects_ndim(
+            self.__sample,
+            (None,) + tuple(_get_param_ndim(distribution_class, p) for p in self.__required_parameters),
+            randomness="different",
+        )
+
+    def __sample(self, num_solutions: int, *parameters) -> torch.Tensor:
+        parameters = {**dict(zip(self.__required_parameters, parameters)), **(self.__fixed_parameters)}
+        if self.__distribution_class.functional_sample is NotImplemented:
+            distribution = self.__distribution_class(parameters)
+            return distribution.sample(num_solutions)
+        else:
+            return self.__distribution_class.functional_sample(num_solutions, parameters)
+
+    def __call__(self, num_samples: int, *parameter_args, **parameter_kwargs) -> torch.Tensor:
+        num_parameter_args = len(parameter_args)
+        num_parameter_kwargs = len(parameter_kwargs)
+        if (num_parameter_args == 0) and (num_parameter_kwargs == self.__num_required_parameters):
+            parameters = [None] * self.__num_required_parameters
+            for parameter_name, parameter_value in parameter_kwargs.items():
+                parameter_pos = self.__required_param_pos[parameter_name]
+                parameters[parameter_pos] = parameter_value
+        elif (num_parameter_args == self.__num_required_parameters) and (num_parameter_kwargs == 0):
+            parameters = parameter_args
+        elif (num_parameter_args == 0) and (num_parameter_kwargs == 0):
+            raise TypeError("Missing parameter arguments")
+        elif (num_parameter_args > 0) and (num_parameter_kwargs > 0):
+            raise TypeError(
+                "Specifying some of the distribution parameters via positional arguments and some others"
+                " via keyword arguments is not supported."
+                " Please provide the distribution parameters only via positional arguments"
+                " or only via keyword arguments."
+            )
+        else:
+            raise TypeError("Invalid number of arguments")
+        return self.__sample_batch(num_samples, *parameters)
+
+
+def make_functional_sampler(
+    distribution_class, *, required_parameters: Iterable, fixed_parameters: Optional[dict] = None
+) -> Callable:
+    """
+    Make a stateless function that samples from a distribution.
+
+    This function is meant to be used when one wants to follow the functional
+    programming paradigm.
+
+    As an example, let us imagine that we are interested in sampling from the
+    distribution `SymmetricSeparableGaussian`. A sampler function out of this
+    distribution can be created like this:
+
+    ```python
+    from evotorch.distributions import SymmetricSeparableGaussian, make_functional_sampler
+
+    get_samples = make_functional_sampler(
+        SymmetricSeparableGaussian,
+        required_parameters=["mu", "sigma"],
+    )
+    ```
+
+    Now we have a function `get_samples()`, which can be used like this:
+
+    ```python
+    number_of_samples = ...  # an integer representing the desired number of samples
+    mu = ...  # a one-dimensional tensor
+    sigma = ...  # a one-dimensional tensor
+
+    my_samples = get_samples(number_of_samples, mu, sigma)
+    ```
+
+    Alternatively, the parameters of the distribution can be specified via
+    keyword arguments, like this:
+
+    ```python
+    my_samples = get_samples(number_of_samples, mu=mu, sigma=sigma)
+    ```
+
+    **Batched sampling.**
+    A functional sampler can be further transformed via `torch.func.vmap(...)`
+    for creating batched samples.
+
+    As an alternative to `vmap`, a functional sampler has built-in support for
+    batched sampling (which actually still uses `vmap` internally).
+    Let us again consider our example sampler `get_samples`.
+    In this example, the parameters `mu` and `sigma` would be 1-dimensional
+    tensors in the non-batched case (because the distribution
+    `SymmetricSeparableGaussian` expects the parameters `mu` and `sigma` as
+    1-dimensional tensors, as can be observed from the class attribute
+    `SymmetricSeparableGaussian.PARAMETER_NDIMS`).
+    If `get_samples` is given `mu` and/or `sigma` with more than 1 dimensions,
+    those extra leftmost dimensions will be considered as batch dimensions,
+    and therefore the resulting sample tensor will have extra leftmost
+    dimensions too.
+
+    **Declaring fixed parameters.**
+    A functional sampler can be created in such a way that some of the
+    parameters are pre-defined and only a subset of the mandatory parameters
+    are expected via arguments. For example, a sampler that samples from
+    `SymmetricSeparableGaussian` with a fixed sigma can be defined like this:
+
+    ```python
+    predefined_sigma = ...  # The constant sigma goes here
+
+    get_samples2 = make_functional_sampler(
+        SymmetricSeparableGaussian,
+        required_parameters=["mu"],
+        fixed_parameters={"sigma": predefined_sigma},
+    )
+    ```
+
+    The function `get_samples2` can be called like this:
+
+    ```python
+    number_of_samples = ...  # an integer, representing the desired number of samples
+    mu = ...  # a one-dimensional tensor
+
+    # or like this:
+    # my_samples2 = get_samples2(number_of_samples, mu=mu)
+    ```
+
+    **How the functional sampler uses its wrapped distribution.**
+    If the wrapped distribution class has a static method with the signature
+    `functional_sample(num_solutions: int, parameters: dict) -> torch.Tensor`
+    (which expects `num_solutions` as the number of solutions/samples
+    and `parameters` as the parameter dictionary), this functional sampler
+    will use that static method to obtain and return the samples.
+    On the other hand, if the wrapped distribution class declares its class
+    attribute `functional_sample = NotImplemented`, then, the wrapped
+    distribution class will be temporarily instantiated, and then, the
+    `sample()` method of this instance will be used to generate and return
+    the samples.
+
+    Args:
+        distribution_class: A class that inherits from the base class
+            [Distribution][evotorch.distributions.Distribution].
+        required_parameters: A list of strings, each string being the name
+            of a distribution parameter. The order of this list determines
+            the order of parameter-related positional arguments in the
+            returned callable object.
+        fixed_parameters: A dictionary where the keys are parameter names
+            (as strings), and the values are pre-defined parameter values.
+    Returns:
+        A callable object whose function is to return samples from the
+        specified distribution.
+    """
+    return FunctionalSampler(
+        distribution_class, required_parameters=required_parameters, fixed_parameters=fixed_parameters
+    )
+
+
+class GradsWithSamplesAndFitnesses(NamedTuple):
+    grads: torch.Tensor
+    samples: torch.Tensor
+    fitnesses: torch.Tensor
+
+
+class GradsWithSamples(NamedTuple):
+    grads: torch.Tensor
+    samples: torch.Tensor
+
+
+class GradsWithFitnesses(NamedTuple):
+    grads: torch.Tensor
+    fitnesses: torch.Tensor
+
+
+class FunctionalGradEstimator:
+    """
+    Represents the callable object returned by `make_functional_grad_estimator`.
+
+    Please see the documentation of
+    [make_functional_grad_estimator][evotorch.distributions.make_functional_grad_estimator]
+    """
+
+    def __init__(
+        self,
+        distribution_class: Type,
+        *,
+        function: Optional[Callable] = None,
+        objective_sense: str,
+        required_parameters: Iterable,
+        fixed_parameters: Optional[dict] = None,
+        ranking_method: Optional[str] = None,
+        return_samples: bool = False,
+        return_fitnesses: bool = False,
+    ):
+        from .decorators import expects_ndim
+
+        self.__function = function
+        self.__objective_sense = None if objective_sense is None else str(objective_sense)
+        self.__distribution_class = distribution_class
+        self.__required_parameters = [str(element) for element in required_parameters]
+        if len(self.__required_parameters) == 0:
+            raise TypeError("`required_parameters` cannot be empty")
+        self.__required_param_pos = {
+            required_parameter: i_parameter for i_parameter, required_parameter in enumerate(self.__required_parameters)
+        }
+        self.__num_required_parameters = len(self.__required_parameters)
+
+        self.__fixed_parameters = {} if fixed_parameters is None else fixed_parameters
+        self.__return_samples = bool(return_samples)
+        self.__return_fitnesses = bool(return_fitnesses)
+        self.__ranking_method = None if ranking_method is None else str(ranking_method)
+
+        if self.__function is None:
+            leftmost_ndims = (None, None, 2, 1)
+        else:
+            leftmost_ndims = (
+                None,
+                None,
+                None,
+            )
+
+        self.__grad_batch = expects_ndim(
+            self.__grad,
+            leftmost_ndims + tuple(_get_param_ndim(distribution_class, p) for p in self.__required_parameters),
+            randomness="different",
+        )
+
+    def __grad(self, *args) -> torch.Tensor:
+        objective_sense = args[0]
+        ranking_method = args[1]
+
+        if self.__function is None:
+            samples = args[2]
+            fitnesses = args[3]
+            vectors = args[4:]
+            [num_solutions, _] = samples.shape
+            [num_fitnesses] = fitnesses.shape
+            if num_solutions != num_fitnesses:
+                raise ValueError("The length of the fitness vector does not match the number of samples")
+        else:
+            num_solutions = args[2]
+            vectors = args[3:]
+            samples = None
+            fitnesses = None
+
+        parameters = {**dict(zip(self.__required_parameters, vectors)), **(self.__fixed_parameters)}
+        distribution = self.__distribution_class(parameters)
+
+        if samples is None:
+            samples = distribution.sample(num_solutions)
+            fitnesses = self.__function(samples)
+
+        grads = distribution.compute_gradients(
+            samples, fitnesses, objective_sense=objective_sense, ranking_method=ranking_method
+        )
+
+        if self.__return_samples and self.__return_fitnesses:
+            return GradsWithSamplesAndFitnesses(grads=grads, samples=samples, fitnesses=fitnesses)
+        elif self.__return_samples:
+            return GradsWithSamples(grads=grads, samples=samples)
+        elif self.__return_fitnesses:
+            return GradsWithFitnesses(grads=grads, fitnesses=fitnesses)
+        else:
+            return grads
+
+    def __call__(self, *args, **parameter_kwargs) -> torch.Tensor:
+        parameters_need_filtering = False
+        if "objective_sense" in parameter_kwargs:
+            objective_sense = parameter_kwargs["objective_sense"]
+            parameters_need_filtering = True
+        else:
+            objective_sense = self.__objective_sense
+            if self.__objective_sense is None:
+                raise ValueError(
+                    "The gradient estimator was not given an `objective_sense`, neither at its phase of initialization,"
+                    " nor when it got called."
+                )
+
+        if "ranking_method" in parameter_kwargs:
+            ranking_method = parameter_kwargs["ranking_method"]
+            parameters_need_filtering = True
+        else:
+            ranking_method = self.__ranking_method
+
+        if parameters_need_filtering:
+            parameter_kwargs = {
+                k: v for k, v in parameter_kwargs.items() if k not in ("objective_sense", "ranking_method")
+            }
+
+        if self.__function is None:
+            samples = args[0]
+            fitnesses = args[1]
+            num_solutions = None
+            parameter_args = args[2:]
+        else:
+            samples = None
+            fitnesses = None
+            num_solutions = args[0]
+            parameter_args = args[1:]
+
+        num_parameter_args = len(parameter_args)
+        num_parameter_kwargs = len(parameter_kwargs)
+        if (num_parameter_args == 0) and (num_parameter_kwargs == self.__num_required_parameters):
+            parameters = [None] * self.__num_required_parameters
+            for parameter_name, parameter_value in parameter_kwargs.items():
+                parameter_pos = self.__required_param_pos[parameter_name]
+                parameters[parameter_pos] = parameter_value
+        elif (num_parameter_args == self.__num_required_parameters) and (num_parameter_kwargs == 0):
+            parameters = parameter_args
+        elif (num_parameter_args == 0) and (num_parameter_kwargs == 0):
+            raise TypeError("Missing parameter arguments")
+        elif (num_parameter_args > 0) and (num_parameter_kwargs > 0):
+            raise TypeError(
+                "Specifying some of the distribution parameters via positional arguments and some others"
+                " via keyword arguments is not supported."
+                " Please provide the distribution parameters only via positional arguments"
+                " or only via keyword arguments."
+            )
+        else:
+            raise TypeError("Invalid number of arguments")
+
+        if self.__function is None:
+            return self.__grad_batch(objective_sense, ranking_method, samples, fitnesses, *parameters)
+        else:
+            return self.__grad_batch(objective_sense, ranking_method, num_solutions, *parameters)
+
+
+def make_functional_grad_estimator(
+    distribution_class: Type,
+    *,
+    required_parameters: Iterable,
+    function: Optional[Callable] = None,
+    objective_sense: Optional[str] = None,
+    fixed_parameters: Optional[dict] = None,
+    ranking_method: Optional[str] = None,
+    return_samples: bool = False,
+    return_fitnesses: bool = False,
+) -> Callable:
+    """
+    Make a stateless gradient estimator function.
+
+    The returned function estimates gradients for the parameters of the
+    specified distribution, either with the help of a fitness function,
+    or with the help of a pair of tensors representing the samples
+    (or solutions) and their associated fitnesses.
+
+    **Usage 1: with the help of a fitness function.**
+    Let us assume that we have a fitness function `f`, which receives a
+    matrix (i.e. 2-dimensional tensor) and returns a vector (i.e. a
+    1-dimensional tensor), where each the i-th row of the matrix represents
+    the i-th solution, and i-th element of the returned vector represents
+    the fitness of the i-th solution.
+    A functional gradient estimator for this function can be created like
+    this:
+
+    ```python
+    from evotorch.distributions import (
+        SymmetricSeparableGaussian,
+        make_functional_grad_estimator,
+    )
+
+
+    def f(x: torch.Tensor) -> torch.Tensor:
+        ...
+
+
+    fgrad = make_functional_grad_estimator(
+        # The gradient estimator will use this distribution:
+        SymmetricSeparableGaussian,
+        # The gradient estimator will be bound to this fitness function:
+        function=f,
+        # We want to maximize the fitnesses returned by `f`
+        # (use "min" for minimizing them)
+        objective_sense="max",
+        # The distribution parameters "mu" and "sigma" are to be passed
+        # as arguments every time we call it as a function.
+        required_parameters=["mu", "sigma"],
+        # The fitnesses will be ranked according to this method:
+        ranking_method="centered",  # the default is "raw"
+    )
+    ```
+
+    Now that we have our gradient estimator `fgrad`, we can use it as a
+    function:
+
+    ```python
+    current_mu = ...  # mu parameter vector
+    current_sigma = ...  # sigma parameter vector
+    num_samples = ...  # number of samples (temporary population size)
+
+    gradients = fgrad(num_samples, current_mu, current_sigma)
+    # or, alternatively:
+    # gradients = fgrad(num_samples, mu=current_mu, sigma=current_sigma)
+
+    # At this point, we have our `gradients`, which is in the form of a
+    # dictionary. Gradients for the parameters mu and sigma can be obtained
+    # from this dictionary like this:
+    grad_for_mu = gradients["mu"]
+    grad_for_sigma = gradients["sigma"]
+    ```
+
+    **Usage 2: without an explicit fitness function.**
+    Let us imagine a scenario where the procedure of computing the fitnesses
+    is not so straightforward and therefore it is not possible to wrap it
+    within a single fitness function. For such cases, we can create and use a
+    gradient estimator that is not bound to any such fitness function:
+
+    ```python
+    from evotorch.distributions import (
+        SymmetricSeparableGaussian,
+        make_functional_sampler,
+        make_functional_grad_estimator,
+    )
+
+    estimate_grads = make_functional_grad_estimator(
+        # The gradient estimator will use this distribution:
+        SymmetricSeparableGaussian,
+        # We want to maximize the fitnesses (use "min" for minimizing them)
+        objective_sense="max",
+        # The distribution parameters "mu" and "sigma" are to be passed
+        # as arguments every time we call it as a function.
+        required_parameters=["mu", "sigma"],
+        # The fitnesses will be ranked according to this method:
+        ranking_method="centered",  # the default is "raw"
+    )
+    ```
+
+    Note that without being bound to any fitness function, `estimate_grad`
+    will ask us to provide the samples and the fitnesses. A practical way
+    of obtaining such samples is to have a functional sampler:
+
+    ```python
+    get_samples = make_functional_sampler(
+        SymmetricSeparableGaussian,
+        required_parameters=["mu", "sigma"],
+    )
+    ```
+
+    Now we are ready to use our sampler and our estimator:
+
+    ```python
+    current_mu = ...  # mu parameter vector
+    current_sigma = ...  # sigma parameter vector
+    num_samples = ...  # number of samples (temporary population size)
+
+    samples = get_samples(num_samples, current_mu, current_sigma)
+    # or, alternatively:
+    # samples = get_samples(num_samples, mu=current_mu, sigma=current_sigma)
+
+    fitnesses = ...  # code to compute fitnesses from the samples goes here
+
+    gradients = estimate_grads(samples, fitnesses, current_mu, current_sigma)
+    # or, alternatively:
+    # gradients = estimate_grads(
+    #     samples, fitnesses, mu=current_mu, sigma=current_sigma
+    # )
+
+    # At this point, we have our `gradients`, which is in the form of a
+    # dictionary. Gradients for the parameters mu and sigma can be obtained
+    # from this dictionary like this:
+    grad_for_mu = gradients["mu"]
+    grad_for_sigma = gradients["sigma"]
+    ```
+
+    **Batched gradient estimation.**
+    The function returned by `make_functional_grad_estimator` is compatible
+    with `vmap`. If the estimator is bound to a specific fitness function,
+    that fitness function should also be compatible with `vmap`. If the
+    fitness function is not `vmap`-compatible, or if its behavior is
+    unexpected in the presence of `vmap`, then, consider instantiating
+    the gradient estimator without binding it to a fitness function.
+
+    As an alternative to `vmap`, a functional sampler has built-in support for
+    batched sampling (which actually still uses `vmap` internally).
+    Let us again consider our example estimator, `estimate_grads`.
+    In this example, the parameters `current_mu` and `current_sigma` would be
+    1-dimensional tensors in the non-batched case (because the distribution
+    `SymmetricSeparableGaussian` expects the parameters `mu` and `sigma` as
+    1-dimensional tensors, as can be observed from the class attribute
+    `SymmetricSeparableGaussian.PARAMETER_NDIMS`).
+    If `estimate_grads` is given `mu` and/or `sigma` with more than 1
+    dimensions, those extra leftmost dimensions will be considered as batch
+    dimensions, and therefore the resulting sample tensor will have extra
+    leftmost dimensions too.
+
+    **Declaring fixed parameters.**
+    A functional gradient estimator can be created in such a way that some of
+    the parameters are pre-defined and only a subset of the mandatory parameters
+    are expected via arguments. For example, a gradient estimator that samples
+    from `SymmetricSeparableGaussian` with a fixed sigma can be defined like
+    this:
+
+    ```python
+    predefined_sigma = ...  # The constant sigma goes here
+
+    fgrad2 = make_functional_sampler(
+        SymmetricSeparableGaussian,
+        function=f,
+        objective_sense="max",
+        required_parameters=["mu"],
+        fixed_parameters={"sigma": predefined_sigma},
+        ranking_method="centered",
+    )
+    ```
+
+    The function `fgrad2` can be called like this:
+
+    ```python
+    gradients = fgrad2(num_samples, current_mu)
+    # or, alternatively:
+    # gradients = fgrad2(num_samples, mu=current_mu)
+    ```
+
+    **Specifying `objective_sense` and/or `ranking_method` later.**
+    One can omit `objective_sense` and `ranking_method` while making the
+    functional gradient estimator, and specify them later at the moment of
+    estimation. For example:
+
+    ```python
+    fgrad3 = make_functional_sampler(
+        SymmetricSeparableGaussian,
+        function=f,
+        required_parameters=["mu", "sigma"],
+        # Notice: `objective_sense` and `ranking_method` are omitted
+    )
+
+    ...
+
+    mu = ...
+    sigma = ...
+
+    gradients = fgrad3(
+        num_samples,
+        mu=mu,
+        sigma=sigma,
+        objective_sense="max",
+        ranking_method="centered",
+    )
+    ```
+
+    Args:
+        function: The fitness function that will be called for estimating
+            the gradients. If provided, the first positional argument of the
+            returned gradient estimator will be the number of solutions.
+            If omitted, the first and second positional arguments of the
+            returned gradient estimator will be the samples (solutions)
+            and fitnesses.
+            Please note that this `function` is expected to receive a
+            2-dimensional tensor (representing the population, where each
+            row of the 2-dimensional tensor is a solution) and is expected
+            to return a 1-dimensional tensor (where each element is a
+            scalar fitness).
+            For batching and/or `vmap` to work, this `function` itself should
+            be `vmap`-compatible.
+        objective_sense: Specify this as "max" if a higher fitness value means
+            better solution. Specify this as "min" if a higher fitness value
+            means worse solution. Please note that, if `objective_sense` is not
+            provided at the moment of its making, one will have to specify it
+            later every time the estimator is called.
+        required_parameters: A list of strings, each string being the name
+            of a distribution parameter. The order of this list determines
+            the order of parameter-related positional arguments in the
+            returned callable object.
+        fixed_parameters: A dictionary where the keys are parameter names
+            (as strings), and the values are pre-defined parameter values.
+        ranking_method: Give a string here if you would like the fitnesses
+            to be ranked first. Possible values are "centered", "linear",
+            "raw".
+        return_samples: Set this as True if you would like the gradient
+            estimator to return not just the gradients, but also the samples
+            (solutions) that were used for estimating the gradients.
+        return_fitnesses: Set this as True if you would like the gradient
+            estimator to return not just the gradients, but also the fitnesses
+            that were used for estimating the gradients.
+    Returns:
+        A callable object whose function is to estimate gradients.
+    """
+    return FunctionalGradEstimator(
+        distribution_class,
+        function=function,
+        objective_sense=objective_sense,
+        required_parameters=required_parameters,
+        fixed_parameters=fixed_parameters,
+        ranking_method=ranking_method,
+        return_samples=return_samples,
+        return_fitnesses=return_fitnesses,
+    )
