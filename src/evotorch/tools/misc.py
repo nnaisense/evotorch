@@ -1856,12 +1856,12 @@ def as_tensor(x: Any, *, dtype: Optional[DType] = None, device: Optional[Device]
             return x
         else:
             raise ValueError(
-                f"An ObjectArray cannot be moved into a device other than 'cpu'." f" The received device is: {device}."
+                f"An ObjectArray cannot be moved into a device other than 'cpu'. The received device is: {device}."
             )
     elif is_dtype_object(dtype):
-        if (device is None) or (str(device) == "cpu"):
+        if (device is not None) and (str(device) != "cpu"):
             raise ValueError(
-                f"An ObjectArray cannot be created on a device other than 'cpu'." f" The received device is: {device}."
+                f"An ObjectArray cannot be created on a device other than 'cpu'. The received device is: {device}."
             )
         if isinstance(x, ObjectArray):
             return x
