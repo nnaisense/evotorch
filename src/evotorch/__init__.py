@@ -29,7 +29,7 @@ for _top_import in _top_imports:
 # Import the subpackages of EvoTorch
 from . import tools
 from . import core
-from .core import Problem, Solution, SolutionBatch
+from .core import Problem, ProblemBoundEvaluator, Solution, SolutionBatch
 
 # isort: on
 
@@ -57,6 +57,7 @@ __all__ = (
     "__author__",
     "__email__",
     "Problem",
+    "ProblemBoundEvaluator",
     "Solution",
     "SolutionBatch",
     "algorithms",

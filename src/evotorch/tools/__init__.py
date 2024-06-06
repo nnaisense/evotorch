@@ -18,6 +18,8 @@ This namespace contains various utility functions, classes, and type aliases.
 
 
 __all__ = (
+    "BatchableScalar",
+    "BatchableVector",
     "DType",
     "DTypeAndDevice",
     "Device",
@@ -36,6 +38,7 @@ __all__ = (
     "clip_tensor",
     "clone",
     "cloning",
+    "constraints",
     "device_of",
     "device_of_container",
     "dtype_of",
@@ -57,7 +60,9 @@ __all__ = (
     "is_real_vector",
     "is_sequence",
     "is_tensor_on_cpu",
+    "log_barrier",
     "make_I",
+    "make_batched_false_for_vmap",
     "make_empty",
     "make_gaussian",
     "make_nan",
@@ -67,10 +72,12 @@ __all__ = (
     "make_uniform",
     "make_zeros",
     "modify_tensor",
+    "modify_vector",
     "multiply_rows_by_scalars",
     "mutable_copy",
     "numpy_copy",
     "pass_info_if_needed",
+    "penalty",
     "rank",
     "read_only_tensor",
     "recursiveprintable",
@@ -82,11 +89,13 @@ __all__ = (
     "to_numpy_dtype",
     "to_stdev_init",
     "to_torch_dtype",
+    "violation",
 )
 
 
 from . import (
     cloning,
+    constraints,
     hook,
     immutable,
     objectarray,
@@ -96,9 +105,12 @@ from . import (
     structures,
     tensormaker,
 )
+from .constraints import log_barrier, penalty, violation
 from .hook import Hook
 from .immutable import as_immutable, mutable_copy
 from .misc import (
+    BatchableScalar,
+    BatchableVector,
     Device,
     DType,
     DTypeAndDevice,
@@ -132,6 +144,7 @@ from .misc import (
     is_real_vector,
     is_sequence,
     is_tensor_on_cpu,
+    make_batched_false_for_vmap,
     make_empty,
     make_gaussian,
     make_I,
@@ -143,6 +156,7 @@ from .misc import (
     make_zeros,
     message_from,
     modify_tensor,
+    modify_vector,
     multiply_rows_by_scalars,
     numpy_copy,
     pass_info_if_needed,
