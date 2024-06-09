@@ -435,6 +435,8 @@ class VecGymNE(BaseNEProblem):
             subbatch_size=subbatch_size,
         )
 
+        self.after_eval_hook.append(self._extra_status)
+
     def _parallelize(self):
         super()._parallelize()
         if self.is_main:
@@ -451,6 +453,9 @@ class VecGymNE(BaseNEProblem):
     def _set_actor_max_num_envs(self, n: int):
         self._actor_max_num_envs = n
         self._actor_max_num_envs_ready = True
+
+    def _extra_status(self, batch: SolutionBatch):
+        return dict(total_interaction_count=self.interaction_count, total_episode_count=self.episode_count)
 
     @property
     def observation_normalization(self) -> bool:
