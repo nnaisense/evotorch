@@ -48,7 +48,7 @@ Each status property can be accessed by its name
 best_discovered_solution = searcher.status["best"]
 ```
 
-All algorithms currently implemented in EvoTorch applied to single-objective problems will *at least* have the following status properties:
+Algorithms currently implemented in EvoTorch applied to single-objective problems might have the following status properties:
 
 - `'best'`, the best discovered solution so far.
 - `'worst'`, the worst discovered solution so far.
