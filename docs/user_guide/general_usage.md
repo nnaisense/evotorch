@@ -54,44 +54,39 @@ for status_key in searcher.iter_status_keys():
     print("===", status_key, "===")
     print(searcher.status[status_key])
     print()
+```
 
+## Extracting and analyzing results
 
-# === Further ways of analyzing the results of the evolutionary run: ===
+We now discuss additional ways of analyzing the results of the evolutionary computation. The following code snippets represent possible continuations to the code example above (or to codes similar to it). Therefore, we will continue to refer to the search algorithm as `searcher`.
 
+If the evolutionary algorithm that was used is distribution-based (such as [SNES][evotorch.algorithms.distributed.gaussian.SNES], [XNES][evotorch.algorithms.distributed.gaussian.XNES], [CEM][evotorch.algorithms.distributed.gaussian.CEM], [PGPE][evotorch.algorithms.distributed.gaussian.PGPE], [CMAES][evotorch.algorithms.distributed.cmaes.CMAES]), the status object includes an item with key `"center"`, representing the center (i.e. mean) of the search distribution as a [ReadOnlyTensor][evotorch.tools.readonlytensor.ReadOnlyTensor]:
 
-# If a distribution-based algorithm is used (e.g. SNES, XNES, CEM, PGPE,
-# CMAES), the status object includes an item with key "center", representing
-# the center (i.e. mean) of the search distribution as a read-only tensor.
-#
-# center_point_as_tensor = searcher.status["center"]
+```python
+center_point_as_tensor = searcher.status["center"]
+```
 
+Algorithms such as [Cosyne][evotorch.algorithms.ga.Cosyne], [GeneticAlgorithm][evotorch.algorithms.ga.GeneticAlgorithm], etc. do not have a search distribution, therefore, they do not have a center point. However, the best solution of their last population can be obtained via the status key `"pop_best"`, as a [Solution][evotorch.core.Solution] object:
 
-# Algorithms such as Cosyne, GeneticAlgorithm, etc. do not have
-# a search distribution, therefore, they do not have a center point.
-# However, the best solution of their last population can be obtained
-# via the status key "pop_best", as an instance of `evotorch.Solution`.
-#
-# solution_object = searcher.status["pop_best"]
-# decision_values_as_tensor = solution_object.values
-# evals_as_tensor = solution_object.evals  # fitness(es), evaluation data, etc.
+```python
+solution_object = searcher.status["pop_best"]
+decision_values_as_tensor = solution_object.values
+evals_as_tensor = solution_object.evals  # fitness(es), evaluation data, etc.
+```
 
+If the [Problem][evotorch.core.Problem] object was initialized with `store_solution_stats=True` (which is enabled by default when the device of the Problem is "cpu"), the solution with the best fitness ever observed is available via the status key `"best"`:
 
-# If the Problem object was initialized with `store_solution_stats=True`
-# (which is enabled by default when the device of the Problem is "cpu"),
-# the solution with the best fitness ever observed is available via the
-# status key "best".
-#
-# best_sln = searcher.status["best"]
-# best_sln_decision_values = best_solution.values
-# best_sln_evals = best_sln.evals  # fitness(s), evaluation data, etc.
+```python
+best_sln = searcher.status["best"]
+best_sln_decision_values = best_solution.values
+best_sln_evals = best_sln.evals  # fitness(s), evaluation data, etc.
+```
 
+Unless the search algorithm was initialized to work across remote actors (via `distributed=True`), the search algorithm keeps its last population accessible via the attribute named `population`.
 
-# Unless the search algorithm was initialized to work across remote
-# actors (via `distributed=True`), the search algorithm keeps its last
-# population accessible via the attribute named `population`.
-#
-# for solution in searcher.population:
-#     print("Decision values:", solution.values)
-#     print("Evaluation:", solution.evals)  # fitnesses, evaluation data, etc.
-#     print()
+```python
+for solution in searcher.population:
+    print("Decision values:", solution.values)
+    print("Evaluation:", solution.evals)  # fitnesses, evaluation data, etc.
+    print()
 ```
