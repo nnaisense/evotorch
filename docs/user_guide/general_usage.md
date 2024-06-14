@@ -90,3 +90,5 @@ for solution in searcher.population:
     print("Evaluation:", solution.evals)  # fitnesses, evaluation data, etc.
     print()
 ```
+
+Please see also [here](algorithm_usage.md#accessing-the-status) for details regarding the status items.
