@@ -69,6 +69,10 @@ ga = GeneticAlgorithm(
 """
 
 __all__ = (
+    "base",
+    "functional",
+    "real",
+    "sequence",
     "CopyingOperator",
     "CosynePermutation",
     "CrossOver",
@@ -84,7 +88,7 @@ __all__ = (
 )
 
 
-from . import base, real, sequence
+from . import base, functional, real, sequence
 from .base import CopyingOperator, CrossOver, Operator, SingleObjOperator
 from .real import (
     CosynePermutation,
