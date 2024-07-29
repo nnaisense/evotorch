@@ -133,11 +133,324 @@ print(pop_best_cost)
 """
 
 
-from typing import Optional, Union
+from typing import Iterable, Optional, Union
 
 import torch
 
 from evotorch.decorators import expects_ndim
+
+
+def _index_comparison_matrices(n: int, *, device: Union[str, torch.dtype]) -> tuple:
+    """
+    Return index tensors that are meant for pairwise comparisons.
+
+    In more details, suppose that the argument `n` is given as 4.
+    What is returned by this function is a 3-element tuple of the form
+    `(indices_matrix1, indices_matrix2, index_row)`. In this returned
+    tuple, `indices_matrix1` is:
+
+    ```
+    0 0 0 0
+    1 1 1 1
+    2 2 2 2
+    3 3 3 3
+    ```
+
+    `indices_matrix2` is:
+
+    ```
+    0 1 2 3
+    0 1 2 3
+    0 1 2 3
+    0 1 2 3
+    ```
+
+    `index_row` is:
+
+    ```
+    0 1 2 3
+    ```
+
+    Note: `indices_matrix1` and `indices_matrix2` are expanded views to the
+    tensor `index_row`. Do not mutate any of these returned tensors, because
+    such mutations might probably reflect on all of them in unexpected ways.
+
+    Args:
+        n: Size for the index row and matrices
+        device: The device in which the index tensors will be generated
+    Returns:
+        A tuple of the form `(indices_matrix1, indices_matrix2, index_row)`
+        where each item is a PyTorch tensor.
+    """
+    increasing_indices = torch.arange(n, device=device)
+    indices1 = increasing_indices.reshape(n, 1).expand(n, n)
+    indices2 = increasing_indices.reshape(1, n).expand(n, n)
+    return indices1, indices2, increasing_indices
+
+
+@expects_ndim(1, 1, None)
+def _dominates(
+    evals1: torch.Tensor,
+    evals2: torch.Tensor,
+    objective_sense: list,
+) -> torch.Tensor:
+    [num_objs] = evals1.shape
+    [n2] = evals2.shape
+    if num_objs != n2:
+        raise ValueError("The lengths of the evaluation results vectors do not match.")
+    if num_objs != len(objective_sense):
+        raise ValueError("The lengths of the evaluation results vectors do not match the number of objectives")
+
+    # For easier internal representation, we generate a sign adjustment tensor.
+    # The motivation is to be able to multiply the evaluation tensors with this adjustment tensor,
+    # resulting in new evaluation tensors that guarantee that better results are higher values.
+    dtype = evals1.dtype
+    device = evals1.device
+    sign_adjustment = torch.empty(num_objs, dtype=dtype, device=device)
+    for i_obj, obj in enumerate(objective_sense):
+        if obj == "min":
+            sign_adjustment[i_obj] = -1
+        elif obj == "max":
+            sign_adjustment[i_obj] = 1
+        else:
+            raise ValueError(
+                "`objective_sense` was expected as a list that consists only of the strings 'min' or 'max'."
+                f" However, one of the items encountered within `objective_sense` is: {repr(obj)}."
+            )
+
+    # Adjust the signs of the evaluation tensors
+    evals1 = sign_adjustment * evals1
+    evals2 = sign_adjustment * evals2
+
+    # Count the number of victories for each solution
+    num_victories_of_first = (evals1 > evals2).to(dtype=torch.int64).sum()
+    num_victories_of_second = (evals2 > evals1).to(dtype=torch.int64).sum()
+
+    # If the first solution has won at least 1 time, and the second solution never won, we can say that the
+    # first solution pareto-dominates the second one.
+    return (num_victories_of_first >= 1) & (num_victories_of_second == 0)
+
+
+def dominates(
+    evals1: torch.Tensor,
+    evals2: torch.Tensor,
+    *,
+    objective_sense: list,
+) -> torch.Tensor:
+    """
+    Return whether or not the first solution pareto-dominates the second one.
+
+    Args:
+        evals1: Evaluation results of the first solution. Expected as an
+            at-least-1-dimensional tensor, the length of which must be
+            equal to the number of objectives. Extra leftmost dimensions
+            will be considered as batch dimensions.
+        evals2: Evaluation results of the second solution. Expected as an
+            at-least-1-dimensional tensor, the length of which must be
+            equal to the number of objectives. Extra leftmost dimensions
+            will be considered as batch dimensions.
+        objective_sense: Expected as a list of strings, where each
+            string is either 'min' or 'max', expressing the direction of
+            optimization regarding each objective.
+    Returns:
+        A tensor of boolean(s), indicating whether or not the first
+        solution(s) dominate(s) the second solution(s).
+    """
+    if isinstance(objective_sense, str):
+        raise ValueError(
+            "`objective_sense` was received as a string, implying that the problem at hand has a single objective."
+            " However, this `dominates(...)` function does not support single-objective cases."
+        )
+    elif isinstance(objective_sense, Iterable):
+        return _dominates(evals1, evals2, objective_sense)
+    else:
+        raise TypeError(f"Unrecognized `objective_sense`: {repr(objective_sense)}")
+
+
+@expects_ndim(2, 0, 0, None)
+def _domination_check_via_indices(
+    population_evals: torch.Tensor,
+    solution1_index: torch.Tensor,
+    solution2_index: torch.Tensor,
+    objective_sense: list,
+) -> torch.Tensor:
+    evals1 = torch.index_select(population_evals, 0, solution1_index.reshape(1))[0]
+    evals2 = torch.index_select(population_evals, 0, solution2_index.reshape(1))[0]
+    return _dominates(evals1, evals2, objective_sense)
+
+
+@expects_ndim(2, None)
+def _domination_matrix(
+    evals: torch.Tensor,
+    objective_sense: list,
+) -> torch.Tensor:
+    num_solutions, _ = evals.shape
+    indices1, indices2, _ = _index_comparison_matrices(num_solutions, device=evals.device)
+    return _domination_check_via_indices(evals, indices2, indices1, objective_sense)
+
+
+def domination_matrix(evals: torch.Tensor, *, objective_sense: list) -> torch.Tensor:
+    """
+    Compute and return a pareto-domination matrix.
+
+    In this pareto-domination matrix `P`, the item `P[i,j]` is True if the
+    `i`-th solution is dominated by the `j`-th solution.
+
+    Args:
+        evals: Evaluation results of the solutions, expected as a tensor
+            with at least 2 dimensions. In a 2-dimensional `evals` tensor,
+            the item `i,j` represents the evaluation result of the
+            `i`-th solution according to the `j`-th objective.
+            Extra leftmost dimensions are interpreted as batch dimensions.
+        objective_sense: A list of strings, where each string is either
+            'min' or 'max', expressing the direction of optimization regarding
+            each objective.
+    Returns:
+        A boolean tensor of size `(n,n)`, where `n` is the number of solutions.
+    """
+    return _domination_matrix(evals, objective_sense)
+
+
+@expects_ndim(2, None)
+def _domination_counts(evals: torch.Tensor, objective_sense: list) -> torch.Tensor:
+    return _domination_matrix(evals, objective_sense).to(dtype=torch.int64).sum(dim=-1)
+
+
+def domination_counts(evals: torch.Tensor, *, objective_sense: list) -> torch.Tensor:
+    """
+    Return a tensor expressing how many times each solution gets dominated
+
+    In this returned tensor, the `i`-th item is an integer which specifies how
+    many times the `i`-th solution is dominated.
+
+    Args:
+        evals: Expected as an at-least-2-dimensional tensor. In such a
+            2-dimensional evaluation tensor, the item `i,j` represents the
+            evaluation result of the `i`-th solution according to the `j`-th
+            objective. Extra leftmost dimensions are interpreted as batch
+            dimensions.
+        objective_sense: A list of strings, where each string is either
+            'min' or 'max', expressing the direction of optimization regarding
+            each objective.
+    Returns:
+        An integer tensor of length `n`, where `n` is the number of solutions.
+    """
+    return _domination_counts(evals, objective_sense)
+
+
+@expects_ndim(2, 1, 0, 0)
+def _crowding_distance_of_solution_considering_objective(
+    population_evals: torch.Tensor,
+    domination_counts: torch.Tensor,
+    solution_index: torch.Tensor,
+    objective_index: torch.Tensor,
+) -> torch.Tensor:
+    num_solutions, _ = population_evals.shape
+
+    [num_domination_counts] = domination_counts.shape
+    if num_domination_counts != num_solutions:
+        raise ValueError(
+            "The number of solutions stored within `evals` does not match the length of `domination_counts`."
+        )
+
+    # Get the evaluation results vector for the considered objective
+    eval_vector = torch.index_select(population_evals, -1, objective_index.reshape(1)).reshape(num_solutions)
+
+    # Get the evaluation result and the domination count for the considered solution
+    solution_eval = torch.index_select(eval_vector, 0, solution_index.reshape(1))[0]
+    solution_domination_count = torch.index_select(domination_counts, 0, solution_index.reshape(1))[0]
+
+    # Prepare the masks `got_lower_eval` and `got_higher_eval`. These masks store True for any solution in the
+    # same pareto-front with lower evaluation result, and with higher evaluation result, respectively.
+    within_same_front = domination_counts == solution_domination_count
+    got_lower_eval = within_same_front & (eval_vector < solution_eval)
+    got_higher_eval = within_same_front & (eval_vector > solution_eval)
+
+    # Compute a large-enough constant that will be the crowding distance for when the considered solution is
+    # pareto-extreme
+    large_constant = 2 * (eval_vector.max() - eval_vector.min())
+
+    # For each solution within the same pareto-front with lower evaluation result, compute the fitness distance
+    distances_from_below = torch.where(got_lower_eval, solution_eval - eval_vector, large_constant)
+    # For each solution within the same pareto-front with higher evaluation result, compute the fitness distance
+    distances_from_above = torch.where(got_higher_eval, eval_vector - solution_eval, large_constant)
+
+    # Sum of the nearest (min) distance from below and the nearest (min) distance from above is the crowding distance
+    # for the considered objective.
+    return distances_from_below.min() + distances_from_above.min()
+
+
+@expects_ndim(2, 1, 0)
+def _crowding_distance_of_solution(
+    population_evals: torch.Tensor,
+    domination_counts: torch.Tensor,
+    solution_index: torch.Tensor,
+) -> torch.Tensor:
+    _, num_objectives = population_evals.shape
+    objective_indices = torch.arange(num_objectives, dtype=torch.int64, device=population_evals.device)
+
+    # Compute the crowding distances for all objectives, then sum those distances, then return the result.
+    return _crowding_distance_of_solution_considering_objective(
+        population_evals, domination_counts, solution_index, objective_indices
+    ).sum()
+
+
+@expects_ndim(2, 1)
+def _crowding_distances(population_evals: torch.Tensor, domination_counts: torch.Tensor) -> torch.Tensor:
+    num_solutions, _ = population_evals.shape
+    all_solution_indices = torch.arange(num_solutions, dtype=torch.int64, device=population_evals.device)
+    return _crowding_distance_of_solution(population_evals, domination_counts, all_solution_indices)
+
+
+@expects_ndim(2, None, None)
+def _pareto_utility(evals: torch.Tensor, objective_sense: list, crowdsort: bool) -> torch.Tensor:
+    num_solutions, _ = evals.shape
+    domination_counts = _domination_counts(evals, objective_sense)
+
+    # Compute utility values such that a solution that has less domination counts (i.e. a solution that has been
+    # dominated less) will have a higher utility value.
+    result = torch.as_tensor(num_solutions - domination_counts, dtype=evals.dtype)
+
+    if crowdsort:
+        # Compute the crowding distances
+        distances = _crowding_distances(evals, domination_counts)
+        # Rescale the crowding distances so that they are between 0 and 0.99
+        min_distance = distances.min()
+        max_distance = distances.max()
+        distance_range = (max_distance - min_distance) + 1e-8
+        rescaled_distances = 0.99 * ((distances - min_distance) / distance_range)
+        # Add the rescaled distances to the resulting utility values
+        result = result + rescaled_distances
+
+    return result
+
+
+def pareto_utility(evals: torch.Tensor, *, objective_sense: list, crowdsort: bool = True) -> torch.Tensor:
+    """
+    Compute utility values for the solutions of a multi-objective problem.
+
+    A solution on a better pareto-front is assigned a higher utility value.
+    Additionally, if `crowdsort` is given as True crowding distances will also
+    be taken into account. In more details, in the same pareto-front,
+    solutions with higher crowding distances will have increased utility
+    values.
+
+    Args:
+        evals: Evaluation results, expected as a tensor with at least two
+            dimensions. A 2-dimensional `evals` tensor is expected to be
+            shaped as (numberOfSolutions, numberOfObjectives). Extra
+            leftmost dimensions will be interpreted as batch dimensions.
+        objective_sense: Expected as a list of strings, where each string
+            is either 'min' or 'max'. The i-th item within this list
+            represents the direction of the optimization for the i-th
+            objective.
+    Returns:
+        A utility tensor. Considering the non-batched case (i.e. considering
+        that `evals` was given as a 2-dimensional tensor), the i-th item
+        within the returned utility tensor represents the utility value
+        assigned to the i-th solution.
+    """
+    return _pareto_utility(evals, objective_sense, crowdsort)
 
 
 @expects_ndim(2, 1, 1, None, randomness="different")
@@ -199,31 +512,13 @@ def _pick_solution_via_tournament(
 
 
 @expects_ndim(2, 1, None, None, None, randomness="different")
-def _tournament(
+def _single_objective_tournament(
     solutions: torch.Tensor,
     evals: torch.Tensor,
     num_tournaments: int,
     tournament_size: int,
     objective_sense: str,
 ) -> tuple:
-    """
-    Randomly pick solutions, put them into a tournament, pick the winners.
-
-    Args:
-        solutions: Decision values of the solutions
-        evals: Evaluation results of the solutions
-        num_tournaments: Number of tournaments that will be applied.
-            In other words, number of winners that will be picked.
-        tournament_size: Number of solutions to be picked for the tournament
-        objective_sense: A string of value 'min' or 'max', representing the
-            goal of the optimization
-    Returns:
-        A tuple of the form `(decision_values, eval_results)` where
-        `decision_values` is the tensor that contains the decision values
-        of the winning solutions, and `eval_result` is a tensor that
-        contains the evaluation results (i.e. fitnesses) of the
-        winning solutions.
-    """
     if tournament_size < 1:
         raise ValueError(
             "The argument `tournament_size` was expected to be greater than or equal to 1."
@@ -234,6 +529,55 @@ def _tournament(
         solutions[:1, :1].expand(num_tournaments, tournament_size), 0, popsize, dtype=torch.int64
     )
     return _pick_solution_via_tournament(solutions, evals, indices_for_tournament, objective_sense)
+
+
+def _tournament(
+    solutions: torch.Tensor,
+    evals: torch.Tensor,
+    num_tournaments: int,
+    tournament_size: int,
+    objective_sense: Union[str, list],
+) -> tuple:
+    """
+    Randomly pick solutions, put them into a tournament, pick the winners.
+
+    Args:
+        solutions: Decision values of the solutions.
+        evals: Evaluation results of the solutions.
+            In the single-objective case, this is expected as an
+            at-least-1-dimensional tensor, the `i`-th item expressing
+            the evaluation result of the `i`-th solution.
+            In the multi-objective case, this is expected as an
+            at-least-2-dimensional tensor, the `(i,j)`-th item
+            expressing the evaluation result of the `i`-th solution
+            according to the `j`-th objective.
+            Extra leftmost dimensions are interpreted as batch dimensions.
+        num_tournaments: Number of tournaments that will be applied.
+            In other words, number of winners that will be picked.
+        tournament_size: Number of solutions to be picked for the tournament
+        objective_sense: A string or a list of strings, where (each) string
+            has either the value 'min' for minimization or 'max' for
+            maximization.
+    Returns:
+        A tuple of the form `(decision_values, eval_results)` where
+        `decision_values` is the tensor that contains the decision values
+        of the winning solutions, and `eval_result` is a tensor that
+        contains the evaluation results (i.e. fitnesses) of the
+        winning solutions.
+    """
+    if isinstance(objective_sense, str):
+        pass  # nothing to do
+    elif isinstance(objective_sense, Iterable):
+        objective_sense = list(objective_sense)
+        evals = pareto_utility(evals, objective_sense=objective_sense, crowdsort=False)
+        objective_sense = "max"
+    else:
+        raise TypeError(
+            "The argument `objective_sense` was expected as a string for the single-objective case,"
+            " or as a list of strings for the multi-objective case."
+            f" However, the encountered `objective_sense` is {repr(objective_sense)}."
+        )
+    return _single_objective_tournament(solutions, evals, num_tournaments, tournament_size, objective_sense)
 
 
 @expects_ndim(2, randomness="different")
@@ -342,7 +686,7 @@ def multi_point_cross_over(
     num_points: int,
     tournament_size: Optional[int] = None,
     num_children: Optional[int] = None,
-    objective_sense: Optional[str] = None,
+    objective_sense: Optional[Union[str, list]] = None,
 ) -> torch.Tensor:
     """
     Apply multi-point cross-over on the given `parents`.
@@ -386,10 +730,14 @@ def multi_point_cross_over(
             If there is no tournament selection (i.e. if `tournament_size` is
             None), `num_children` is expected to be None.
         objective_sense: Mandatory if `tournament_size` is not None.
-            `objective_sense` is expected as 'max' for when the goal of the
-            optimization is to maximize `evals`, 'min' for when the goal of
-            the optimization is to minimize `evals`. If `tournament_size`
-            is None, `objective_sense` can also be left as None.
+            For when there is only one objective, `objective_sense` is
+            expected as 'max' for when the goal of the optimization is to
+            maximize `evals`, 'min' for when the goal of the optimization is
+            to minimize `evals`. For when there are multiple objectives,
+            `objective_sense` is expected as a list of strings, where each
+            string is either 'min' or 'max'.
+            If `tournament_size` is None, `objective_sense` can also be left
+            as None.
     Returns:
         Decision values of the child solutions, as a new tensor.
     """
@@ -502,10 +850,14 @@ def one_point_cross_over(
             If there is no tournament selection (i.e. if `tournament_size` is
             None), `num_children` is expected to be None.
         objective_sense: Mandatory if `tournament_size` is not None.
-            `objective_sense` is expected as 'max' for when the goal of the
-            optimization is to maximize `evals`, 'min' for when the goal of
-            the optimization is to minimize `evals`. If `tournament_size`
-            is None, `objective_sense` can also be left as None.
+            For when there is only one objective, `objective_sense` is
+            expected as 'max' for when the goal of the optimization is to
+            maximize `evals`, 'min' for when the goal of the optimization is
+            to minimize `evals`. For when there are multiple objectives,
+            `objective_sense` is expected as a list of strings, where each
+            string is either 'min' or 'max'.
+            If `tournament_size` is None, `objective_sense` can also be left
+            as None.
     Returns:
         Decision values of the child solutions, as a new tensor.
     """
@@ -596,10 +948,14 @@ def two_point_cross_over(
             If there is no tournament selection (i.e. if `tournament_size` is
             None), `num_children` is expected to be None.
         objective_sense: Mandatory if `tournament_size` is not None.
-            `objective_sense` is expected as 'max' for when the goal of the
-            optimization is to maximize `evals`, 'min' for when the goal of
-            the optimization is to minimize `evals`. If `tournament_size`
-            is None, `objective_sense` can also be left as None.
+            For when there is only one objective, `objective_sense` is
+            expected as 'max' for when the goal of the optimization is to
+            maximize `evals`, 'min' for when the goal of the optimization is
+            to minimize `evals`. For when there are multiple objectives,
+            `objective_sense` is expected as a list of strings, where each
+            string is either 'min' or 'max'.
+            If `tournament_size` is None, `objective_sense` can also be left
+            as None.
     Returns:
         Decision values of the child solutions, as a new tensor.
     """
@@ -688,10 +1044,14 @@ def simulated_binary_cross_over(
             If there is no tournament selection (i.e. if `tournament_size` is
             None), `num_children` is expected to be None.
         objective_sense: Mandatory if `tournament_size` is not None.
-            `objective_sense` is expected as 'max' for when the goal of the
-            optimization is to maximize `evals`, 'min' for when the goal of
-            the optimization is to minimize `evals`. If `tournament_size`
-            is None, `objective_sense` can also be left as None.
+            For when there is only one objective, `objective_sense` is
+            expected as 'max' for when the goal of the optimization is to
+            maximize `evals`, 'min' for when the goal of the optimization is
+            to minimize `evals`. For when there are multiple objectives,
+            `objective_sense` is expected as a list of strings, where each
+            string is either 'min' or 'max'.
+            If `tournament_size` is None, `objective_sense` can also be left
+            as None.
     Returns:
         Decision values of the child solutions, as a new tensor.
     """
@@ -794,7 +1154,12 @@ def _utility(evals: torch.Tensor, objective_sense: str, ranking_method: Optional
     return ranks
 
 
-def utility(evals: torch.Tensor, *, objective_sense: str, ranking_method: Optional[str] = "centered") -> torch.Tensor:
+def utility(
+    evals: torch.Tensor,
+    *,
+    objective_sense: str,
+    ranking_method: Optional[str] = "centered",
+) -> torch.Tensor:
     """
     Return utility values representing how good the evaluation results are.
 
@@ -832,7 +1197,17 @@ def utility(evals: torch.Tensor, *, objective_sense: str, ranking_method: Option
         Utility values, as a tensor whose shape is the same with the shape of
         `evals`.
     """
-    return _utility(evals, objective_sense, ranking_method)
+    if isinstance(objective_sense, str):
+        return _utility(evals, objective_sense, ranking_method)
+    elif isinstance(objective_sense, Iterable):
+        raise ValueError(
+            "The argument `objective_sense` was received as an iterable other than string,"
+            " implying that the problem at hand has multiple objectives."
+            " However, this `utility(...)` function does not support multiple objectives."
+            " Consider using `pareto_utility(...)`."
+        )
+    else:
+        raise TypeError(f"Unrecognized `objective_sense`: {repr(objective_sense)}")
 
 
 @expects_ndim(1, randomness="different")
@@ -1005,19 +1380,31 @@ def _combine_values_and_evals(
     return torch.vstack([values1, values2]), torch.hstack([evals1, evals2])
 
 
-def combine(a: Union[torch.Tensor, tuple], b: Union[torch.Tensor, tuple]) -> Union[torch.Tensor, tuple]:
+@expects_ndim(2, 2, 2, 2)
+def _combine_values_and_multiobjective_evals(
+    values1: torch.Tensor, evals1: torch.Tensor, values2: torch.Tensor, evals2: torch.Tensor
+) -> tuple:
+    return torch.vstack([values1, values2]), torch.vstack([evals1, evals2])
+
+
+def combine(
+    a: Union[torch.Tensor, tuple],
+    b: Union[torch.Tensor, tuple],
+    *,
+    objective_sense: Optional[Union[str, Iterable]] = None,
+) -> Union[torch.Tensor, tuple]:
     """
     Combine two populations into one.
 
     This function can be used in two forms.
 
-    **First usage: without evaluation results.**
+    **Usage 1: without evaluation results.**
     Let us assume that we have two decision values matrices, `values1`
     `values2`. The shapes of these matrices are (n1, L) and (n2, L)
     respectively, where L represents the length of a solution.
     Let us assume that the solutions that these decision values
     represent are not evaluated yet. Therefore, we do not have evaluation
-    results (i.e. we do not have fitnesses). Two combine these two
+    results (i.e. we do not have fitnesses). To combine these two
     unevaluated populations, we use this function as follows:
 
     ```python
@@ -1026,17 +1413,38 @@ def combine(a: Union[torch.Tensor, tuple], b: Union[torch.Tensor, tuple]) -> Uni
     # We now have a combined decision values matrix, shaped (n1+n2, L).
     ```
 
-    **Second usage: with evaluation results.**
-    Let us now assume that we have two decision values matrices, `values1`
+    **Usage 2: with evaluation results, single-objective.**
+    We again assume that we have two decision values matrices, `values1`
     and `values2`. Like in our previous example, these matrices are shaped
     (n1, L) and (n2, L), respectively. Additionally, let us assume that we
     know the evaluation results for the solutions represented by `values1`
     and `values2`. These evaluation results are represented by the tensors
-    `evals1` and `evals2`, shaped (n1,) and (n2,), respectively. Two
-    combine these two evaluated populations, we use this function as follows:
+    `evals1` and `evals2`, shaped (n1,) and (n2,), respectively. To combine
+    these two evaluated populations, we use this function as follows:
 
     ```python
     c_values, c_evals = combine((values1, evals1), (values2, evals2))
+
+    # We now have a combined decision values matrix and a combined evaluations
+    # vector.
+    # `c_values` is shaped (n1+n2, L), and `c_evals` is shaped (n1+n2,).
+    ```
+
+    **Usage 3: with evaluation results, multi-objective.**
+    We again assume that we have two decision values matrices, `values1`
+    and `values2`. Like in our previous example, these matrices are shaped
+    (n1, L) and (n2, L), respectively. Additionally, we assume that we know
+    the evaluation results for these solutions. The evaluation results are
+    stored within the tensors `evals1` and `evals2`, whose shapes are
+    (n1, M) and (n2, M), where M is the number of objectives. To combine
+    these two evaluated populations, we use this function as follows:
+
+    ```python
+    c_values, c_evals = combine(
+        (values1, evals1),
+        (values2, evals2),
+        objective_sense=["min", "min"],  # Assuming we have 2 min objectives
+    )
 
     # We now have a combined decision values matrix and a combined evaluations
     # vector.
@@ -1060,6 +1468,17 @@ def combine(a: Union[torch.Tensor, tuple], b: Union[torch.Tensor, tuple]) -> Uni
             If this positional argument is a tensor, the first positional
             argument must also be a tensor. If this positional argument is a
             tuple, the first positional argument must also be a tuple.
+        objective_sense: In the case of single-objective optimization,
+            `objective_sense` can be left as None, or can be 'min' or 'max',
+            representing the direction of the optimization.
+            In the case of multi-objective optimization, `objective_sense`
+            is expected as a list of strings, each string being 'min' or
+            'max', representing the direction for each objective.
+            Please also note that, if this combination operation is done
+            without evaluation results (i.e. if the first two positional
+            arguments are given as tensors, not tuples), `objective_sense`
+            is not needed, and can be omitted, regardless of whether or
+            not the problem at hand is single-objective.
     Returns:
         The combined decision values tensor, or a tuple of the form
         `(values, evals)` where `values` is the combined decision values
@@ -1074,7 +1493,12 @@ def combine(a: Union[torch.Tensor, tuple], b: Union[torch.Tensor, tuple]) -> Uni
                 f" However, the second argument is {repr(b)} (of type {type(b)})."
             )
         values2, evals2 = b
-        return _combine_values_and_evals(values1, evals1, values2, evals2)
+        if (objective_sense is None) or isinstance(objective_sense, str):
+            return _combine_values_and_evals(values1, evals1, values2, evals2)
+        elif isinstance(objective_sense, Iterable):
+            return _combine_values_and_multiobjective_evals(values1, evals1, values2, evals2)
+        else:
+            raise TypeError(f"Unrecognized `objective_sense`: {repr(objective_sense)}")
     elif isinstance(a, torch.Tensor):
         if not isinstance(b, torch.Tensor):
             raise TypeError(
@@ -1125,9 +1549,47 @@ def _take_multiple_best(values: torch.Tensor, evals: torch.Tensor, n: int, objec
     return best_rows, best_evals
 
 
-def take_best(values: torch.Tensor, evals: torch.Tensor, n: Optional[int] = None, *, objective_sense: str) -> tuple:
+@expects_ndim(2, 2, None, None, None)
+def _take_multiple_best_with_multiobjective(
+    values: torch.Tensor,
+    evals: torch.Tensor,
+    n: int,
+    objective_sense: str,
+    crowdsort: bool,
+) -> tuple:
+    utils = pareto_utility(evals, objective_sense=objective_sense, crowdsort=crowdsort)
+    indices_of_best = torch.argsort(utils, descending=True)[:n]
+    best_rows = torch.index_select(values, 0, indices_of_best)
+    best_evals = torch.index_select(evals, 0, indices_of_best)
+    return best_rows, best_evals
+
+
+def take_best(
+    values: torch.Tensor,
+    evals: torch.Tensor,
+    n: Optional[int] = None,
+    *,
+    objective_sense: Union[str, list],
+    crowdsort: bool = True,
+) -> tuple:
     """
     Take the best solution, or the best `n` number of solutions.
+
+    **Single-objective case.**
+    If the positional argument `n` is omitted (i.e. is left as None), the
+    decision values and the evaluation result of the single best solution
+    will be returned.
+    If the positional argument `n` is provided, top-`n` solutions, together
+    with their evaluation results, will be returned.
+
+    **Multi-objective case.**
+    In the multi-objective case, the positional argument `n` is mandatory.
+    With a valid value for `n` given, `n` number of solutions will be taken
+    from the best pareto-fronts. If `crowdsort` is given as True (which is
+    the default), crowding distances of the solutions within the same
+    pareto-fronts will be an additional criterion when deciding which
+    solutions to take. Like in the single-objective case, the decision values
+    and the evaluation results of the taken solutions will be returned.
 
     Args:
         values: Decision values tensor, with at least 2 dimensions.
@@ -1136,11 +1598,43 @@ def take_best(values: torch.Tensor, evals: torch.Tensor, n: Optional[int] = None
             Extra leftmost dimensions will be taken as batch dimensions.
         n: If left as None, the single best solution will be taken.
             If given as an integer, this number of best solutions will be
-            taken.
-        objective_sense: A string whose value is either 'min' or 'max',
-            representing the goal of the optimization.
+            taken. Please note that, if the problem at hand has multiple
+            objectives, this argument cannot be omitted.
+        objective_sense: In the single-objective case, `objective_sense` is
+            expected as a string 'min' or 'max', representing the direction
+            of the optimization. In the multi-objective case,
+            `objective_sense` is expected as a list of strings, each string
+            being 'min' or 'max', representing the goal of optimization for
+            each objective.
+        crowdsort: Relevant only when there are multiple objectives.
+            If `crowdsort` is True, the crowding distances of the solutions
+            within the given population will be an additional criterion
+            when choosing the best `n` solution. If `crowdsort` is False,
+            how many times a solution was dominated will be the only factor
+            when deciding whether or not it is among the best `n` solutions.
+    Returns:
+        A tuple of the form `(decision_values, evaluation_results)`, where
+        `decision_values` is the decision values tensor for the taken
+        solution(s), and `evaluation_results` is the evaluation results tensor
+        for the taken solution(s).
     """
+    if isinstance(objective_sense, str):
+        multi_objective = False
+    elif isinstance(objective_sense, Iterable):
+        multi_objective = True
+    else:
+        raise TypeError("Unrecognized `objective_sense`: {repr(objective_sense)}")
+
     if n is None:
+        if multi_objective:
+            raise ValueError(
+                "`objective_sense` not given as a string, implying that there are multiple objectives."
+                " When there are multiple objectives, the argument `n` (i.e. number of solutions to take)"
+                " must not be omitted. However, `n` was encountered as None."
+            )
         return _take_single_best(values, evals, objective_sense)
     else:
-        return _take_multiple_best(values, evals, n, objective_sense)
+        if multi_objective:
+            return _take_multiple_best_with_multiobjective(values, evals, n, objective_sense, crowdsort)
+        else:
+            return _take_multiple_best(values, evals, n, objective_sense)
