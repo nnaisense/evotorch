@@ -251,7 +251,13 @@ class CMAES(SearchAlgorithm, SinglePopulationAlgorithmMixin):
             center_init = center_init.values.clone()
 
         # Store the center
-        self.m = self._problem.make_tensor(center_init)
+        self.m = self._problem.make_tensor(center_init).squeeze()
+        valid_shaped_m = (self.m.ndim == 1) and (len(self.m) == self._problem.solution_length)
+        if not valid_shaped_m:
+            raise ValueError(
+                f"The initial center point was expected as a vector of length {self._problem.solution_length}."
+                " However, the provided `center_init` has (or implies) a different shape."
+            )
 
         # Store the initial step size
         self.sigma = self._problem.make_tensor(stdev_init)
