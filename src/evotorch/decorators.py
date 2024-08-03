@@ -254,8 +254,7 @@ def on_device(device: Device) -> Callable:
 
 
     @on_device("cuda")
-    def f(x: torch.Tensor) -> torch.Tensor:
-        ...
+    def f(x: torch.Tensor) -> torch.Tensor: ...
 
 
     problem = Problem(
@@ -306,8 +305,7 @@ def on_device(device: Device) -> Callable:
 
     ```python
     @on_device("cpu")
-    def f(x: torch.Tensor) -> torch.Tensor:
-        ...
+    def f(x: torch.Tensor) -> torch.Tensor: ...
 
 
     print(f.device)  # Prints: torch.device("cpu")
@@ -499,8 +497,7 @@ def on_aux_device(*args) -> Callable:
 
 
     @on_aux_device
-    def f(x: torch.Tensor) -> torch.Tensor:
-        ...
+    def f(x: torch.Tensor) -> torch.Tensor: ...
 
 
     problem = Problem(
@@ -632,8 +629,7 @@ def expects_ndim(  # noqa: C901
 
 
     @expects_ndim(2, 1)
-    def f(a: torch.Tensor, b: torch.Tensor) -> torch.Tensor:
-        ...
+    def f(a: torch.Tensor, b: torch.Tensor) -> torch.Tensor: ...
     ```
 
     Once decorated like this, the function `f` will gain the following
@@ -663,8 +659,7 @@ def expects_ndim(  # noqa: C901
 
     ```python
     @expects_ndim(2, 1, randomness="error")
-    def f(a: torch.Tensor, b: torch.Tensor) -> torch.Tensor:
-        ...
+    def f(a: torch.Tensor, b: torch.Tensor) -> torch.Tensor: ...
     ```
 
     If `randomness` is set as "error", then, when there is batching, any
@@ -941,8 +936,7 @@ def rowwise(*args, randomness: str = "error") -> Callable:
 
     ```python
     @rowwise(randomness="error")
-    def f(x: torch.Tensor) -> torch.Tensor:
-        ...
+    def f(x: torch.Tensor) -> torch.Tensor: ...
     ```
 
     If `randomness` is set as "error", then, when there is batching, any

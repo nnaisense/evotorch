@@ -293,8 +293,7 @@ class CustomNE(NEProblem):
     def _network_constants(self):
         return {"d": self._d}  # Pass self._d as 'd' to networks at instantiation
 
-    def _evaluate_network(self, network: torch.nn.Module):
-        ...
+    def _evaluate_network(self, network: torch.nn.Module): ...
 ```
 
 which then allows, for example, the use of the variable `d` in the string representation of the network

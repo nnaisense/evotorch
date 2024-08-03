@@ -256,8 +256,7 @@ from evotorch.algorithms.functional import cem, cem_ask, cem_tell
 
 
 class MyProblem(Problem):
-    def __init__(self):
-        ...
+    def __init__(self): ...
 
     def _evaluate_batch(self, batch: SolutionBatch):
         # Stateful batch evaluation code goes here

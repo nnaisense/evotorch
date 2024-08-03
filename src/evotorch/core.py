@@ -610,8 +610,9 @@ class Problem(TensorMakerMixin, Serializable):
                 # for initializing solutions
             )
 
-        def _evaluate_batch(self, solutions: SolutionBatch):
-            ...  # code to compute and fill the fitnesses goes here
+        def _evaluate_batch(
+            self, solutions: SolutionBatch
+        ): ...  # code to compute and fill the fitnesses goes here
 
         def _fill(self, values: torch.Tensor):
             # `values` is an empty tensor of shape (n, m) where n is the number
@@ -749,8 +750,7 @@ class Problem(TensorMakerMixin, Serializable):
     from evotorch.logging import StdOutLogger
 
 
-    def f(x: torch.Tensor) -> torch.Tensor:
-        ...
+    def f(x: torch.Tensor) -> torch.Tensor: ...
 
 
     prob = Problem("min", f, solution_length=..., dtype=torch.float32)
