@@ -1395,8 +1395,7 @@ def make_functional_grad_estimator(
     )
 
 
-    def f(x: torch.Tensor) -> torch.Tensor:
-        ...
+    def f(x: torch.Tensor) -> torch.Tensor: ...
 
 
     fgrad = make_functional_grad_estimator(
