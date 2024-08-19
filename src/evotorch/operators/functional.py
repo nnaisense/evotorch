@@ -133,11 +133,12 @@ print(pop_best_cost)
 """
 
 
-from typing import Iterable, Optional, Union
+from typing import Iterable, NamedTuple, Optional, Union
 
 import torch
 
 from evotorch.decorators import expects_ndim
+from evotorch.tools import ObjectArray
 
 
 def _index_comparison_matrices(n: int, *, device: Union[str, torch.dtype]) -> tuple:
@@ -453,96 +454,451 @@ def pareto_utility(evals: torch.Tensor, *, objective_sense: list, crowdsort: boo
     return _pareto_utility(evals, objective_sense, crowdsort)
 
 
-@expects_ndim(2, 1, 1, None, randomness="different")
-def _pick_solution_via_tournament(
+@expects_ndim(2, None, None, randomness="different")
+def _generate_first_parent_candidate_indices(
+    solutions: torch.Tensor,
+    num_tournaments: int,
+    tournament_size: int,
+) -> torch.Tensor:
+    # We are considering half of the given `num_tournaments`, because a second set of tournaments will later
+    # be executed to pick the second parents. This current operation is only for the first set (and therefore the
+    # first half) of the parents.
+    num_tournaments = int(num_tournaments)
+    if (num_tournaments % 2) != 0:
+        raise ValueError(
+            f"`num_tournaments` was expected as a number divisible by 2. However, its value is {num_tournaments}."
+        )
+    half_num_tournaments = num_tournaments // 2
+
+    num_solutions, _ = solutions.shape
+    return torch.randint(0, num_solutions, (half_num_tournaments, tournament_size), device=solutions.device)
+
+
+@expects_ndim(None, 1, 0, randomness="different")
+def _generate_second_parent_candidate_indices(
+    num_solutions: int,
+    parent1_candidate_indices: torch.Tensor,
+    parent1_winner_index: torch.Tensor,
+) -> torch.Tensor:
+    parent2_candidate_indices = torch.randint_like(parent1_candidate_indices, 0, num_solutions - 1)
+    parent2_candidate_indices = torch.where(
+        parent2_candidate_indices >= parent1_winner_index,
+        parent2_candidate_indices + 1,
+        parent2_candidate_indices,
+    )
+    return parent2_candidate_indices
+
+
+@expects_ndim(1, None, 1, randomness="different")
+def _run_two_tournaments_using_utilities(
+    utilities: torch.Tensor,
+    higher_utility_is_better: bool,
+    parent1_candidate_indices: torch.Tensor,
+) -> tuple:
+    argbest = torch.argmax if higher_utility_is_better else torch.argmin
+    parent1_candidate_evals = torch.index_select(utilities, 0, parent1_candidate_indices)
+    winner1_indirect_index = argbest(parent1_candidate_evals)
+    winner1_index = torch.index_select(parent1_candidate_indices, 0, winner1_indirect_index.reshape(1))[0]
+
+    [num_solutions] = utilities.shape
+    parent2_candidate_indices = _generate_second_parent_candidate_indices(
+        num_solutions, parent1_candidate_indices, winner1_index
+    )
+
+    parent2_candidate_evals = torch.index_select(utilities, 0, parent2_candidate_indices)
+    winner2_indirect_index = argbest(parent2_candidate_evals)
+    winner2_index = torch.index_select(parent2_candidate_indices, 0, winner2_indirect_index.reshape(1))[0]
+
+    return winner1_index, winner2_index
+
+
+class SelectedParentIndices(NamedTuple):
+    parent1_indices: torch.Tensor
+    parent2_indices: torch.Tensor
+
+
+class SelectedParentValues(NamedTuple):
+    parent1_values: Union[torch.Tensor, ObjectArray]
+    parent2_values: Union[torch.Tensor, ObjectArray]
+
+
+class SelectedParents(NamedTuple):
+    parent1_values: Union[torch.Tensor, ObjectArray]
+    parent1_evals: torch.Tensor
+    parent2_values: Union[torch.Tensor, ObjectArray]
+    parent2_evals: torch.Tensor
+
+
+class SelectedAndStackedParents(NamedTuple):
+    parent_values: Union[torch.Tensor, ObjectArray]
+    parent_evals: torch.Tensor
+
+
+def _undecorated_take_solutions(
     solutions: torch.Tensor,
     evals: torch.Tensor,
-    indices: torch.Tensor,
-    objective_sense: str,
-) -> tuple:
-    """
-    Run a single tournament among multiple solutions to pick the best.
+    parent1_indices: torch.Tensor,
+    parent2_indices: torch.Tensor,
+    with_evals: bool,
+    split_results: bool,
+    multi_objective: bool,
+) -> Union[torch.Tensor, tuple]:
+    parent1_values = solutions[parent1_indices]
+    parent2_values = solutions[parent2_indices]
 
-    Args:
-        solutions: Decision values of the solutions, as a tensor of at least
-            2 dimensions. Extra leftmost dimensions will be considered as
-            batch dimensions.
-        evals: Evaluation results (i.e. fitnesses) of the solutions, as a
-            tensor with at least 1 dimension. Extra leftmost dimensions will
-            be considered as batch dimensions.
-        indices: Indices of solutions that participate into the tournament,
-            as a tensor of integers with at least 1 dimension. Extra leftmost
-            dimensions will be considered as batch dimensions.
-        objective_sense: A string with value 'min' or 'max', representing the
-            goal of the optimization.
-    Returns:
-        A tuple of the form `(decision_values, eval_result)` where
-        `decision_values` is the tensor that contains the decision values
-        of the winning solution(s), and `eval_result` is a tensor that
-        contains the evaluation result(s) (i.e. fitness(es)) of the
-        winning solution(s).
-    """
-    # Get the evaluation results of the solutions that participate into the tournament
-    competing_evals = torch.index_select(evals, 0, indices)
-
-    if objective_sense == "max":
-        # If the objective sense is 'max', we are looking for the solution with the highest evaluation result
-        argbest = torch.argmax
-    elif objective_sense == "min":
-        # If the objective sense is 'min', we are looking for the solution with the lowest evaluation result
-        argbest = torch.argmin
+    if with_evals:
+        if split_results:
+            return SelectedParents(
+                parent1_values=parent1_values,
+                parent1_evals=evals[parent1_indices],
+                parent2_values=parent2_values,
+                parent2_evals=evals[parent2_indices],
+            )
+        else:
+            combine_evals_fn = torch.vstack if multi_objective else torch.cat
+            return SelectedAndStackedParents(
+                parent_values=torch.vstack([parent1_values, parent2_values]),
+                parent_evals=combine_evals_fn([evals[parent1_indices], evals[parent2_indices]]),
+            )
     else:
-        raise ValueError(
-            "`objective_sense` was expected either as 'min' or as 'max'."
-            f" However, it was received as {repr(objective_sense)}."
-        )
-
-    # Among the competing solutions, which one is the best?
-    winner_competing_eval_index = argbest(competing_evals)
-
-    # Get the index (within the original `solutions`) of the winning solution
-    winner_solution_index = torch.index_select(indices, 0, winner_competing_eval_index.reshape(1))
-
-    # Get the decision values and the evaluation result of the winning solution
-    winner_solution = torch.squeeze(torch.index_select(solutions, 0, winner_solution_index), dim=0)
-    winner_eval = torch.squeeze(torch.index_select(evals, 0, winner_solution_index), dim=0)
-
-    # Return the winning solution's decision values and evaluation results
-    return winner_solution, winner_eval
+        if split_results:
+            return SelectedParentValues(
+                parent1_values=parent1_values,
+                parent2_values=parent2_values,
+            )
+        else:
+            return torch.vstack([parent1_values, parent2_values])
 
 
-@expects_ndim(2, 1, None, None, None, randomness="different")
-def _single_objective_tournament(
+@expects_ndim(2, 1, 1, 1, None, None)
+def _take_solutions_with_single_objective(
+    solutions: torch.Tensor,
+    evals: torch.Tensor,
+    parent1_indices: torch.Tensor,
+    parent2_indices: torch.Tensor,
+    with_evals: bool,
+    split_results: bool,
+) -> Union[torch.Tensor, tuple]:
+    return _undecorated_take_solutions(
+        solutions, evals, parent1_indices, parent2_indices, with_evals, split_results, False
+    )
+
+
+@expects_ndim(2, 2, 1, 1, None, None)
+def _take_solutions_with_multi_objective(
+    solutions: torch.Tensor,
+    evals: torch.Tensor,
+    parent1_indices: torch.Tensor,
+    parent2_indices: torch.Tensor,
+    with_evals: bool,
+    split_results: bool,
+) -> Union[torch.Tensor, tuple]:
+    return _undecorated_take_solutions(
+        solutions, evals, parent1_indices, parent2_indices, with_evals, split_results, True
+    )
+
+
+@expects_ndim(2, 1, None, None, None, None, None, None, randomness="different")
+def _pick_pairs_via_tournament_with_single_objective(
     solutions: torch.Tensor,
     evals: torch.Tensor,
     num_tournaments: int,
     tournament_size: int,
     objective_sense: str,
-) -> tuple:
-    if tournament_size < 1:
-        raise ValueError(
-            "The argument `tournament_size` was expected to be greater than or equal to 1."
-            f" However, it was encountered as {tournament_size}."
-        )
-    popsize, _ = solutions.shape
-    indices_for_tournament = torch.randint_like(
-        solutions[:1, :1].expand(num_tournaments, tournament_size), 0, popsize, dtype=torch.int64
+    return_indices: bool,
+    with_evals: bool,
+    split_results: bool,
+) -> Union[torch.Tensor, tuple]:
+    num_solutions, _ = solutions.shape
+    [num_evals] = evals.shape
+    if num_solutions != num_evals:
+        raise ValueError("Number of evaluation results does not match the number of solutions")
+
+    if objective_sense == "min":
+        higher_utility_is_better = False
+    elif objective_sense == "max":
+        higher_utility_is_better = True
+    else:
+        raise ValueError(f"Unrecognized `objective_sense`: {repr(objective_sense)}")
+
+    first_parent_indices = _generate_first_parent_candidate_indices(solutions, num_tournaments, tournament_size)
+    winner1_indices, winner2_indices = _run_two_tournaments_using_utilities(
+        evals, higher_utility_is_better, first_parent_indices
     )
-    return _pick_solution_via_tournament(solutions, evals, indices_for_tournament, objective_sense)
+
+    if return_indices:
+        if split_results:
+            return SelectedParentIndices(parent1_indices=winner1_indices, parent2_indices=winner2_indices)
+        else:
+            return torch.cat([winner1_indices, winner2_indices])
+    else:
+        return _take_solutions_with_single_objective(
+            solutions, evals, winner1_indices, winner2_indices, with_evals, split_results
+        )
 
 
-def _tournament(
+@expects_ndim(2, 2, None, None, None, None, None, None, randomness="different")
+def _pick_pairs_via_tournament_with_multi_objective(
     solutions: torch.Tensor,
     evals: torch.Tensor,
+    num_tournaments: int,
+    tournament_size: int,
+    objective_sense: list,
+    return_indices: bool,
+    with_evals: bool,
+    split_results: bool,
+) -> Union[torch.Tensor, tuple]:
+    num_solutions, _ = solutions.shape
+    num_evals, _ = evals.shape
+    if num_solutions != num_evals:
+        raise ValueError("Number of evaluation results does not match the number of solutions")
+
+    utils = pareto_utility(evals, objective_sense=objective_sense, crowdsort=False)
+    first_parent_indices = _generate_first_parent_candidate_indices(solutions, num_tournaments, tournament_size)
+    winner1_indices, winner2_indices = _run_two_tournaments_using_utilities(utils, True, first_parent_indices)
+
+    if return_indices:
+        if split_results:
+            return SelectedParentIndices(parent1_indices=winner1_indices, parent2_indices=winner2_indices)
+        else:
+            return torch.cat([winner1_indices, winner2_indices])
+    else:
+        return _take_solutions_with_multi_objective(
+            solutions, evals, winner1_indices, winner2_indices, with_evals, split_results
+        )
+
+
+def _pick_pairs_via_tournament_considering_objects(
+    solutions: ObjectArray,
+    evals: torch.Tensor,
+    num_tournaments: int,
+    tournament_size: int,
+    objective_sense: Union[list, str],
+    return_indices: bool,
+    with_evals: bool,
+    split_results: bool,
+) -> tuple:
+    from evotorch.tools import make_tensor
+
+    num_solutions = len(solutions)
+    if isinstance(objective_sense, str):
+        multi_objective = False
+        if evals.ndim != 1:
+            raise ValueError(
+                "In the case of single-objective optimization, `evals` was expected as a 1-dimensional tensor."
+                f" However, the shape of `evals` is {evals.shape}."
+            )
+        [num_evals] = evals.shape
+        utils = evals
+        if objective_sense == "min":
+            higher_utility_is_better = False
+        elif objective_sense == "max":
+            higher_utility_is_better = True
+        else:
+            raise ValueError(f"Unrecognized `objective_sense`: {repr(objective_sense)}")
+    elif isinstance(objective_sense, Iterable):
+        multi_objective = True
+        if evals.ndim != 2:
+            raise ValueError(
+                "In the case of multi-objective optimization, `evals` was expected as a 2-dimensional tensor."
+                f" However, the shape of `evals` is {evals.shape}."
+            )
+        multi_objective = True
+        num_evals, _ = evals.shape
+        utils = pareto_utility(evals, objective_sense=objective_sense, crowdsort=False)
+        higher_utility_is_better = True
+    else:
+        raise TypeError(f"Unrecognized `objective_sense`: {repr(objective_sense)}")
+
+    if num_solutions != num_evals:
+        raise ValueError("Number of evaluation results does not match the number of solutions")
+
+    num_tournaments = int(num_tournaments)
+    if (num_tournaments % 2) != 0:
+        raise ValueError(
+            f"`num_tournaments` was expected as a number divisible by 2. However, its value is {num_tournaments}."
+        )
+    half_num_tournaments = num_tournaments // 2
+    first_parent_indices = torch.randint(0, num_solutions, (half_num_tournaments, tournament_size), device=evals.device)
+
+    winner1_indices, winner2_indices = _run_two_tournaments_using_utilities(
+        utils, higher_utility_is_better, first_parent_indices
+    )
+
+    if return_indices:
+        if split_results:
+            return SelectedParentIndices(parent1_indices=winner1_indices, parent2_indices=winner2_indices)
+        else:
+            return torch.cat([winner1_indices, winner2_indices])
+    else:
+        parent1_values = solutions[torch.as_tensor(winner1_indices, device="cpu")]
+        parent2_values = solutions[torch.as_tensor(winner2_indices, device="cpu")]
+        if split_results:
+            combined_values = None
+        else:
+            combined_values = make_tensor(
+                [*parent1_values, *parent2_values], read_only=solutions.is_read_only, dtype=object
+            )
+
+        if with_evals:
+            if split_results:
+                return SelectedParents(
+                    parent1_values=parent1_values,
+                    parent1_evals=evals[winner1_indices],
+                    parent2_values=parent2_values,
+                    parent2_evals=evals[winner2_indices],
+                )
+            else:
+                evals_combiner_fn = torch.vstack if multi_objective else torch.cat
+                combined_evals = evals_combiner_fn([evals[winner1_indices], evals[winner2_indices]])
+                return SelectedAndStackedParents(parent_values=combined_values, parent_evals=combined_evals)
+        else:
+            if split_results:
+                return SelectedParentValues(
+                    parent1_values=parent1_values,
+                    parent2_values=parent2_values,
+                )
+            else:
+                return combined_values
+
+
+TournamentResult = Union[
+    SelectedParentIndices,
+    SelectedParentValues,
+    SelectedParents,
+    SelectedAndStackedParents,
+    torch.Tensor,
+    ObjectArray,
+]
+
+
+def tournament(
+    solutions: Union[torch.Tensor, ObjectArray],
+    evals: torch.Tensor,
+    *,
     num_tournaments: int,
     tournament_size: int,
     objective_sense: Union[str, list],
-) -> tuple:
+    return_indices: bool = False,
+    with_evals: bool = False,
+    split_results: bool = False,
+) -> TournamentResult:
     """
-    Randomly pick solutions, put them into a tournament, pick the winners.
+    Randomly organize pairs of tournaments and pick the winning solutions.
+
+    Hyperparameters regarding the tournament selection are
+    `num_tournaments` (number of tournaments), and `tournament_size`
+    (size of each tournament).
+
+    **How does each tournament work?**
+    `tournament_size` number of solutions are randomly sampled from the given
+    `solutions`, and then, the best solution among the sampled solutions is
+    declared the winner. In the case of single-objective optimization, the
+    best solution is the one with the best evaluation result (i.e. best
+    fitness). In the case of multi-objective optimization, the best solution
+    is the one within the best pareto-front.
+
+    **How are multiple tournaments are organized?**
+    Two sets of tournaments are organized. Each set contains `n` number of
+    tournaments, `n` being the half of `num_tournaments`.
+    For example, let us assume that `num_tournaments` is 6. Then, we have:
+
+    ```text
+    First set of tournaments  : tournamentA, tournamentB, tournamentC
+    Second set of tournaments : tournamentD, tournamentE, tournamentF
+    ```
+
+    In this organization of tournaments, the winner of tournamentA is meant
+    for cross-over with the winner of tournamentD; the winner of tournamentB
+    is meant for cross-over with the winner of tournamentE; and the winner of
+    tournamentC is meant for cross-over with the winner of tournamentF.
+
+    While sampling the participants for these tournaments, it is ensured that
+    the winner of tournamentA does not participate into tournamentD; the
+    winner of tournamentB does not participate into tournamentE; and the
+    winner of tournamentC does not participate into tournamentF. Therefore,
+    each cross-over operation is applied on two different parent solutions.
+
+    **How are the tournament results represented?**
+    The tournament results are returned in various forms. These various forms
+    are as follows.
+
+    **Results in the form of decision values.**
+    This is the default form of results (with `return_indices=False`,
+    `with_evals=False`, `split_results=False`). Here, the results are
+    expressed as a single tensor (or `ObjectArray`) of decision values.
+    The first half of these decision values represent the first set of
+    parents, and the second half of these decision values represent the second
+    half of these decision values represent the second set of parents.
+    For example, let us assume that the number of tournaments
+    (`num_tournaments`) is configured as 6. In this case, the result is a
+    decision values tensor with 6 rows (or an `ObjectArray` of length 6).
+    In these results (let us call them `resulting_values`), the pairings
+    for the cross-over operations are as follows:
+    - `resulting_values[0]` and `resulting_values[3]`;
+    - `resulting_values[1]` and `resulting_values[4]`;
+    - `resulting_values[2]` and `resulting_values[5]`.
+
+    **Results in the form of indices.**
+    This form of results can be taken with arguments `return_indices=True`,
+    `with_evals=False`, `split_results=False`. Here, the results are
+    expressed as a single tensor of integers, each integer being the index
+    of a solution within `solutions`.
+    For example, let us assume that the number of tournaments
+    (`num_tournaments`) is configured as 6. In this case, the result is a
+    tensor of indices of length 6.
+    In these results (let us call them `resulting_indices`), the pairings
+    for the cross-over operations are as follows:
+    - `resulting_indices[0]` and `resulting_indices[3]`;
+    - `resulting_indices[1]` and `resulting_indices[4]`;
+    - `resulting_indices[2]` and `resulting_indices[5]`.
+
+    **Results in the form of decision values and evaluations.**
+    This form of results can be taken with arguments `return_indices=False`,
+    `with_evals=True`, `split_results=False`. Here, the results are expressed
+    via a named tuple in the form `(parent_values=..., parent_evals=...)`.
+    In this tuple, `parent_values` stores a tensor (or an `ObjectArray`)
+    representing the decision values of the picked solutions, and
+    `parent_evals` stores the evaluation results as a tensor.
+    For example, let us assume that the number of tournaments
+    (`num_tournaments`) is 6. With this assumption, in the returned named
+    tuple (let us call it `result`), the pairings for the cross-over
+    operations are as follows:
+    - `result.parent_values[0]` and `result.parent_values[3]`;
+    - `result.parent_values[1]` and `result.parent_values[4]`;
+    - `result.parent_values[2]` and `result.parent_values[5]`.
+    For any solution `result.parent_values[i]`, the evaluation result
+    is stored by `result.parent_evals[i]`.
+
+    **Results with split parent solutions.**
+    This form of results can be taken with arguments `return_indices=False`,
+    `with_evals=False`, `split_results=True`. The returned object is a
+    named tuple in the form `(parent1_values=..., parent2_values=...)`.
+    In the returned named tuple (let us call it `result`), the pairings for
+    the cross-over operations are as follows:
+    - `result.parent1_values[0]` and `result.parent2_values[0]`;
+    - `result.parent1_values[1]` and `result.parent2_values[1]`;
+    - `result.parent1_values[2]` and `result.parent2_values[2]`;
+    - and so on...
+
+    **Results with split parent solutions and evaluations.**
+    This form of results can be taken with arguments `return_indices=False`,
+    `with_evals=True`, `split_results=True`. The returned object is a
+    named tuple, its attributes being `parent1_values`, `parent1_evals`,
+    `parent2_values`, and `parent2_evals`.
+    In the returned named tuple (let us call it `result`), the pairings for
+    the cross-over operations are as follows:
+    - `result.parent1_values[0]` and `result.parent2_values[0]`;
+    - `result.parent1_values[1]` and `result.parent2_values[1]`;
+    - `result.parent1_values[2]` and `result.parent2_values[2]`;
+    - and so on...
+    For any solution `result.parent_values[i]`, the evaluation result
+    is stored by `result.parent_evals[i]`.
 
     Args:
-        solutions: Decision values of the solutions.
+        solutions: Decision values of the solutions. Can be a tensor with
+            at least 2 dimensions (where extra leftmost dimensions are to be
+            interpreted as batch dimensions), or an `ObjectArray`.
         evals: Evaluation results of the solutions.
             In the single-objective case, this is expected as an
             at-least-1-dimensional tensor, the `i`-th item expressing
@@ -558,26 +914,37 @@ def _tournament(
         objective_sense: A string or a list of strings, where (each) string
             has either the value 'min' for minimization or 'max' for
             maximization.
+        return_indices: If this is given as True, indices of the selected
+            solutions will be returned, instead of their decision values.
+        with_evals: If this is given as True, evaluations of the selected
+            solutions will be returned in addition to their decision values.
+        split_results: If this is given as True, tournament results will be
+            split as first parents and second parents. If this is given as
+            False, results will be stacked vertically, in the sense that
+            the first half of the results are the first parents and the
+            second half of the results are the second parents.
     Returns:
-        A tuple of the form `(decision_values, eval_results)` where
-        `decision_values` is the tensor that contains the decision values
-        of the winning solutions, and `eval_result` is a tensor that
-        contains the evaluation results (i.e. fitnesses) of the
-        winning solutions.
+        Selected solutions (or their indices, with or without their
+        evaluation results).
     """
-    if isinstance(objective_sense, str):
-        pass  # nothing to do
-    elif isinstance(objective_sense, Iterable):
-        objective_sense = list(objective_sense)
-        evals = pareto_utility(evals, objective_sense=objective_sense, crowdsort=False)
-        objective_sense = "max"
-    else:
-        raise TypeError(
-            "The argument `objective_sense` was expected as a string for the single-objective case,"
-            " or as a list of strings for the multi-objective case."
-            f" However, the encountered `objective_sense` is {repr(objective_sense)}."
+    if return_indices and with_evals:
+        raise ValueError(
+            "When `return_indices` is given as True, `with_evals` must be False."
+            " However, `with_evals` was encountered as True."
         )
-    return _single_objective_tournament(solutions, evals, num_tournaments, tournament_size, objective_sense)
+
+    if isinstance(solutions, ObjectArray):
+        pick_fn = _pick_pairs_via_tournament_considering_objects
+    elif isinstance(solutions, torch.Tensor):
+        if isinstance(objective_sense, str):
+            pick_fn = _pick_pairs_via_tournament_with_single_objective
+        elif isinstance(objective_sense, Iterable):
+            pick_fn = _pick_pairs_via_tournament_with_multi_objective
+        else:
+            raise TypeError(f"Unrecognized `objective_sense`: {repr(objective_sense)}")
+    return pick_fn(
+        solutions, evals, num_tournaments, tournament_size, objective_sense, return_indices, with_evals, split_results
+    )
 
 
 @expects_ndim(2, randomness="different")
@@ -767,7 +1134,14 @@ def multi_point_cross_over(
             )
 
         # Apply tournament selection on the original `parents`
-        parents, _ = _tournament(parents, evals, num_children, tournament_size, objective_sense)
+        parents = tournament(
+            parents,
+            evals,
+            num_tournaments=num_children,
+            tournament_size=tournament_size,
+            objective_sense=objective_sense,
+            with_evals=False,
+        )
 
     # Apply the cross-over operation on `parents`, and return the recombined decision values tensor.
     return _do_cross_over(parents, num_points)
@@ -1080,7 +1454,14 @@ def simulated_binary_cross_over(
             )
 
         # Apply tournament selection on the original `parents`
-        parents, _ = _tournament(parents, evals, num_children, tournament_size, objective_sense)
+        parents = tournament(
+            parents,
+            evals,
+            num_tournaments=num_children,
+            tournament_size=tournament_size,
+            objective_sense=objective_sense,
+            with_evals=False,
+        )
 
     return _do_sbx(parents, eta)
 
@@ -1387,16 +1768,53 @@ def _combine_values_and_multiobjective_evals(
     return torch.vstack([values1, values2]), torch.vstack([evals1, evals2])
 
 
+def _combine_object_arrays(values1: ObjectArray, values2: ObjectArray) -> ObjectArray:
+    from evotorch.tools import make_tensor
+
+    read_only = values1.is_read_only or values2.is_read_only
+    return make_tensor([*values1, *values2], dtype=object, read_only=read_only)
+
+
+def _combine_object_arrays_and_evals(
+    values1: ObjectArray, evals1: torch.Tensor, values2: ObjectArray, evals2: torch.Tensor
+) -> tuple:
+    eval_shapes_are_valid = (evals1.ndim == 1) and (evals2.ndim == 1)
+    if not eval_shapes_are_valid:
+        raise ValueError(
+            "Evaluation result tensors were expected to have only 1 dimension each."
+            f" However, their shapes are {evals1.shape} and {evals2.shape}."
+        )
+    return _combine_object_arrays(values1, values2), torch.cat([evals1, evals2])
+
+
+def _combine_object_arrays_and_multiobjective_evals(
+    values1: ObjectArray, evals1: torch.Tensor, values2: ObjectArray, evals2: torch.Tensor
+) -> tuple:
+    eval_shapes_are_valid = (evals1.ndim == 2) and (evals2.ndim == 2)
+    if not eval_shapes_are_valid:
+        raise ValueError(
+            "Evaluation result tensors were expected to have 2 dimensions each."
+            f" However, their shapes are {evals1.shape} and {evals2.shape}."
+        )
+    return _combine_object_arrays(values1, values2), torch.vstack([evals1, evals2])
+
+
+def _both_are_tensors(a, b) -> bool:
+    return isinstance(a, torch.Tensor) and isinstance(b, torch.Tensor)
+
+
+def _both_are_object_arrays(a, b) -> bool:
+    return isinstance(a, ObjectArray) and isinstance(b, ObjectArray)
+
+
 def combine(
-    a: Union[torch.Tensor, tuple],
-    b: Union[torch.Tensor, tuple],
+    a: Union[torch.Tensor, ObjectArray, tuple],
+    b: Union[torch.Tensor, ObjectArray, tuple],
     *,
     objective_sense: Optional[Union[str, Iterable]] = None,
 ) -> Union[torch.Tensor, tuple]:
     """
     Combine two populations into one.
-
-    This function can be used in two forms.
 
     **Usage 1: without evaluation results.**
     Let us assume that we have two decision values matrices, `values1`
@@ -1451,23 +1869,35 @@ def combine(
     # `c_values` is shaped (n1+n2, L), and `c_evals` is shaped (n1+n2,).
     ```
 
+    **Support for ObjectArray.**
+    This function supports decision values that are expressed via instances
+    of `ObjectArray`.
+
     Args:
-        a: A decision values tensor with at least 2 dimensions, or a tuple
-            of the form `(values, evals)`, where `values` is an at least
-            2-dimensional decision values tensor, and `evals` is an at least
-            1-dimensional evaluation results tensor.
-            Extra leftmost dimensions are taken as batch dimensions.
+        a: A decision values tensor with at least 2 dimensions, or an
+            `ObjectArray` of decision values, or a tuple of the form
+            `(values, evals)` where `values` is the decision values
+            and `evals` is a tensor with at least 1 dimension.
+            Additional leftmost dimensions within tensors are interpreted
+            as batch dimensions.
             If this positional argument is a tensor, the second positional
-            argument must also be a tensor. If this positional argument is a
-            tuple, the second positional argument must also be a tuple.
-        b: A decision values tensor with at least 2 dimensions, or a tuple
-            of the form `(values, evals)`, where `values` is an at least
-            2-dimensional decision values tensor, and `evals` is an at least
-            1-dimensional evaluation results tensor.
-            Extra leftmost dimensions are taken as batch dimensions.
+            argument must also be a tensor.
+            If this positional argument is an `ObjectArray`, the second
+            positional argument must also be an `ObjectArray`.
+            If this positional argument is a tuple, the second positional
+            argument must also be a tuple.
+        b: A decision values tensor with at least 2 dimensions, or an
+            `ObjectArray` of decision values, or a tuple of the form
+            `(values, evals)` where `values` is the decision values
+            and `evals` is a tensor with at least 1 dimension.
+            Additional leftmost dimensions within tensors are interpreted
+            as batch dimensions.
             If this positional argument is a tensor, the first positional
-            argument must also be a tensor. If this positional argument is a
-            tuple, the first positional argument must also be a tuple.
+            argument must also be a tensor.
+            If this positional argument is an `ObjectArray`, the first
+            positional argument must also be an `ObjectArray`.
+            If this positional argument is a tuple, the first positional
+            argument must also be a tuple.
         objective_sense: In the case of single-objective optimization,
             `objective_sense` can be left as None, or can be 'min' or 'max',
             representing the direction of the optimization.
@@ -1494,19 +1924,43 @@ def combine(
             )
         values2, evals2 = b
         if (objective_sense is None) or isinstance(objective_sense, str):
-            return _combine_values_and_evals(values1, evals1, values2, evals2)
+            if _both_are_tensors(values1, values2):
+                return _combine_values_and_evals(values1, evals1, values2, evals2)
+            elif _both_are_object_arrays(values1, values2):
+                return _combine_object_arrays_and_evals(values1, evals1, values2, evals2)
+            else:
+                raise TypeError(
+                    "Both decision values arrays must be `Tensor`s or `ObjectArray`s."
+                    f" However, their types are: {type(values1)}, {type(values2)}."
+                )
         elif isinstance(objective_sense, Iterable):
-            return _combine_values_and_multiobjective_evals(values1, evals1, values2, evals2)
+            if _both_are_tensors(values1, values2):
+                return _combine_values_and_multiobjective_evals(values1, evals1, values2, evals2)
+            elif _both_are_object_arrays(values1, values2):
+                return _combine_object_arrays_and_multiobjective_evals(values1, evals1, values2, evals2)
+            else:
+                raise TypeError(
+                    "Both decision values arrays must be `Tensor`s or `ObjectArray`s."
+                    f" However, their types are: {type(values1)}, {type(values2)}."
+                )
         else:
             raise TypeError(f"Unrecognized `objective_sense`: {repr(objective_sense)}")
-    elif isinstance(a, torch.Tensor):
-        if not isinstance(b, torch.Tensor):
+    elif isinstance(a, (torch.Tensor, ObjectArray)):
+        if not isinstance(b, (torch.Tensor, ObjectArray)):
             raise TypeError(
-                "The first positional argument was received as a tensor."
-                " Therefore, the second positional argument was also expected as a tensor."
+                "The first positional argument was received as a tensor or ObjectArray."
+                " Therefore, the second positional argument was also expected as a tensor or ObjectArray."
                 f" However, the second argument is {repr(b)} (of type {type(b)})."
             )
-        return _combine_values(a, b)
+        if _both_are_tensors(a, b):
+            return _combine_values(a, b)
+        elif _both_are_object_arrays(a, b):
+            return _combine_object_arrays(a, b)
+        else:
+            raise TypeError(
+                "Both decision values arrays must be `Tensor`s or `ObjectArray`s."
+                f" However, their types are: {type(values1)}, {type(values2)}."
+            )
     else:
         raise TypeError(
             "Expected both positional arguments as tensors, or as tuples."
@@ -1564,8 +2018,56 @@ def _take_multiple_best_with_multiobjective(
     return best_rows, best_evals
 
 
+def _take_best_considering_objects(
+    values: ObjectArray,
+    evals: torch.Tensor,
+    n: Optional[int],
+    objective_sense: Union[str, list],
+    crowdsort: bool,
+) -> ObjectArray:
+    if isinstance(objective_sense, str):
+        if evals.ndim != 1:
+            raise ValueError(
+                "The given `objective_sense` implies that there is only one objective."
+                " In this case, `evals` was expected to have only one dimension."
+                f" However, the shape of `evals` is {evals.shape}."
+            )
+        multi_objective = False
+        if objective_sense == "min":
+            descending = False
+        elif objective_sense == "max":
+            descending = True
+        else:
+            raise ValueError(f"Unrecognized `objective_sense`: {repr(objective_sense)}")
+        utils = evals
+    elif isinstance(objective_sense, Iterable):
+        if evals.ndim != 2:
+            raise ValueError(
+                "The given `objective_sense` implies that there are multiple objectives."
+                " In this case, `evals` was expected to have two dimensions."
+                f" However, the shape of `evals` is {evals.shape}."
+            )
+        multi_objective = True
+        utils = pareto_utility(evals, objective_sense=objective_sense, crowdsort=crowdsort)
+        descending = True
+    else:
+        raise TypeError(f"Unrecognized `objective_sense`: {repr(objective_sense)}")
+
+    if n is None:
+        if multi_objective:
+            raise ValueError("When there are multiple objectives, the number of solutions to take cannot be omitted.")
+        argbest = torch.argmax if descending else torch.argmin
+        best_index = argbest(utils)
+        return values[torch.as_tensor(best_index, device="cpu")], evals[best_index]
+    else:
+        indices_of_best = torch.argsort(utils, descending=descending)[:n]
+        best_rows = values[torch.as_tensor(indices_of_best, device="cpu")]
+        best_evals = torch.index_select(evals, 0, indices_of_best)
+        return best_rows, best_evals
+
+
 def take_best(
-    values: torch.Tensor,
+    values: Union[torch.Tensor, ObjectArray],
     evals: torch.Tensor,
     n: Optional[int] = None,
     *,
@@ -1591,9 +2093,15 @@ def take_best(
     solutions to take. Like in the single-objective case, the decision values
     and the evaluation results of the taken solutions will be returned.
 
+    **Support for ObjectArray.**
+    This function supports decision values expressed via instances of
+    `ObjectArray`.
+
     Args:
-        values: Decision values tensor, with at least 2 dimensions.
-            Extra leftmost dimensions will be taken as batch dimensions.
+        values: Decision values, expressed via a tensor with at least
+            2 dimensions or via an `ObjectArray`. If given as a tensor,
+            extra leftmost dimensions will be interpreted as batch
+            dimensions.
         evals: Evaluation results tensor, with at least 1 dimension.
             Extra leftmost dimensions will be taken as batch dimensions.
         n: If left as None, the single best solution will be taken.
@@ -1614,10 +2122,13 @@ def take_best(
             when deciding whether or not it is among the best `n` solutions.
     Returns:
         A tuple of the form `(decision_values, evaluation_results)`, where
-        `decision_values` is the decision values tensor for the taken
-        solution(s), and `evaluation_results` is the evaluation results tensor
-        for the taken solution(s).
+        `decision_values` is the decision values (as a tensor or as an
+        `ObjectArray`) for the taken solution(s), and `evaluation_results`
+        is the evaluation results tensor for the taken solution(s).
     """
+    if isinstance(values, ObjectArray):
+        return _take_best_considering_objects(values, evals, n, objective_sense, crowdsort)
+
     if isinstance(objective_sense, str):
         multi_objective = False
     elif isinstance(objective_sense, Iterable):

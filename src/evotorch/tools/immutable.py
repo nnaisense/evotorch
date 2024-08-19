@@ -66,7 +66,12 @@ def as_immutable(x: Any, *, memo: Optional[dict] = None) -> Any:
     elif isinstance(x, torch.Tensor):
         result = x.clone().as_subclass(ReadOnlyTensor)
     elif isinstance(x, ObjectArray):
-        result = x.clone().get_read_only_view()
+        x = x.clone()
+        xlength = len(x)
+        result = ObjectArray(xlength)
+        for i in range(xlength):
+            result[i] = x[i]
+        result = result.get_read_only_view()
     elif isinstance(x, np.ndarray):
         if _numpy_array_stores_objects(x):
             result = ObjectArray(len(x))
@@ -76,7 +81,6 @@ def as_immutable(x: Any, *, memo: Optional[dict] = None) -> Any:
         else:
             result = x.copy()
             result.flags["WRITEABLE"] = False
-            result = result
     elif isinstance(x, Mapping):
         result = ImmutableDict(x, memo)
     elif isinstance(x, set):

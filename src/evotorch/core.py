@@ -3367,7 +3367,7 @@ class Problem(TensorMakerMixin, Serializable):
         ```
 
         **Parallelized fitness evaluation.**
-        If a `Problem` object is condifured to use parallelized evaluation with
+        If a `Problem` object is configured to use parallelized evaluation with
         the help of multiple actors, a callable evaluator made out of that
         `Problem` object will also make use of those multiple actors.
 
@@ -3375,7 +3375,8 @@ class Problem(TensorMakerMixin, Serializable):
         If a callable evaluator receives a tensor with 3 or more dimensions,
         those extra leftmost dimensions will be considered as batch
         dimensions. The returned fitness tensor will also preserve those batch
-        dimensions.
+        dimensions. Please note, however, that if the `dtype` of the problem
+        is `object`, additional batch dimensions are not supported.
 
         **Notes on vmap.**
         `ProblemBoundEvaluator` is a shallow wrapper around a `Problem` object.
@@ -3388,12 +3389,20 @@ class Problem(TensorMakerMixin, Serializable):
         Args:
             obj_index: The index of the objective according to which the
                 evaluations will be done. If the problem is single-objective,
-                this is not required. If the problem is multi-objective, this
-                needs to be given as an integer.
+                `obj_index` can be omitted. If the problem is multi-objective
+                and `obj_index` is omitted, the callable evaluator will return
+                multi-dimensional tensors that express the fitnesses for all
+                objectives (where the rightmost dimension size is equal to
+                the number of objectives). If the problem is multi-objective
+                and `obj_index` is given, the callable evaluator will return
+                tensors that express the fitnesses of the specified objective.
         Returns:
             A callable fitness evaluator, bound to this problem object.
         """
-        return ProblemBoundEvaluator(self, obj_index=obj_index)
+        if self.dtype is object:
+            return ObjectTypedProblemBoundEvaluator(self, obj_index=obj_index)
+        else:
+            return ProblemBoundEvaluator(self, obj_index=obj_index)
 
 
 SolutionBatchSliceInfo = NamedTuple("SolutionBatchSliceInfo", source="SolutionBatch", slice=IndicesOrSlice)
@@ -5114,19 +5123,27 @@ class ProblemBoundEvaluator:
                 is multi-objective, this is expected as an integer.
         """
         self._problem = problem
+        self._ensure_valid_problem()
+        if self._problem.is_multi_objective and (obj_index is None):
+            self._multi_objective = True
+            self._obj_index = None
+        else:
+            self._multi_objective = False
+            self._obj_index = self._problem.normalize_obj_index(obj_index)
+        self._problem.ensure_numeric()
+        # if problem.dtype != problem.eval_dtype:
+        #     raise TypeError(
+        #         "The dtype of the decision values is not the same with the dtype of the evaluations."
+        #         " Currently, it is not supported to make callable evaluators out of problems whose"
+        #         " decision value dtypes are different than their evaluation dtypes."
+        #     )
+
+    def _ensure_valid_problem(self):
         if not isinstance(self._problem, Problem):
             clsname = type(self).__name__
             raise TypeError(
                 f"In its initialization phase, {clsname} expected a `Problem` object,"
                 f" but found: {repr(self._problem)} (of type {repr(type(self._problem))})"
-            )
-        self._obj_index = self._problem.normalize_obj_index(obj_index)
-        self._problem.ensure_numeric()
-        if problem.dtype != problem.eval_dtype:
-            raise TypeError(
-                "The dtype of the decision values is not the same with the dtype of the evaluations."
-                " Currently, it is not supported to make callable evaluators out of problems whose"
-                " decision value dtypes are different than their evaluation dtypes."
             )
 
     def _make_empty_solution_batch(self, popsize: int) -> SolutionBatch:
@@ -5165,6 +5182,68 @@ class ProblemBoundEvaluator:
 
         values = values.reshape(-1, solution_length)
         evaluated_batch = self._prepare_evaluated_solution_batch(values)
-        evals = evaluated_batch.evals[:, self._obj_index]
 
-        return evals.reshape(original_batch_shape).as_subclass(torch.Tensor)
+        if self._multi_objective:
+            evals = evaluated_batch.evals
+            num_objs = evals.shape[-1]
+            original_evals_shape = tuple([*original_batch_shape, num_objs])
+        else:
+            evals = evaluated_batch.evals[:, self._obj_index]
+            original_evals_shape = original_batch_shape
+        return evals.reshape(original_evals_shape).as_subclass(torch.Tensor)
+
+
+class ObjectTypedProblemBoundEvaluator(ProblemBoundEvaluator):
+    """
+    A callable fitness evaluator, bound to a `Problem` whose dtype is object.
+
+    A callable evaluator returned by the method
+    `Problem.make_callable_evaluator` is an instance of this class, if the
+    dtype of the problem is `object`.
+    For details, please see the documentation of
+    [Problem][evotorch.core.Problem], and of its method
+    `make_callable_evaluator`.
+    """
+
+    def __init__(self, problem: Problem, *, obj_index: Optional[int] = None):
+        self._problem = problem
+        self._ensure_valid_problem()
+        if self._problem.is_multi_objective and (obj_index is None):
+            self._multi_objective = True
+            self._obj_index = None
+        else:
+            self._multi_objective = False
+            self._obj_index = self._problem.normalize_obj_index(obj_index)
+        if self._problem.dtype is not object:
+            raise TypeError(
+                "Expected a problem whose dtype is `object`."
+                f" However, the dtype of the problem is {self._problem.dtype}."
+                " Hint: did you mean to instantiate a `ProblemBoundEvaluator`, instead of an"
+                " `ObjectTypedProblemBoundEvaluator`?"
+            )
+
+    def _make_empty_solution_batch(self, popsize: int) -> SolutionBatch:
+        return SolutionBatch(self._problem, popsize=popsize, empty=True, device="cpu")
+
+    def _prepare_evaluated_solution_batch(self, values: ObjectArray) -> SolutionBatch:
+        num_solutions = len(values)
+        batch = self._make_empty_solution_batch(num_solutions)
+        batch.access_values()[:] = values
+        self._problem.evaluate(batch)
+        return batch
+
+    def __call__(self, values: ObjectArray) -> torch.Tensor:
+        """
+        Evaluate the solutions expressed by the ObjectArray-typed `values`.
+
+        Args:
+            values: Decision values. Expected as an `ObjectArray`.
+        Returns:
+            The fitnesses, as a tensor.
+        """
+        if not isinstance(values, ObjectArray):
+            raise TypeError(
+                "The positional argument `values` was expected as an `ObjectArray`."
+                f" However, an object of this type was encountered: {type(values)}."
+            )
+        return self._prepare_evaluated_solution_batch(values).evals.as_subclass(torch.Tensor)
