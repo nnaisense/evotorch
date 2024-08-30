@@ -5246,4 +5246,7 @@ class ObjectTypedProblemBoundEvaluator(ProblemBoundEvaluator):
                 "The positional argument `values` was expected as an `ObjectArray`."
                 f" However, an object of this type was encountered: {type(values)}."
             )
-        return self._prepare_evaluated_solution_batch(values).evals.as_subclass(torch.Tensor)
+        result = self._prepare_evaluated_solution_batch(values).evals.as_subclass(torch.Tensor)
+        if len(self._problem.senses) == 1:
+            result = result.reshape(-1)
+        return result
