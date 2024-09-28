@@ -362,7 +362,7 @@ logger.run["..."].log(...)
     searcher.run(100)
 
     # Stop the neptune run
-    run.stop()
+    logger.run.stop()
     ```
 
 ## Logging with Weights & Biases
@@ -404,6 +404,6 @@ _ = WandbLogger(searcher, project="project-name")
     # Run the search algorithm
     searcher.run(100)
 
-    # Stop the neptune run
-    run.stop()
+    # Finish the W&B run
+    wandb.finish()
     ```
