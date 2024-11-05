@@ -2,7 +2,7 @@ exclude: '^docs/conf.py'
 
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.6.0
+    rev: v5.0.0
     hooks:
       - id: check-added-large-files
         args: ['--maxkb=2048']
@@ -23,7 +23,7 @@ repos:
         args: ['--fix=no']
 
   - repo: https://github.com/PyCQA/flake8
-    rev: '7.1.0'
+    rev: '7.1.1'
     hooks:
       - id: flake8
         additional_dependencies:
@@ -35,19 +35,19 @@ repos:
       - id: isort
 
   - repo: https://github.com/psf/black
-    rev: 24.8.0
+    rev: 24.10.0
     hooks:
       - id: black
         args: [--safe]
 
   - repo: https://github.com/kynan/nbstripout
-    rev: 0.7.1
+    rev: 0.8.0
     hooks:
       - id: nbstripout
 
   - repo: https://github.com/adamchainz/blacken-docs
-    rev: 1.18.0
+    rev: 1.19.1
     hooks:
       - id: blacken-docs
-        additional_dependencies: [black==24.8.0]
+        additional_dependencies: [black==24.10.0]
         args: [--skip-string-normalization, --line-length=88]
