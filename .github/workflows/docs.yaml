@@ -30,10 +30,10 @@ jobs:
           git config --local user.name "github-actions[bot]"
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
 
-      - name: Deploy with mike (tag_ 🚀
+      - name: Deploy with mike (tag) 🚀
         if: ${{ github.ref_type == 'tag' }}
-        run: mike deploy --push --rebase --update-aliases ${{ github.ref_name }} latest
+        run: mike deploy --push --update-aliases ${{ github.ref_name }} latest
 
       - name: Deploy with mike (branch) 🚀
         if: ${{ github.ref_type == 'branch' }}
-        run: mike deploy --push --rebase docs-latest
+        run: mike deploy --push docs-latest
