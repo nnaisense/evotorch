@@ -50,6 +50,7 @@ def is_immutable_container_or_tensor(x: Any) -> bool:
 def as_immutable(x: Any, *, memo: Optional[dict] = None) -> Any:
     from .objectarray import ObjectArray
     from .readonlytensor import ReadOnlyTensor
+    from .tensorframe import TensorFrame
 
     if memo is None:
         memo = {}
@@ -72,6 +73,8 @@ def as_immutable(x: Any, *, memo: Optional[dict] = None) -> Any:
         for i in range(xlength):
             result[i] = x[i]
         result = result.get_read_only_view()
+    elif isinstance(x, TensorFrame):
+        result = x.clone().get_read_only_view()
     elif isinstance(x, np.ndarray):
         if _numpy_array_stores_objects(x):
             result = ObjectArray(len(x))
@@ -103,6 +106,7 @@ def as_immutable(x: Any, *, memo: Optional[dict] = None) -> Any:
 def mutable_copy(x: Any, *, memo: Optional[dict] = None) -> Any:
     from .objectarray import ObjectArray
     from .readonlytensor import ReadOnlyTensor
+    from .tensorframe import TensorFrame
 
     if memo is None:
         memo = {}
@@ -113,7 +117,7 @@ def mutable_copy(x: Any, *, memo: Optional[dict] = None) -> Any:
 
     if _is_basic_data(x):
         result = x
-    elif isinstance(x, (ReadOnlyTensor, ObjectArray)):
+    elif isinstance(x, (ReadOnlyTensor, ObjectArray, TensorFrame)):
         result = x.clone(preserve_read_only=False)
     elif isinstance(x, np.ndarray):
         result = x.copy()

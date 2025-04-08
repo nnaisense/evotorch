@@ -15,6 +15,8 @@
 
 from typing import Any, Iterable, Mapping
 
+DEFAULT_MAX_DEPTH_FOR_PRINTING = 10
+
 
 class RecursivePrintable:
     """
@@ -30,7 +32,7 @@ class RecursivePrintable:
     are also defined as aliases of this `to_string` method.
     """
 
-    def to_string(self, *, max_depth: int = 10) -> str:
+    def to_string(self, *, max_depth: int = DEFAULT_MAX_DEPTH_FOR_PRINTING) -> str:
         if max_depth <= 0:
             return "<...>"
 

@@ -69,10 +69,10 @@ def deep_clone(  # noqa: C901
     Args:
         x: The object which will be deep-cloned. This object can be a standard
             Python container (i.e. list, tuple, dict, set), an instance of
-            Problem, Solution, SolutionBatch, ObjectArray, ImmutableContainer,
-            Clonable, and also any other type of object if either the argument
-            `otherwise_deepcopy` or the argument `otherwise_return` is set as
-            True.
+            Problem, Solution, SolutionBatch, ObjectArray, TensorFrame,
+            ImmutableContainer, Clonable, and also any other type of object if
+            either the argument `otherwise_deepcopy` or the argument
+            `otherwise_return` is set as True.
         otherwise_deepcopy: Setting this as True means that, when an
             unrecognized object is encountered, that object will be
             deep-copied. To handle shared and cyclic-referencing objects,
@@ -92,6 +92,7 @@ def deep_clone(  # noqa: C901
     """
     from .objectarray import ObjectArray
     from .readonlytensor import ReadOnlyTensor
+    from .tensorframe import TensorFrame
 
     if memo is None:
         # If a memo dictionary was not given, make a new one now.
@@ -148,7 +149,7 @@ def deep_clone(  # noqa: C901
         result.flags["WRITEABLE"] = x.flags["WRITEABLE"]
     elif isinstance(x, (ObjectArray, ReadOnlyClonable)):
         result = x.clone(preserve_read_only=True, memo=memo)
-    elif isinstance(x, ReadOnlyTensor):
+    elif isinstance(x, (ReadOnlyTensor, TensorFrame)):
         result = x.clone(preserve_read_only=True)
     elif isinstance(x, torch.Tensor):
         result = x.clone()
