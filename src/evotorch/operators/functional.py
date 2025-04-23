@@ -140,6 +140,11 @@ import torch
 from evotorch.decorators import expects_ndim
 from evotorch.tools import ObjectArray
 
+try:
+    from torch.func import vmap
+except ImportError:
+    from functorch import vmap
+
 
 def _index_comparison_matrices(n: int, *, device: Union[str, torch.dtype]) -> tuple:
     """
@@ -339,68 +344,105 @@ def domination_counts(evals: torch.Tensor, *, objective_sense: list) -> torch.Te
     return _domination_counts(evals, objective_sense)
 
 
-@expects_ndim(2, 1, 0, 0)
-def _crowding_distance_of_solution_considering_objective(
-    population_evals: torch.Tensor,
-    domination_counts: torch.Tensor,
-    solution_index: torch.Tensor,
-    objective_index: torch.Tensor,
+def _divide_by_non_negative(a: torch.Tensor, b: torch.Tensor) -> torch.Tensor:
+    # A safe division operator which is protected against divide-by-zero situations
+    # This function assumes that the denominator is always non-negative
+    from evotorch.core import _near_zero_float_tolerance
+
+    tolerance = _near_zero_float_tolerance.get(b.dtype, 1e-8)
+    b = torch.where(b < tolerance, tolerance, b)
+    return a / b
+
+
+def _crowding_distances_considering_single_objective(
+    evals: torch.Tensor, domination_counts: torch.Tensor
 ) -> torch.Tensor:
-    num_solutions, _ = population_evals.shape
+    div = _divide_by_non_negative
+    Inf = float("inf")
+    [num_solutions] = evals.shape
+    if num_solutions <= 2:
+        return torch.ones_like(evals) * Inf
 
-    [num_domination_counts] = domination_counts.shape
-    if num_domination_counts != num_solutions:
-        raise ValueError(
-            "The number of solutions stored within `evals` does not match the length of `domination_counts`."
-        )
+    device = evals.device
+    max_solution_index = num_solutions - 1
+    solution_indices = torch.arange(num_solutions, device=device)
 
-    # Get the evaluation results vector for the considered objective
-    eval_vector = torch.index_select(population_evals, -1, objective_index.reshape(1)).reshape(num_solutions)
+    # Find the minimum and maximum evaluation (fitness)
+    min_eval = torch.min(evals)
+    max_eval = torch.max(evals)
 
-    # Get the evaluation result and the domination count for the considered solution
-    solution_eval = torch.index_select(eval_vector, 0, solution_index.reshape(1))[0]
-    solution_domination_count = torch.index_select(domination_counts, 0, solution_index.reshape(1))[0]
+    # Using the maximum and minimum fitness, find the range of fitness values
+    eval_gap = max_eval - min_eval
 
-    # Prepare the masks `got_lower_eval` and `got_higher_eval`. These masks store True for any solution in the
-    # same pareto-front with lower evaluation result, and with higher evaluation result, respectively.
-    within_same_front = domination_counts == solution_domination_count
-    got_lower_eval = within_same_front & (eval_vector < solution_eval)
-    got_higher_eval = within_same_front & (eval_vector > solution_eval)
+    # Here, we prepare weights such that, when we sort the population according to these weights:
+    # - the solutions will be grouped by their domination counts (and therefore, by their pareto ranks);
+    # - within each pareto-front, the solutions will be sorted by their fitnesses.
+    #
+    # Also note:
+    # This function does not receive objective sense information (i.e. it does not know if the objective is 'min'
+    # or 'max'). Therefore, it does not know if the result of the sorting will be best-to-worst or worst-to-best.
+    # This should not be a problem because we just want to establish which solutions are fitness-wise neighbors.
+    weights = (div(evals - min_eval, eval_gap) * 0.99) + torch.as_tensor(domination_counts, dtype=evals.dtype)
 
-    # Compute a large-enough constant that will be the crowding distance for when the considered solution is
-    # pareto-extreme
-    large_constant = 2 * (eval_vector.max() - eval_vector.min())
+    # Sort the population and the associated data (evals, domination counts, original index within the population)
+    indices_for_sorting = torch.argsort(weights, descending=True)
+    sorted_evals = evals[indices_for_sorting]
+    sorted_domination_counts = domination_counts[indices_for_sorting]
+    sorted_solution_indices = solution_indices[indices_for_sorting]
 
-    # For each solution within the same pareto-front with lower evaluation result, compute the fitness distance
-    distances_from_below = torch.where(got_lower_eval, solution_eval - eval_vector, large_constant)
-    # For each solution within the same pareto-front with higher evaluation result, compute the fitness distance
-    distances_from_above = torch.where(got_higher_eval, eval_vector - solution_eval, large_constant)
+    prev_ones = (solution_indices - 1).clamp(0, max_solution_index)
+    next_ones = (solution_indices + 1).clamp(0, max_solution_index)
 
-    # Sum of the nearest (min) distance from below and the nearest (min) distance from above is the crowding distance
-    # for the considered objective.
-    return distances_from_below.min() + distances_from_above.min()
+    # Masks for the sorted population.
+    prev_is_different_front = (solution_indices == 0) | (
+        sorted_domination_counts != sorted_domination_counts[prev_ones]
+    )
+    next_is_different_front = (solution_indices == max_solution_index) | (
+        sorted_domination_counts != sorted_domination_counts[next_ones]
+    )
 
+    # Fitness distances for each solution with the previous ones and the next ones, within the sorted population.
+    distance_to_prev = torch.where(
+        prev_is_different_front,
+        Inf,
+        div(sorted_evals[prev_ones] - sorted_evals, eval_gap),
+    )
+    distance_to_next = torch.where(
+        next_is_different_front,
+        Inf,
+        div(sorted_evals - sorted_evals[next_ones], eval_gap),
+    )
 
-@expects_ndim(2, 1, 0)
-def _crowding_distance_of_solution(
-    population_evals: torch.Tensor,
-    domination_counts: torch.Tensor,
-    solution_index: torch.Tensor,
-) -> torch.Tensor:
-    _, num_objectives = population_evals.shape
-    objective_indices = torch.arange(num_objectives, dtype=torch.int64, device=population_evals.device)
+    # For each solution within the sorted population, the final crowding distance is the sum of fitness distance
+    # to the previous one (i.e. the upper neighbor) and to the next one (i.e. the bottom neighbor).
+    sorted_crowding_distance = distance_to_prev + distance_to_next
 
-    # Compute the crowding distances for all objectives, then sum those distances, then return the result.
-    return _crowding_distance_of_solution_considering_objective(
-        population_evals, domination_counts, solution_index, objective_indices
-    ).sum()
+    # We have the crowding distances computed, but they are not in the original order. Using the original solution
+    # indices, we re-arrange them.
+    result = torch.empty_like(sorted_crowding_distance)
+    result[sorted_solution_indices] = sorted_crowding_distance
+
+    # Finally, we return the result
+    return result
 
 
 @expects_ndim(2, 1)
-def _crowding_distances(population_evals: torch.Tensor, domination_counts: torch.Tensor) -> torch.Tensor:
-    num_solutions, _ = population_evals.shape
-    all_solution_indices = torch.arange(num_solutions, dtype=torch.int64, device=population_evals.device)
-    return _crowding_distance_of_solution(population_evals, domination_counts, all_solution_indices)
+def _crowding_distances(evals: torch.Tensor, domination_counts: torch.Tensor) -> torch.Tensor:
+    _, num_objectives = evals.shape
+
+    # Get the crowding distances for each objective, then, for each solution, sum the distances over
+    # its objectives to obtain its overall crowding distance.
+    result = vmap(_crowding_distances_considering_single_objective, in_dims=(1, None), out_dims=(1,))(
+        evals, domination_counts
+    ).sum(dim=-1)
+
+    # Replace the infinity values within the distance values with a large-enough number
+    is_finite = torch.isfinite(result)
+    is_positive_infinite = (~is_finite) & (result > 0)
+    max_distance_score = torch.max(torch.where(is_finite, result, 0.0) * 1.1)
+    result = torch.where(is_positive_infinite, max_distance_score, result)
+
+    return result
 
 
 @expects_ndim(2, None, None)
@@ -418,8 +460,8 @@ def _pareto_utility(evals: torch.Tensor, objective_sense: list, crowdsort: bool)
         # Rescale the crowding distances so that they are between 0 and 0.99
         min_distance = distances.min()
         max_distance = distances.max()
-        distance_range = (max_distance - min_distance) + 1e-8
-        rescaled_distances = 0.99 * ((distances - min_distance) / distance_range)
+        distance_range = max_distance - min_distance
+        rescaled_distances = 0.99 * _divide_by_non_negative(distances - min_distance, distance_range)
         # Add the rescaled distances to the resulting utility values
         result = result + rescaled_distances
 
