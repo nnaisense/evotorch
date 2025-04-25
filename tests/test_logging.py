@@ -196,7 +196,7 @@ def test_wandb_logger(pass_run, kwargs, searcher_gym, tmpdir):
 
         kwargs["project"] = "test_project"
         kwargs["mode"] = "disabled"
-        kwargs["dir"] = tmpdir
+        kwargs["dir"] = str(tmpdir)
 
         if pass_run:
             wandb.init(**kwargs)
