@@ -32,7 +32,6 @@ def pytest_sessionstart(session):
         include_dashboard=False,
         object_store_memory=256 * 1024**2,
         _memory=512 * 1024**2,
-        _redis_max_memory=256 * 1024**2,
         _system_config={
             "object_timeout_milliseconds": 200,
             # "num_heartbeats_timeout": 10,
