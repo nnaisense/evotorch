@@ -30,6 +30,7 @@ __all__ = (
     "RealOrVector",
     "Size",
     "SuppressSacredExperiment",
+    "TensorFrame",
     "Vector",
     "as_immutable",
     "as_read_only_tensor",
@@ -103,6 +104,7 @@ from . import (
     readonlytensor,
     recursiveprintable,
     structures,
+    tensorframe,
     tensormaker,
 )
 from .constraints import log_barrier, penalty, violation
@@ -172,3 +174,4 @@ from .misc import (
 from .objectarray import ObjectArray
 from .ranking import rank
 from .readonlytensor import ReadOnlyTensor, as_read_only_tensor, read_only_tensor
+from .tensorframe import TensorFrame
