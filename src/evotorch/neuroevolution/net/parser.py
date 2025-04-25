@@ -108,8 +108,6 @@ def _get_nn_module(name: str) -> Type:
 
 def _eval_with_constants(node: ast.expr, constants: dict) -> Any:
     def fail(msg, erroneous_node=None, original_error=None):
-        nonlocal node
-
         if (
             erroneous_node is None
             or (not hasattr(erroneous_node, "lineno"))
@@ -134,8 +132,6 @@ def _eval_with_constants(node: ast.expr, constants: dict) -> Any:
         return result
 
     def get_constant(name):
-        nonlocal constants
-
         if name not in constants.keys():
             fail(f"Unknown constant: {name}. Available constants: {repr(list(constants.keys()))}")
 

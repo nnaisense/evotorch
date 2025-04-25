@@ -449,7 +449,6 @@ def get_optimizer_class(s: str, optimizer_config: Optional[dict] = None) -> Call
     else:
 
         def f(*args, **kwargs):
-            nonlocal cls, optimizer_config
             conf = {}
             conf.update(optimizer_config)
             conf.update(kwargs)
