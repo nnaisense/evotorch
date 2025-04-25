@@ -462,7 +462,6 @@ class StdOutLogger(ScalarLogger):
         max_key_length = max([len(str(k)) for k in status.keys()])
 
         def report(k, v):
-            nonlocal max_key_length
             print(str(k).rjust(max_key_length), ":", v)
 
         for k in self._leading_keys:
