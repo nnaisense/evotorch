@@ -1,5 +1,6 @@
 import itertools
-from typing import Callable, Iterable, Optional, Union
+import math
+from typing import Iterable, Optional, Union
 
 import torch
 
@@ -8,8 +9,9 @@ try:
 except ImportError:
     from functorch import vmap
 
-from ..core import Problem, SolutionBatch
-from ..operators import CosynePermutation, CrossOver, GaussianMutation, OnePointCrossOver, SimulatedBinaryCrossOver
+from torch_scatter import scatter_max, scatter_min
+
+from ..core import Problem, RegularFeatureGrid, SolutionBatch
 from ..tools import Device, DType, to_torch_dtype
 from .ga import ExtendedPopulationMixin
 from .searchalgorithm import SearchAlgorithm, SinglePopulationAlgorithmMixin
@@ -503,3 +505,98 @@ class MAPElites(SearchAlgorithm, SinglePopulationAlgorithmMixin, ExtendedPopulat
 
         f_grids = [_make_feature_grid(*bounds) for bounds in zip(lower_bounds, upper_bounds, num_bins)]
         return torch.stack([torch.cat(c) for c in itertools.product(*f_grids)])
+
+
+class RegularMAPElites(MAPElites):
+    def __init__(
+        self,
+        problem: Problem,
+        *,
+        operators: Iterable,
+        feature_grid: RegularFeatureGrid,
+        re_evaluate: bool = True,
+        re_evaluate_parents_first: Optional[bool] = None,
+    ):
+        problem.ensure_single_objective()
+        problem.ensure_numeric()
+
+        SearchAlgorithm.__init__(self, problem)
+
+        self._feature_grid = feature_grid
+        self._sense = self._problem.senses[0]
+        self._scatter_best = scatter_max if self._sense == "max" else scatter_min
+        self._popsize = math.prod(feature_grid.num_bins)
+
+        self._population = problem.generate_batch(self._popsize)
+        self._filled = torch.zeros(self._popsize, dtype=torch.bool, device=self._population.device)
+
+        ExtendedPopulationMixin.__init__(
+            self,
+            re_evaluate=re_evaluate,
+            re_evaluate_parents_first=re_evaluate_parents_first,
+            operators=operators,
+            allow_empty_operators_list=False,
+        )
+
+        SinglePopulationAlgorithmMixin.__init__(self)
+
+    def _step(self):
+        # Form an extended population from the parents and from the children
+        extended_population = self._make_extended_population(split=False)
+        extended_pop_size = extended_population.eval_shape[0]
+
+        all_evals = extended_population.evals.as_subclass(torch.Tensor)
+        all_values = extended_population.values.as_subclass(torch.Tensor)
+        all_fitnesses = all_evals[:, 0]
+        feats = all_evals[:, 1:]
+        device = all_evals.device
+
+        hypervolume_index = torch.zeros(extended_pop_size, device=device, dtype=torch.long)
+        widths = []
+        for i, (lb, ub, n_bins) in enumerate(zip(*self._feature_grid)):
+            diff = ub - lb
+            const = n_bins / diff
+            min_ = const * lb
+            max_ = (const * ub) - 1
+
+            feat = feats[:, i]
+
+            feat *= const
+            feat = torch.clamp_min(feat, min_)
+            feat = torch.clamp_max(feat, max_)
+            feat -= min_
+
+            hypervolume_index += feat.long() * math.prod(widths)
+            widths.append(n_bins)
+
+        # Find the best population members for each hypervolume
+        _, argbest = self._scatter_best(all_fitnesses, hypervolume_index)
+
+        # Filter hypervolumes that had no members
+        all_index = argbest[argbest < extended_pop_size]
+        index = torch.argwhere(argbest < extended_pop_size)[:, 0]
+
+        # Build empty output
+        values = torch.zeros((self._popsize, all_values.shape[1]), device=device, dtype=all_values.dtype)
+        evals = torch.zeros((self._popsize, all_evals.shape[1]), device=device, dtype=all_evals.dtype)
+        suitable = torch.zeros(self._popsize, device=device, dtype=torch.bool)
+
+        # Map the members from the extended population to the output
+        values[index] = all_values[all_index]
+        evals[index] = all_evals[all_index]
+        suitable[index] = True
+
+        # Place the most suitable decision values and evaluation results into the current population.
+        self._population.access_values(keep_evals=True)[:] = values
+        self._population.access_evals()[:] = evals
+
+        # If there was a suitable solution for the i-th cell, fill[i] is to be set as True.
+        self._filled[:] = suitable
+
+    @staticmethod
+    def make_feature_grid(
+        lower_bounds: list[float],
+        upper_bounds: list[float],
+        num_bins: list[int],
+    ) -> RegularFeatureGrid:
+        return RegularFeatureGrid(lower_bounds, upper_bounds, num_bins)
