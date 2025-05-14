@@ -371,7 +371,7 @@ class Problem(TensorMakerMixin, Serializable):
 
     Let us imagine that we have the following fitness function:
 
-    ```
+    ```python
     import torch
 
     def f(solution: torch.Tensor) -> torch.Tensor:
@@ -380,7 +380,7 @@ class Problem(TensorMakerMixin, Serializable):
 
     A problem definition can be made around this fitness function as follows:
 
-    ```
+    ```python
     from evotorch import Problem
 
     problem = Problem(
@@ -397,7 +397,7 @@ class Problem(TensorMakerMixin, Serializable):
     in a batched manner using the vectorization capabilities of PyTorch.
     A vectorized problem definition can be made as follows:
 
-    ```
+    ```python
     from evotorch.decorators import vectorized
 
     @vectorized
@@ -1161,7 +1161,7 @@ class Problem(TensorMakerMixin, Serializable):
             if s not in ("min", "max"):
                 raise ValueError(
                     f"Invalid objective sense: {repr(s)}."
-                    f"Instead, please provide the objective sense as 'min' or 'max'."
+                    " Instead, please provide the objective sense as 'min' or 'max'."
                 )
 
         if not is_sequence(objective_sense):

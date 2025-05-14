@@ -3,6 +3,9 @@ minversion = "6.0"
 addopts = "-ra --cov=evotorch"
 testpaths = ["tests"]
 
+[tool.ruff]
+line-length = 120
+
 [tool.black]
 line-length = 120
 include = '\.pyi?$'
