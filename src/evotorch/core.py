@@ -374,6 +374,7 @@ class Problem(TensorMakerMixin, Serializable):
     ```python
     import torch
 
+
     def f(solution: torch.Tensor) -> torch.Tensor:
         return torch.linalg.norm(solution)
     ```
@@ -384,7 +385,8 @@ class Problem(TensorMakerMixin, Serializable):
     from evotorch import Problem
 
     problem = Problem(
-        "min", f,  # Goal is to minimize f (would be "max" for maximization)
+        "min",
+        f,  # Goal is to minimize f (would be "max" for maximization)
         solution_length=10,  # Length of a solution is 10
         initial_bounds=(-5.0, 5.0),  # Bounds for sampling a new solution
         dtype=torch.float32,  # dtype of a solution
@@ -400,12 +402,15 @@ class Problem(TensorMakerMixin, Serializable):
     ```python
     from evotorch.decorators import vectorized
 
+
     @vectorized
     def vf(solutions: torch.Tensor) -> torch.Tensor:
-        return torch.linalg.norm(solutions ** 2, dim=-1)
+        return torch.linalg.norm(solutions**2, dim=-1)
+
 
     problem = Problem(
-        "min", vf,  # Goal is to minimize vf (would be "max" for maximization)
+        "min",
+        vf,  # Goal is to minimize vf (would be "max" for maximization)
         solution_length=10,  # Length of a solution is 10
         initial_bounds=(-5.0, 5.0),  # Bounds for sampling a new solution
         dtype=torch.float32,  # dtype of a solution
