@@ -21,7 +21,7 @@ import pytest
 import torch
 
 from evotorch import Problem, SolutionBatch
-from evotorch.algorithms import GeneticAlgorithm, MAPElites, SteadyStateGA
+from evotorch.algorithms import GeneticAlgorithm, MAPElites, RegularMAPElites, SteadyStateGA
 from evotorch.operators import (
     GaussianMutation,
     MultiPointCrossOver,
@@ -249,6 +249,7 @@ class Helpers:
             GeneticAlgorithm,
             SteadyStateGA,
             MAPElites,
+            RegularMAPElites,
         ],
     ),
 )
@@ -265,12 +266,19 @@ def test_ga(dtype: DType, ga_type: Type):
         # Put the instantiated operators into the keyword arguments dictionary that we will use
         ga_kwargs = {"operators": operators}
 
-        if issubclass(ga_type, MAPElites):
+        if ga_type == MAPElites:
             # If the algorithm being tested is MAPElites, we make a feature grid
             feature_grid = MAPElites.make_feature_grid(
                 lower_bounds=torch.tensor([-1, -1], dtype=torch.float32),
                 upper_bounds=torch.tensor([1, 1], dtype=torch.float32),
                 num_bins=10,
+            )
+            ga_kwargs["feature_grid"] = feature_grid
+        elif ga_type == RegularMAPElites:
+            feature_grid = RegularMAPElites.make_feature_grid(
+                lower_bounds=[-1, -1],
+                upper_bounds=[1, 1],
+                num_bins=[10, 10],
             )
             ga_kwargs["feature_grid"] = feature_grid
         else:

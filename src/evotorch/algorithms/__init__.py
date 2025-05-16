@@ -23,6 +23,7 @@ __all__ = (
     "CEM",
     "Cosyne",
     "MAPElites",
+    "RegularMAPElites",
     "PGPE",
     "SNES",
     "XNES",
@@ -37,6 +38,6 @@ from . import cmaes, distributed, ga, mapelites, pycmaes, searchalgorithm
 from .cmaes import CMAES
 from .distributed import CEM, PGPE, SNES, XNES
 from .ga import Cosyne, GeneticAlgorithm, SteadyStateGA
-from .mapelites import MAPElites
+from .mapelites import MAPElites, RegularMAPElites
 from .pycmaes import PyCMAES
 from .searchalgorithm import SearchAlgorithm
