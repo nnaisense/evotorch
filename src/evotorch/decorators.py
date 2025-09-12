@@ -14,8 +14,9 @@
 
 """Module defining decorators for evotorch."""
 
+from collections.abc import Iterable, Sequence
 from numbers import Number
-from typing import Callable, Iterable, Optional, Union
+from typing import Callable, Optional, Union
 
 import numpy as np
 import torch
@@ -694,6 +695,12 @@ def expects_ndim(  # noqa: C901
     )
 
     def expects_ndim_decorator(fn: Callable):
+        if hasattr(fn, "__evotorch_distribute__"):
+            raise ValueError(
+                "Cannot apply `@expects_ndim` or `@rowwise` on a function"
+                " that was previously subjected to `@distribute`"
+            )
+
         def expects_ndim_decorated(*args):
             # The inner class below is responsible for accumulating the dtype and device info of the tensors
             # encountered across the arguments received by the decorated function.
@@ -702,8 +709,8 @@ def expects_ndim(  # noqa: C901
             class tensor_info:
                 # At first, we initialize the set of encountered dtype and device info as None.
                 # They will be lazily filled if we ever need such information.
-                encountered_dtypes: Optional[set] = None
-                encountered_devices: Optional[set] = None
+                encountered_dtypes: set | None = None
+                encountered_devices: set | None = None
 
                 @classmethod
                 def update(cls):
@@ -963,3 +970,236 @@ def rowwise(*args, randomness: str = "error") -> Callable:
         return decorated
 
     return decorator(args[0]) if immediately_decorate else decorator
+
+
+def distribute(
+    *arguments,
+    num_actors: str | int | None = None,
+    num_gpus_per_actor: int | float | str | None = None,
+    devices: Sequence[bool] | None = None,
+) -> Callable:
+    """
+    Transform a function such that its computations are distributed.
+
+    Let us assume that we have the following function which expects two tensors
+    as arguments, and returns a new tensor, with the constraint that the
+    leftmost dimension sizes of all these tensors (of its input arguments and
+    and of its returned output) are the same:
+
+    ```python
+    def update_and_concat(a: torch.Tensor, b: torch.Tensor) -> torch.Tensor:
+        assert a.ndim == 2
+        assert b.ndim == 2
+
+        # ====
+        # Let us imagine some very heavy computation here which modifies a and b
+        # such that their values are updated, but their sizes remain the same.
+        ...
+        # ====
+
+        return torch.hstack([a, b])
+    ```
+
+    Let us now imagine that, because of the heavy computation part, we want to
+    run this function in a distributed manner, across two cuda devices.
+    To achieve this, we can decorate this function as follows:
+
+    ```python
+    @distribute(devices=["cuda:0", "cuda:1"])
+    def update_and_concat(a: torch.Tensor, b: torch.Tensor) -> torch.Tensor: ...
+    ```
+
+    The decorated version of this function, upon being called for the first
+    time, will do the following:
+
+    - create two remote actors, one for `cuda:0`, one for `cuda:1`;
+    - split the input arguments `a` and `b` into 2 chunks (because of 2 actors)
+      along their leftmost dimensions;
+    - send the first chunk of arguments to the actor dedicated to `cuda:0`
+      and the second chunk of arguments to the actor dedicated to `cuda:1`;
+    - initiate parallelized computation across the actors (each actor
+      moving its received chunk of arguments to its assigned device);
+    - collect the resulting chunks produced by the actors and combine the
+      chunks.
+
+    The finally collected and combined result is the output of the decorated
+    function.
+
+    The following types are supported for splitting into chunks of arguments
+    and for combining to form the final output:
+    - `torch.Tensor`
+    - `evotorch.tools.ReadOnlyTensor`
+    - `evotorch.tools.ObjectArray`
+    - `evotorch.tools.TensorFrame`
+    - a (non-nested) dictionary-like object (i.e. Mapping) in which the values
+      are `Tensor`, `ReadOnlyTensor`, `ObjectArray` or `TensorFrame`
+    - a (non-nested) sequence in which the values are `Tensor`,
+      `ReadOnlyTensor`, `ObjectArray`, `TensorFrame`
+
+    **Combining with other decorators.**
+    A function that was previously decorated via `@expects_ndim` or `@rowwise`
+    or `@torch.vmap` can be decorated via `@distribute`. However, the opposite
+    is NOT true (e.g. a function that was previously decorated via
+    `@distribute` cannot be then decorated via `@expects_ndim`).
+
+    **Inline function transformation.**
+    The `distribute` function can also be used in this alternative form if
+    decoration is not desired:
+
+    ```python
+    distributed_update_and_concat = distribute(
+        update_and_concat, devices=["cuda:0", "cuda:1"]
+    )
+    ```
+
+    **Alternative ways of declaring number of actors.**
+    Like in the example above, if we have two cuda devices and we want to
+    explicitly target them, we decorate our function like this:
+
+    ```python
+    @distribute(devices=["cuda:0", "cuda:1"])
+    def update_and_concat(a: torch.Tensor, b: torch.Tensor) -> torch.Tensor: ...
+    ```
+
+    The devices do not have to be different. For example, for having 4
+    actors which share the available CPUs, one could do:
+
+    ```python
+    @distribute(devices=["cpu", "cpu", "cpu", "cpu"])
+    def update_and_concat(a: torch.Tensor, b: torch.Tensor) -> torch.Tensor: ...
+    ```
+
+    For distributing the computation across 4 GPUs:
+
+    ```python
+    @distribute(num_actors=4, num_gpus_per_actor=1)
+    def update_and_concat(a: torch.Tensor, b: torch.Tensor) -> torch.Tensor: ...
+    ```
+
+    For having two actors, each using the half of a single GPU:
+
+    ```python
+    @distribute(num_actors=2, num_gpus_per_actor=0.5)
+    def update_and_concat(a: torch.Tensor, b: torch.Tensor) -> torch.Tensor: ...
+    ```
+
+    For having an actor for each available GPU:
+
+    ```python
+    @distribute(num_actors="num_gpus", num_gpus_per_actor=1)
+    def update_and_concat(a: torch.Tensor, b: torch.Tensor) -> torch.Tensor: ...
+    ```
+
+    For having `n` actors, where `n` is the minimum between the number of
+    CPUs and the number of GPUs:
+
+    ```python
+    @distribute(num_actors="num_devices", num_gpus_per_actor=1)
+    def update_and_concat(a: torch.Tensor, b: torch.Tensor) -> torch.Tensor: ...
+    ```
+
+    For having a CPU-only actor for each available CPU:
+
+    ```python
+    @distribute(num_actors="num_cpus")  # or: num_actors="max"
+    def update_and_concat(a: torch.Tensor, b: torch.Tensor) -> torch.Tensor:
+        # Note: setting `num_actors` without setting `num_gpus_per_actor`
+        # will cause the actors to be CPU-only (they will not see the GPUs).
+        ...
+    ```
+
+    **Specifying which argument to split into chunks.**
+    Sometimes one has to distribute a function in which some of the arguments
+    are not tensors, but are flags to configure the behavior of the function.
+    While sending the arguments to remote actors, such flags are usually
+    expected to be duplicated, instead of being sent in chunks.
+    As an example, please take a look at the function below:
+
+    ```python
+    def update_and_combine(
+        a: torch.Tensor, b: torch.Tensor, combine_how: str
+    ) -> torch.Tensor:
+        assert a.ndim == 2
+        assert b.ndim == 2
+
+        # ====
+        # Let us imagine some very heavy computation here which modifies a and b
+        # such that their values are updated, but their sizes remain the same.
+        ...
+        # ====
+
+        if combine_how == "add":
+            return a + b
+        elif combine_how == "hstack":
+            return torch.hstack([a, b])
+        else:
+            raise ValueError("Unsupported combine_how value")
+    ```
+
+    In the case of this example, we inform `@distribute` that the first two
+    positional arguments are to be split into chunks, and the third positional
+    argument is to be duplicated:
+
+    ```python
+    @distribute(True, True, False, devices=...)
+    def update_and_combine(
+        a: torch.Tensor, b: torch.Tensor, combine_how: str
+    ) -> torch.Tensor: ...
+    ```
+
+    Notice how `@distribute` is given booleans as positional arguments.
+    The first boolean (True) tells that the first argument of
+    `update_and_combine`, `a`, is to be split into chunks.
+    The second boolean (True) tells that the second argument of
+    `update_and_combine`, `b`, is to be split into chunks.
+    The third boolean (False) tells that the third argument of
+    `update_and_combine`, `combine_how`, is to be duplicated
+    (i.e. to be sent as it is, instead of being split into chunks).
+
+    The non-decorator alternative looks like this:
+
+    ```python
+    dist_update_and_combine = distribute(
+        update_and_combine, (True, True, False), devices=...
+    )
+    ```
+
+    **Distributing across multiple computers.**
+    This `@distribute` decorator uses the `ray` library for parallelizing
+    the wrapped function. Thanks to this, if the program is placed upon
+    a `ray`-powered cluster consisting of multiple computers (and also
+    if the main program has addressed and initialized the `ray` cluster using
+    `ray.init` before executing this decorator), the computation of the
+    wrapped function will be distributed across all the devices that are
+    visible to the cluster.
+
+    **NOTE.**
+    If a distributed counterpart of a function cannot be created due to its
+    distribution configuration (e.g. if one sets `num_actors` as 1 or 0, or if
+    one sets `num_actors` as `"num_gpus"` when there is only 1 GPU available),
+    an error will be raised.
+    """
+
+    from ._distribute import DecoratorForDistributingFunctions
+
+    if (len(arguments) == 1) and isinstance(arguments[0], Callable):
+        function_to_decorate = arguments[0]
+        split_arguments = None
+    elif (len(arguments) == 2) and isinstance(arguments[0], Callable) and isinstance(arguments[1], tuple):
+        function_to_decorate = arguments[0]
+        split_arguments = arguments[1]
+    else:
+        function_to_decorate = None
+        split_arguments = arguments
+
+    result = DecoratorForDistributingFunctions(
+        split_arguments=split_arguments,
+        num_actors=num_actors,
+        num_gpus_per_actor=num_gpus_per_actor,
+        devices=devices,
+    )
+
+    if function_to_decorate is not None:
+        result = result(function_to_decorate)
+
+    return result
