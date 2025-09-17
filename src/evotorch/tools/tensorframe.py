@@ -417,6 +417,14 @@ class TensorFrame(RecursivePrintable):
         else:
             raise AttributeError(column_name)
 
+    @property
+    def has_enforced_device(self) -> bool:
+        """
+        True if this TensorFrame was initialized with a `device`.
+        False otherwise.
+        """
+        return self.__device is not None
+
     def without_enforced_device(self) -> "TensorFrame":
         """
         Make a shallow copy of this TensorFrame without any enforced device.

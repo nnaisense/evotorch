@@ -24,6 +24,7 @@ import torch
 
 from .core import Problem, SolutionBatch
 from .tools import ObjectArray, TensorFrame
+from .tools._shallow_containers import move_shallow_container_to_device
 
 TensorLike = torch.Tensor | TensorFrame | ObjectArray
 
@@ -652,60 +653,6 @@ def stack_chunks(
             "Received a sequence in which some or all elements have unsupported types,"
             " or in which the element types are inconsistent"
         )
-
-
-def move_shallow_container_to_device(
-    x: TensorLike | Sequence[TensorLike] | Mapping[Any, TensorLike], *, device: str | torch.device
-) -> TensorLike | Sequence[TensorLike] | Mapping[Any, TensorLike]:
-    """
-    Move a tensor or a shallow container of tensors to the given device.
-
-    Args:
-        x: A tensor or a TensorFrame or an ObjectArray, or a dictionary-like
-            object or a sequence of tensors/arrays. Any encountered tensors
-            and `TensorFrame`s within `x` will be moved to the given `device`.
-            Any encountered ObjectArray within `x` will be put back as it is
-            (without raising any error), since an ObjectArray can reside only
-            on the cpu.
-        device: The target device that can be given as an instance of `str`
-            or `torch.device`.
-    Returns:
-        The counterpart of `x` that resides on the given device.
-    """
-    if isinstance(x, ObjectArray):
-        result = x
-    elif isinstance(x, (torch.Tensor, TensorFrame)):
-        result = x.to(device=device)
-    elif isinstance(x, (str, np.str_, bytes, bytearray)):
-        raise TypeError(f"Cannot move an object of type {type(x)} to the device {device}")
-    elif isinstance(x, Sequence):
-        result = []
-        for item in x:
-            if isinstance(item, ObjectArray):
-                result.append(item)
-            elif isinstance(item, (torch.Tensor, TensorFrame)):
-                result.append(item.to(device=device))
-            else:
-                raise TypeError(
-                    "While trying to move the tensors within a sequence,"
-                    f" encountered an element of this unexpected type: {type(item)}"
-                )
-    elif isinstance(x, Mapping):
-        result = {}
-        for k, v in x.items():
-            if isinstance(v, ObjectArray):
-                result[k] = v
-            elif isinstance(item, (torch.Tensor, TensorFrame)):
-                result[k] = v.to(device=device)
-            else:
-                raise TypeError(
-                    "While trying to move the tensors within a dictionary-like object,"
-                    f" encountered an element of this unexpected type: {type(item)}"
-                )
-    else:
-        raise TypeError(f"Cannot move an object of type {type(x)} to the device {device}")
-
-    return result
 
 
 class _FunctionWrapInfo(NamedTuple):

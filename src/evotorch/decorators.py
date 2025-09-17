@@ -209,344 +209,6 @@ def pass_info(*args) -> Callable:
     return _simple_decorator("__evotorch_pass_info__", args, decorator_name="pass_info")
 
 
-def on_device(device: Device) -> Callable:
-    """
-    Decorator that informs a problem object that this function wants to
-    receive its solutions on the specified device.
-
-    What this decorator does is that it injects a `device` attribute onto
-    the decorated callable object. Then, this callable object itself is
-    returned. Upon seeing the `device` attribute, the `evaluate(...)` method
-    of the [Problem][evotorch.core.Problem] object will attempt to move the
-    solutions to that device.
-
-    Let us imagine a fitness function `f` whose definition looks like:
-
-    ```python
-    import torch
-
-
-    def f(x: torch.Tensor) -> torch.Tensor:
-        return torch.sum(x, dim=-1)
-    ```
-
-    In its not-yet-decorated form, the function `f` would be given `x` on the
-    default device of the associated problem object. However, if one decorates
-    `f` as follows:
-
-    ```python
-    from evotorch.decorators import on_device
-
-
-    @on_device("cuda:0")
-    def f(x: torch.Tensor) -> torch.Tensor:
-        return torch.sum(x, dim=-1)
-    ```
-
-    then the Problem object will first move `x` onto the device cuda:0, and
-    then will call `f`.
-
-    This decorator is useful on multi-GPU settings. For details, please see
-    the following example:
-
-    ```python
-    from evotorch import Problem
-    from evotorch.decorators import on_device
-
-
-    @on_device("cuda")
-    def f(x: torch.Tensor) -> torch.Tensor: ...
-
-
-    problem = Problem(
-        "min",
-        f,
-        num_actors=4,
-        num_gpus_per_actor=1,
-        device="cpu",
-    )
-    ```
-
-    In the example code above, we assume that there are 4 GPUs available.
-    The main device of the problem is "cpu", which means the populations
-    will be generated on the cpu. When evaluating a population, the population
-    will be split into 4 subbatches (because we have 4 actors), and each
-    subbatch will be sent to an actor. Thanks to the decorator `@on_device`,
-    the [Problem][evotorch.core.Problem] instance on each actor will first move
-    its [SolutionBatch][evotorch.core.SolutionBatch] to the cuda device visible
-    to its actor, and then the fitness function `f` will perform its evaluation
-    operations on that [SolutionBatch][evotorch.core.SolutionBatch] on the
-    the visible cuda. In summary, the actors will use their associated cuda
-    devices to evaluate the fitnesses of the solutions in parallel.
-
-    This decorator can also be used to decorate the method `_evaluate` or
-    `_evaluate_batch` belonging to a custom subclass of
-    [Problem][evotorch.core.Problem]. Please see the example below:
-
-    ```python
-    from evotorch import Problem
-
-
-    class MyCustomProblem(Problem):
-        def __init__(self):
-            super().__init__(
-                ...,
-                device="cpu",  # populations will be created on the cpu
-                ...,
-            )
-
-        @on_device("cuda")  # fitness evaluations will happen on cuda
-        def _evaluate_batch(self, solutions: SolutionBatch):
-            fitnesses = ...
-            solutions.set_evals(fitnesses)
-    ```
-
-    The attribute `device` that is added by this decorator can be used to
-    query the fitness device, and also to modify/update it:
-
-    ```python
-    @on_device("cpu")
-    def f(x: torch.Tensor) -> torch.Tensor: ...
-
-
-    print(f.device)  # Prints: torch.device("cpu")
-    f.device = "cuda:0"  # Evaluations will be done on cuda:0 from now on
-    ```
-
-    Args:
-        device: The device on which the decorated fitness function will work.
-    """
-
-    # Take the `torch.device` counterpart of `device`
-    device = torch.device(device)
-
-    def decorator(fn: Callable) -> Callable:
-        setattr(fn, "__evotorch_on_device__", True)
-        setattr(fn, "device", device)
-        return fn
-
-    return decorator
-
-
-def on_cuda(*args) -> Callable:
-    """
-    Decorator that informs a problem object that this function wants to
-    receive its solutions on a cuda device (optionally of the specified
-    cuda index).
-
-    Decorating a fitness function like this:
-
-    ```
-    @on_cuda
-    def f(...):
-        ...
-    ```
-
-    is equivalent to:
-
-    ```
-    @on_device("cuda")
-    def f(...):
-        ...
-    ```
-
-    Decorating a fitness function like this:
-
-    ```
-    @on_cuda(0)
-    def f(...):
-        ...
-    ```
-
-    is equivalent to:
-
-    ```
-    @on_device("cuda:0")
-    def f(...):
-        ...
-    ```
-
-    Please see the documentation of [on_device][evotorch.decorators.on_device]
-    for further details.
-
-    Args:
-        args: An optional positional arguments using which one can specify
-            the index of the cuda device to use.
-    """
-
-    # Get the number of arguments
-    nargs = len(args)
-
-    if nargs == 0:
-        # If the number of arguments is 0, then we assume that we are in this situation:
-        #
-        #     @on_cuda()
-        #     def f(...):
-        #         ...
-        #
-        # There is no specified index, and we are not yet given which object to decorate.
-        # Therefore, we set both of them as None.
-        index = None
-        fn = None
-    elif nargs == 1:
-        # The number of arguments is 1. We begin by storing that single argument using a variable named `arg`.
-        arg = args[0]
-
-        if isinstance(arg, Callable):
-            # If the argument is a callable object, we assume that we are in this situation:
-            #
-            #     @on_cuda
-            #     def f(...):
-            #         ...
-
-            # We are not given a cuda index
-            index = None
-
-            # We are given our function to decorate. We store that function using a variable named `fn`.
-            fn = arg
-        else:
-            # If the argument is not a callable object, we assume that it is a cuda index, and that we are in the
-            # following situation:
-            #
-            #     @on_cuda(index)
-            #     def f(...):
-            #         ...
-
-            # We are given a cuda index. After making sure that it is an integer, we store it by a variable named
-            # `index`.
-            index = int(arg)
-
-            # At this moment, we do not know the function that is being decorated. So, we set `fn` as None.
-            fn = None
-    else:
-        # If the number of arguments is neither 0 nor 1, then this is an unexpected case.
-        # We raise an error to inform the user.
-        raise TypeError("`on_cuda(...)` received invalid number of arguments")
-
-    # Prepare the device as "cuda"
-    device_str = "cuda"
-
-    if index is not None:
-        # If a cuda index is given, then we add ":N" (where N is the index) to the end of `device_str`.
-        device_str += ":" + str(index)
-
-    # Prepare the decorator function which, upon being called with a function argument, wraps that function.
-    decorator = on_device(device_str)
-
-    # If the function that is being decorated is not known yet (i.e. if `fn` is None), then we return the
-    # decorator function. If the function is known, then we decorate and return it.
-    return decorator if fn is None else decorator(fn)
-
-
-def on_aux_device(*args) -> Callable:
-    """
-    Decorator that informs a problem object that this function wants to
-    receive its solutions on the auxiliary device of the problem.
-
-    According to its default (non-overriden) implementation, a problem
-    object returns `torch.device("cuda")` as its auxiliary device if
-    PyTorch's cuda backend is available and if there is a visible cuda
-    device. Otherwise, the auxiliary device is returned as
-    `torch.device("cpu")`.
-    The auxiliary device is meant as a secondary device (in addition
-    to the main device reported by the problem object's `device`
-    attribute) used mainly for boosting the performance of fitness
-    evaluations.
-    This decorator, therefore, tells a problem object that the fitness
-    function requests to receive its solutions on this secondary device.
-
-    What this decorator does is that it injects a new attribute named
-    `__evotorch_on_aux_device__` onto the decorated callable object,
-    then sets that new attribute to `True`, and then return the decorated
-    callable object itself. Upon seeing this new attribute with the
-    value `True`, a [Problem][evotorch.core.Problem] object will attempt
-    to move the solutions to its auxiliary device before calling the
-    decorated fitness function.
-
-    Let us imagine a fitness function `f` whose definition looks like:
-
-    ```python
-    import torch
-
-
-    def f(x: torch.Tensor) -> torch.Tensor:
-        return torch.sum(x, dim=-1)
-    ```
-
-    In its not-yet-decorated form, the function `f` would be given `x` on the
-    main device of the associated problem object. However, if one decorates
-    `f` as follows:
-
-    ```python
-    from evotorch.decorators import on_aux_device
-
-
-    @on_aux_device
-    def f(x: torch.Tensor) -> torch.Tensor:
-        return torch.sum(x, dim=-1)
-    ```
-
-    then the Problem object will first move `x` onto its auxiliary device,
-    then will call `f`.
-
-    This decorator is useful on multi-GPU settings. For details, please see
-    the following example:
-
-    ```python
-    from evotorch import Problem
-    from evotorch.decorators import on_aux_device
-
-
-    @on_aux_device
-    def f(x: torch.Tensor) -> torch.Tensor: ...
-
-
-    problem = Problem(
-        "min",
-        f,
-        num_actors=4,
-        num_gpus_per_actor=1,
-        device="cpu",
-    )
-    ```
-
-    In the example code above, we assume that there are 4 GPUs available.
-    The main device of the problem is "cpu", which means the populations
-    will be generated on the cpu. When evaluating a population, the population
-    will be split into 4 subbatches (because we have 4 actors), and each
-    subbatch will be sent to an actor. Thanks to the decorator `@on_aux_device`,
-    the [Problem][evotorch.core.Problem] instance on each actor will first move
-    its [SolutionBatch][evotorch.core.SolutionBatch] to its auxiliary device
-    visible to the actor, and then the fitness function will perform its
-    fitness evaluations on that device. In summary, the actors will use their
-    associated auxiliary devices (most commonly "cuda") to evaluate the
-    fitnesses of the solutions in parallel.
-
-    This decorator can also be used to decorate the method `_evaluate` or
-    `_evaluate_batch` belonging to a custom subclass of
-    [Problem][evotorch.core.Problem]. Please see the example below:
-
-    ```python
-    from evotorch import Problem
-
-
-    class MyCustomProblem(Problem):
-        def __init__(self):
-            super().__init__(
-                ...,
-                device="cpu",  # populations will be created on the cpu
-                ...,
-            )
-
-        @on_aux_device("cuda")  # evaluations will be on the auxiliary device
-        def _evaluate_batch(self, solutions: SolutionBatch):
-            fitnesses = ...
-            solutions.set_evals(fitnesses)
-    ```
-    """
-    return _simple_decorator("__evotorch_on_aux_device__", args, decorator_name="on_aux_device")
-
-
 def vectorized(*args) -> Callable:
     """
     Decorates a fitness function so that the problem object (which can be an instance
@@ -609,6 +271,400 @@ def vectorized(*args) -> Callable:
     and will send it `n` solutions, and will receive and process `n` fitnesses.
     """
     return _simple_decorator("__evotorch_vectorized__", args, decorator_name="vectorized")
+
+
+def on_device(device: Device, *, move_only_from_cpu: bool = False) -> Callable:
+    """
+    Transform a function so that it will compute on the specified device.
+
+    A function decorated via `@on_device` will first move its positional
+    arguments to the specified device, then perform the operations listed
+    within the body of the original function definition, and then move
+    the result back to the most encountered device within its arguments.
+
+    For a function to be decorated via `@on_device`, the assumption is that
+    its positional arguments and its output are of these types:
+
+    - Pytorch tensor
+    - `ReadOnlyTensor`
+    - `TensorFrame`
+    - `ObjectArray`
+    - shallow (non-nested) sequence or dictionary-like container consisting of
+        objects that are instances of the types listed above
+
+    Additionally, a `device` attribute is added onto the decorated counterpart
+    of the function. This `device` attribute is not meant for changing, but for
+    informing an observer regarding where the computation will take place.
+
+    **Note.**
+    Although an `on_device`-decorated function moves its arguments to the
+    specified target device for encouraging the computation to take place on
+    that device, it is still possible for the inner body of the function to
+    move the tensors to any device.
+
+    **Special behavior for evaluation methods of Problem objects.**
+    In addition to simple functions, these specific methods of a `Problem`
+    class can be decorated via `@on_device`:
+
+    - `_evaluate`
+    - `_evaluate_batch`
+
+    If the decorated function receives a Problem object as its first argument,
+    and a Solution or a SolutionBatch as its second argument, the decorator
+    will assume that the decorated function is one of the methods listed above,
+    and will do nothing other than simply passing the arguments to the original
+    version of the decorated function. Instead, it is the `Problem` object
+    which moves the solutions to the correct device by looking at the `device`
+    attribute created by the `@on_device` decorator.
+
+    Decorating arbitrary methods (other than these solution or batch evaluation
+    methods of the `Problem` class) is not supported.
+
+    **Example usage 1.**
+
+    Assuming that the cuda device is available:
+
+    ```python
+    from evotorch.decorators import on_device
+
+
+    @on_device("cuda")
+    def my_function(x: torch.Tensor, y: torch.Tensor) -> torch.Tensor:
+        # Thanks to the decorator, x and y should be on the 'cuda' device.
+        result = x + y
+
+        return result  # the result will be moved back to the most encountered
+        # device among the original x and y tensors.
+    ```
+
+    **Example usage 2.**
+
+    Assuming that the cuda device is available:
+
+    ```python
+    import torch
+    from evotorch.decorators import on_device
+    from evotorch import Problem, SolutionBatch
+
+
+    class SphereProblem(Problem):
+        def __init__(self):
+            super().__init__(
+                objective_sense="min",
+                solution_length=20,
+                initial_bounds=(-1.0, 1.0),
+                dtype=torch.float32,
+                device="cpu",  # the populations are to be stored on the cpu
+            )
+
+        @on_device("cuda")
+        def _evaluate_batch(self, batch: SolutionBatch):
+            # Upon seeing that this method is decorated by `@on_device`,
+            # the `Problem` object will move the `batch` to the cuda device
+            # while calling this method.
+            # Therefore, the computation below is expected to happen on cuda.
+            evals = torch.sum(batch.values**2.0, dim=-1)
+            batch.set_evals(evals)
+    ```
+
+    Args:
+        device: The device to which the arguments will be moved.
+        move_only_from_cpu: If this True, only the tensors which are on the
+            cpu will be moved to the specified target tensor.
+    """
+
+    from .core import Problem, Solution, SolutionBatch
+    from .tools._shallow_containers import most_favored_device_among_arguments, move_shallow_container_to_device
+
+    # Make sure that the device is expressed as an instance of `torch.device`
+    device = torch.device(device)
+
+    def decorator(original_behavior: Callable) -> Callable:
+
+        def modified_behavior(*args) -> Callable:
+
+            is_evaluation_method = False
+            if isinstance(args[0], Problem):
+                if (len(args) == 2) and isinstance(args[1], (Solution, SolutionBatch)):
+                    is_evaluation_method = True
+                else:
+                    raise TypeError(
+                        " The function decorated by `@on_device` (or `@on_aux_device` or `@on_cuda`) has received"
+                        " a Problem object as its first argument."
+                        " In this case, it is assumed that the decorated function is an overriden version"
+                        " of the method `Problem._evaluate(self, solution: Solution)`"
+                        " or `Problem._evaluate_batch(self, batch: SolutionBatch)`."
+                        " However, either the number of arguments or the type of the received non-self argument"
+                        " is unexpected."
+                    )
+
+            if is_evaluation_method:
+                # This seems to be an evaluation method (like, e.g. _evaluate_batch).
+                # In this case, we assume that the Problem object, while calling this method, already saw the
+                # `device` attribute of the decorated function, and did the necessary move operations on the
+                # solution batch.
+                # So, we just pass the positional arguments to the original function:
+                return original_behavior(*args)
+
+            # Get the most favored device among the tensors of the received arguments.
+            # This most favored device is the target device for the produced output.
+            result_device = most_favored_device_among_arguments(args, slightly_favor_cpu=True)
+
+            # Move each argument to the target device, and apply the wrapped function on the moved data.
+            result_value = original_behavior(*[move_shallow_container_to_device(arg, device=device) for arg in args])
+
+            # Move the result back to the most favored device among the input arguments.
+            result_value = move_shallow_container_to_device(result_value, device=result_device)
+
+            # Finally, we return the result here.
+            return result_value
+
+        if hasattr(original_behavior, "__evotorch_vectorized__"):
+            modified_behavior.__evotorch_vectorized__ = original_behavior.__evotorch_vectorized__
+        modified_behavior.device = device
+        if move_only_from_cpu:
+            modified_behavior.__evotorch_move_only_from_cpu__ = True
+        return modified_behavior
+
+    return decorator
+
+
+def on_aux_device(*args) -> Callable:
+    """
+    Transform a function so that it will compute on the auxiliary device.
+
+    By default, the auxiliary device is cuda if cuda is available, and
+    cpu if cuda is not available.
+
+    A function decorated via `@on_aux_device` will first move its positional
+    arguments to the auxiliary device if their original device is the cpu,
+    then perform the operations listed within the body of the original function
+    definition, and then move the result back to the most encountered device
+    within its arguments.
+
+    For a function to be decorated via `@on_aux_device`, the assumption is that
+    its positional arguments and its output are of these types:
+
+    - Pytorch tensor
+    - `ReadOnlyTensor`
+    - `TensorFrame`
+    - `ObjectArray`
+    - shallow (non-nested) sequence or dictionary-like container consisting of
+        objects that are instances of the types listed above
+
+    Additionally, a `device` attribute is added onto the decorated counterpart
+    of the function. This `device` attribute is not meant for changing, but for
+    informing an observer regarding where the computation will take place.
+    An attribute `__evotorch_on_aux_device__=True` is also registered to the
+    decorated function, to inform to an outside observer that the function is
+    decorated via `@on_aux_device`.
+
+    **Note.**
+    Although an `on_aux_device`-decorated function moves its cpu-residing
+    arguments to the auxiliary device for encouraging the computation to take
+    place on that auxiliary device, it is still possible for the inner body of
+    the function to move the tensors to any device.
+
+    **Special behavior for evaluation methods of Problem objects.**
+    In addition to simple functions, these specific methods of a `Problem`
+    class can be decorated via `@on_aux_device`:
+
+    - `_evaluate`
+    - `_evaluate_batch`
+
+    If the decorated function receives a Problem object as its first argument,
+    and a Solution or a SolutionBatch as its second argument, the decorator
+    will assume that the decorated function is one of the methods listed above,
+    and will do nothing other than simply passing the arguments to the original
+    version of the decorated function. Instead, it is the `Problem` object
+    which moves the solutions to its own auxiliary device by looking at its own
+    `aux_device` property.
+
+    Decorating arbitrary methods (other than these solution or batch evaluation
+    methods of the `Problem` class) is not supported.
+
+    **Example usage 1.**
+
+    ```python
+    from evotorch.decorators import on_device
+
+
+    @on_aux_device
+    def my_function(x: torch.Tensor, y: torch.Tensor) -> torch.Tensor:
+        # Thanks to the decorator, x and y will be on the cuda device
+        # if cuda is available.
+        result = x + y
+
+        return result  # the result will be moved back to the most encountered
+        # device among the original x and y tensors.
+    ```
+
+    **Example usage 2.**
+
+    ```python
+    import torch
+    from evotorch.decorators import on_device
+    from evotorch import Problem, SolutionBatch
+
+
+    class SphereProblem(Problem):
+        def __init__(self):
+            super().__init__(
+                objective_sense="min",
+                solution_length=20,
+                initial_bounds=(-1.0, 1.0),
+                dtype=torch.float32,
+                device="cpu",  # the populations are to be stored on the cpu
+            )
+
+        @on_device("cuda")
+        def _evaluate_batch(self, batch: SolutionBatch):
+            # Upon seeing that this method is decorated by `@on_aux_device`,
+            # the `Problem` object will move the `batch` to the auxiliary
+            # device declared by its property named `aux_device`.
+            evals = torch.sum(batch.values**2.0, dim=-1)
+            batch.set_evals(evals)
+    ```
+    """
+
+    num_args = len(args)
+
+    if num_args == 0:
+        func_to_wrap = None
+    elif num_args == 1:
+        [func_to_wrap] = args
+    else:
+        raise TypeError("`on_aux_device` received an unexpected number of positional arguments")
+
+    target_device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+    def decorator(fn: Callable) -> Callable:
+        fn = on_device(target_device, move_only_from_cpu=True)(fn)
+        fn.__evotorch_on_aux_device__ = True
+        return fn
+
+    result = decorator
+    if func_to_wrap is not None:
+        result = result(func_to_wrap)
+    return result
+
+
+def on_cuda(*args) -> Callable:
+    """
+    Transform a function so that it will compute on the specified cuda device.
+
+    A function decorated via `@on_cuda` will first move its positional
+    arguments to the specified cuda device, then perform the operations listed
+    within the body of the original function definition, and then move
+    the result back to the most encountered device within its arguments.
+
+    For a function to be decorated via `@on_cuda`, the assumption is that
+    its positional arguments and its output are of these types:
+
+    - Pytorch tensor
+    - `ReadOnlyTensor`
+    - `TensorFrame`
+    - `ObjectArray`
+    - shallow (non-nested) sequence or dictionary-like container consisting of
+        objects that are instances of the types listed above
+
+    Additionally, a `device` attribute is added onto the decorated counterpart
+    of the function. This `device` attribute is not meant for changing, but for
+    informing an observer regarding where the computation will take place.
+
+    **Note.**
+    Although an `on_cuda`-decorated function moves its arguments to the
+    specified cuda device for encouraging the computation to take place on
+    cuda, it is still possible for the inner body of the function to move
+    the tensors to any device.
+
+    **Special behavior for evaluation methods of Problem objects.**
+    In addition to simple functions, these specific methods of a `Problem`
+    class can be decorated via `@on_cuda`:
+
+    - `_evaluate`
+    - `_evaluate_batch`
+
+    If the decorated function receives a Problem object as its first argument,
+    and a Solution or a SolutionBatch as its second argument, the decorator
+    will assume that the decorated function is one of the methods listed above,
+    and will do nothing other than simply passing the arguments to the original
+    version of the decorated function. Instead, it is the `Problem` object
+    which moves the solutions to the correct cuda device by looking at the
+    `device` attribute created by the `@on_cuda` decorator.
+
+    Decorating arbitrary methods (other than these solution or batch evaluation
+    methods of the `Problem` class) is not supported.
+
+    **Example usage 1.**
+
+    Assuming that the cuda device is available:
+
+    ```python
+    from evotorch.decorators import on_device
+
+
+    @on_cuda  # Note: could also be, e.g., @on_cuda(0) for 'cuda:0'
+    def my_function(x: torch.Tensor, y: torch.Tensor) -> torch.Tensor:
+        # Thanks to the decorator, x and y should be on the 'cuda' device.
+        result = x + y
+
+        return result  # the result will be moved back to the most encountered
+        # device among the original x and y tensors.
+    ```
+
+    **Example usage 2.**
+
+    Assuming that the cuda device is available:
+
+    ```python
+    import torch
+    from evotorch.decorators import on_device
+    from evotorch import Problem, SolutionBatch
+
+
+    class SphereProblem(Problem):
+        def __init__(self):
+            super().__init__(
+                objective_sense="min",
+                solution_length=20,
+                initial_bounds=(-1.0, 1.0),
+                dtype=torch.float32,
+                device="cpu",  # the populations are to be stored on the cpu
+            )
+
+        @on_cuda  # Note: could also be, e.g., @on_cuda(0) for 'cuda:0'
+        def _evaluate_batch(self, batch: SolutionBatch):
+            # Upon seeing that this method is decorated by `@on_cuda`,
+            # the `Problem` object will move the `batch` to the cuda device
+            # while calling this method.
+            # Therefore, the computation below is expected to happen on cuda.
+            evals = torch.sum(batch.values**2.0, dim=-1)
+            batch.set_evals(evals)
+    ```
+    """
+    num_args = len(args)
+
+    if num_args == 0:
+        func_to_wrap = None
+        target_device = torch.device("cuda")
+    elif num_args == 1:
+        [first_arg] = args
+        if isinstance(first_arg, Callable):
+            func_to_wrap = first_arg
+            target_device = torch.device("cuda")
+        else:
+            func_to_wrap = None
+            target_device = torch.device("cuda", int(first_arg))
+    else:
+        raise TypeError("`on_cuda` received an unexpected number of positional arguments")
+
+    decorator = on_device(target_device)
+
+    if func_to_wrap is None:
+        return decorator
+    else:
+        return decorator(func_to_wrap)
 
 
 def expects_ndim(  # noqa: C901
