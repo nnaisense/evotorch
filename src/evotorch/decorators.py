@@ -1031,6 +1031,7 @@ def rowwise(*args, randomness: str = "error") -> Callable:
 def distribute(
     *arguments,
     num_actors: str | int | None = None,
+    chunk_size: int | None = None,
     num_gpus_per_actor: int | float | str | None = None,
     devices: Sequence[bool] | None = None,
 ) -> Callable:
@@ -1220,6 +1221,28 @@ def distribute(
     )
     ```
 
+    **Specifying a chunk size.**
+    The `@distribute` decorator has an optional integer argument named
+    `chunk_size`. If this is given, then the original arguments will be
+    split into chunks with at most this given size.
+
+    Example:
+
+    ```python
+    @distribute(devices=["cpu", "cpu"], chunk_size=10)
+    def function_to_be_distributed(x: torch.Tensor) -> torch.Tensor: ...
+
+
+    large_data = ...  # some large tensor here
+
+    # The call below will split `large_data` into chunks.
+    # Each chunk is a subtensor of `large_data`, and the leftmost dimension
+    # size of each chunk is at most 10.
+    # Parallelized processing of these chunks will be scheduled for the two
+    # available remote actors.
+    result = function_to_be_distributed(large_data)
+    ```
+
     **Distributing across multiple computers.**
     This `@distribute` decorator uses the `ray` library for parallelizing
     the wrapped function. Thanks to this, if the program is placed upon
@@ -1251,6 +1274,7 @@ def distribute(
     result = DecoratorForDistributingFunctions(
         split_arguments=split_arguments,
         num_actors=num_actors,
+        chunk_size=chunk_size,
         num_gpus_per_actor=num_gpus_per_actor,
         devices=devices,
     )

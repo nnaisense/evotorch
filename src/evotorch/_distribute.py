@@ -21,6 +21,7 @@ from typing import Any, NamedTuple
 import numpy as np
 import ray
 import torch
+from ray.util import ActorPool
 
 from .core import Problem, SolutionBatch
 from .tools import ObjectArray, TensorFrame
@@ -38,18 +39,24 @@ def _split_tensor(
     x: TensorLike,
     num_actors: int,
     *,
+    chunk_size: int | None = None,
     expect_size: int | None = None,
     target_device: str | torch.device | None = None,
 ) -> _TensorSplittingResult:
     """
     Split a tensor, or a TensorFrame, or an ObjectArray into chunks.
 
-    The number of chunks and the size of each chunk are determined by the given
-    number of actors, and the size of the given tensor/TensorFrame/ObjectArray.
-
     Args:
         x: The tensor or ObjectArray or TensorFrame to be split into chunks.
-        num_actors: Maximum number of chunks is determined by this integer.
+        num_actors: Number of remote actors, as an integer that is at least 2.
+            If `chunk_size` is not provided (i.e. left as None), the number
+            of chunks and the size of each chunk will be determined by this
+            `num_actors`.
+        chunk_size: The size of a chunk when splitting a tensor/array into
+            chunks. If this is provided, then this will be the main factor for
+            determining the chunk size and also the number of chunks.
+            Can be left as None if the number of chunks and the chunk size is
+            to be determined by `num_actors` instead.
         expect_size: If provided, the leftmost dimension of the given tensor
             or array or the number of rows of the given TensorFrame will be
             compared to this given number. If the size of `x` does not match
@@ -79,16 +86,28 @@ def _split_tensor(
         raise ValueError("While trying to split tensors into chunks, encountered incompatible tensor sizes")
 
     # Compute the chunk sizes
-    if tensor_size == 0:
-        raise ValueError("Cannot split a tensor whose leftmost dimension size is 0")
-    elif tensor_size < num_actors:
-        chunk_sizes = [1 for _ in range(tensor_size)]
+    if chunk_size is None:
+        if tensor_size == 0:
+            raise ValueError("Cannot split a tensor whose leftmost dimension size is 0")
+        elif tensor_size < num_actors:
+            chunk_sizes = [1 for _ in range(tensor_size)]
+        else:
+            min_chunk_size = tensor_size // num_actors
+            remaining = tensor_size % num_actors
+            chunk_sizes = [min_chunk_size for _ in range(num_actors)]
+            for i in range(remaining):
+                chunk_sizes[i] += 1
     else:
-        min_chunk_size = tensor_size // num_actors
-        remaining = tensor_size - (min_chunk_size * num_actors)
-        chunk_sizes = [min_chunk_size for _ in range(num_actors)]
-        for i in range(remaining):
-            chunk_sizes[i] += 1
+        if chunk_size >= tensor_size:
+            raise ValueError(
+                "Cannot split the tensor into chunks because the given chunk size"
+                " is larger than or equal to the original tensor size."
+            )
+        min_num_chunks = tensor_size // chunk_size
+        last_chunk_size = tensor_size % chunk_size
+        chunk_sizes = [chunk_size for _ in range(min_num_chunks)]
+        if last_chunk_size > 0:
+            chunk_sizes.append(last_chunk_size)
 
     # Prepare the chunks
     chunks = []
@@ -117,21 +136,26 @@ def _split_dict(
     x: Mapping[Any, TensorLike],
     num_actors: int,
     *,
+    chunk_size: int | None = None,
     expect_size: int | None = None,
     target_device: str | torch.device | None = None,
 ) -> _DictSplittingResult:
     """
     Split the tensors/`TensorFrame`s/`ObjectArray`s in a dictionary-like object.
 
-    The number of chunks and the size of each chunk are determined by the given
-    number of actors, and the sizes of the tensors and/or `TensorFrame`s and/or
-    `ObjectArray`s contained within the given dictionary-like object.
-
     Args:
         x: A shallow (non-nested) dictionary-like object (that is an instance
             of `collections.abc.Mapping`) that contains tensors and/or
             `TensorFrame`s and/or `ObjectArray`s.
-        num_actors: Maximum number of chunks is determined by this integer.
+        num_actors: Number of remote actors, as an integer that is at least 2.
+            If `chunk_size` is not provided (i.e. left as None), the number
+            of chunks and the size of each chunk will be determined by this
+            `num_actors`.
+        chunk_size: The size of a chunk when splitting a tensor/array into
+            chunks. If this is provided, then this will be the main factor for
+            determining the chunk size and also the number of chunks.
+            Can be left as None if the number of chunks and the chunk size is
+            to be determined by `num_actors` instead.
         expect_size: If provided, the leftmost dimension of the contained
             tensors or `ObjectArray`s or the number of rows of the contained
             `TensorFrame`s will be compared to this given number.
@@ -158,7 +182,7 @@ def _split_dict(
     num_chunks: int | None = None
     for k, v in x.items():
         chunks, tensor_size = _split_tensor(
-            v, num_actors, expect_size=original_tensor_size, target_device=target_device
+            v, num_actors, chunk_size=chunk_size, expect_size=original_tensor_size, target_device=target_device
         )
 
         if original_tensor_size is None:
@@ -183,21 +207,26 @@ def _split_sequence(
     x: Sequence[TensorLike],
     num_actors: int,
     *,
+    chunk_size: int | None = None,
     expect_size: int | None = None,
     target_device: str | torch.device | None = None,
 ) -> _SequenceSplittingResult:
     """
     Split the tensors/`TensorFrame`s/`ObjectArray`s in a sequence.
 
-    The number of chunks and the size of each chunk are determined by the given
-    number of actors, and the sizes of the tensors and/or `TensorFrame`s and/or
-    `ObjectArray`s contained within the given sequence.
-
     Args:
         x: A shallow (non-nested) sequence (that is an instance of
             `collections.abc.Sequence`) that contains tensors and/or
             `TensorFrame`s and/or `ObjectArray`s.
-        num_actors: Maximum number of chunks is determined by this integer.
+        num_actors: Number of remote actors, as an integer that is at least 2.
+            If `chunk_size` is not provided (i.e. left as None), the number
+            of chunks and the size of each chunk will be determined by this
+            `num_actors`.
+        chunk_size: The size of a chunk when splitting a tensor/array into
+            chunks. If this is provided, then this will be the main factor for
+            determining the chunk size and also the number of chunks.
+            Can be left as None if the number of chunks and the chunk size is
+            to be determined by `num_actors` instead.
         expect_size: If provided, the leftmost dimension of the contained
             tensors or `ObjectArray`s or the number of rows of the contained
             `TensorFrame`s will be compared to this given number.
@@ -229,7 +258,7 @@ def _split_sequence(
     num_chunks: int | None
     for v in x:
         chunks, tensor_size = _split_tensor(
-            v, num_actors, expect_size=original_tensor_size, target_device=target_device
+            v, num_actors, chunk_size=chunk_size, expect_size=original_tensor_size, target_device=target_device
         )
 
         if original_tensor_size is None:
@@ -252,22 +281,27 @@ def split_into_chunks(
     x: TensorLike | Sequence[TensorLike] | Mapping[Any, TensorLike],
     num_actors: int,
     *,
+    chunk_size: int | None = None,
     expect_size: int | None = None,
     target_device: str | torch.device | None = None,
 ) -> _TensorSplittingResult | _DictSplittingResult | _SequenceSplittingResult:
     """
     Split into chunks a tensor/ObjectArray/TensorFrame or a container of them.
 
-    The number of chunks and the size of each chunk is determined by the given
-    number of actors, and the sizes of the tensors and/or `TensorFrame`s and/or
-    `ObjectArray`s contained within the given sequence.
-
     Args:
         x: A tensor, or a `TensorFrame`, or an `ObjectArray`, or a shallow
             (non-nested) dictionary-like container or a sequence containing one
             or more tensor/`TensorFrame`/`ObjectArray`. This is the input that
             is subject to splitting into chunks.
-        num_actors: Maximum number of chunks is determined by this integer.
+        num_actors: Number of remote actors, as an integer that is at least 2.
+            If `chunk_size` is not provided (i.e. left as None), the number
+            of chunks and the size of each chunk will be determined by this
+            `num_actors`.
+        chunk_size: The size of a chunk when splitting a tensor/array into
+            chunks. If this is provided, then this will be the main factor for
+            determining the chunk size and also the number of chunks.
+            Can be left as None if the number of chunks and the chunk size is
+            to be determined by `num_actors` instead.
         expect_size: If provided, the leftmost dimension of the contained
             tensors or `ObjectArray`s or the number of rows of the contained
             `TensorFrame`s will be compared to this given number.
@@ -287,11 +321,15 @@ def split_into_chunks(
         # but cannot contain any tensor/TensorFrame/ObjectArray
         raise TypeError(f"Unsupported type: {type(x)}")
     elif isinstance(x, Mapping):
-        result = _split_dict(x, num_actors, expect_size=expect_size, target_device=target_device)
+        result = _split_dict(x, num_actors, chunk_size=chunk_size, expect_size=expect_size, target_device=target_device)
     elif isinstance(x, Sequence):
-        result = _split_sequence(x, num_actors, expect_size=expect_size, target_device=target_device)
+        result = _split_sequence(
+            x, num_actors, chunk_size=chunk_size, expect_size=expect_size, target_device=target_device
+        )
     elif isinstance(x, (torch.Tensor, TensorFrame, ObjectArray)):
-        result = _split_tensor(x, num_actors, expect_size=expect_size, target_device=target_device)
+        result = _split_tensor(
+            x, num_actors, chunk_size=chunk_size, expect_size=expect_size, target_device=target_device
+        )
     else:
         raise TypeError(f"Unsupported type: {type(x)}")
 
@@ -303,6 +341,7 @@ def split_arguments_into_chunks(
     split_arguments: Sequence[bool],
     num_actors: int,
     *,
+    chunk_size: int | None = None,
     target_device: str | torch.device | None = None,
 ) -> list:
     """
@@ -320,7 +359,15 @@ def split_arguments_into_chunks(
             if the i-th element of `split_arguments` is False, then the
             i-th element of `args` is going to be duplicated as it is,
             instead of being split.
-        num_actors: Maximum number of chunks is determined by this integer.
+        num_actors: Number of remote actors, as an integer that is at least 2.
+            If `chunk_size` is not provided (i.e. left as None), the number
+            of chunks and the size of each chunk will be determined by this
+            `num_actors`.
+        chunk_size: The size of a chunk when splitting a tensor/array into
+            chunks. If this is provided, then this will be the main factor for
+            determining the chunk size and also the number of chunks.
+            Can be left as None if the number of chunks and the chunk size is
+            to be determined by `num_actors` instead.
         target_device: If provided, the chunks will be moved into this device.
             (except when an `ObjectArray` is encountered which will be kept
             on the cpu regardless of the given `target_device`).
@@ -362,7 +409,7 @@ def split_arguments_into_chunks(
     for i_arg in arg_indices_to_split:
         # Split the argument into chunks
         chunks, tensor_size = split_into_chunks(
-            args[i_arg], num_actors, expect_size=original_size, target_device=target_device
+            args[i_arg], num_actors, chunk_size=chunk_size, expect_size=original_size, target_device=target_device
         )
         # Make sure that we know the original size and the number of chunks
         if original_size is None:
@@ -658,6 +705,7 @@ def stack_chunks(
 class _FunctionWrapInfo(NamedTuple):
     function: Callable
     num_actors: str | int | None
+    chunk_size: int | None
     num_gpus_per_actor: int | float | str | None
     split_arguments: tuple[bool, ...]
     devices: tuple[torch.device, ...]
@@ -802,6 +850,7 @@ class _DistributedFunctionHandler(Problem):
         *,
         function: Callable,
         num_actors: str | int | None = None,
+        chunk_size: int | None = None,
         num_gpus_per_actor: int | float | str | None,
         split_arguments: tuple[bool, ...],
         devices: tuple[torch.device, ...],
@@ -813,6 +862,9 @@ class _DistributedFunctionHandler(Problem):
             function: The reference to the original form of the function
                 to be distributed across multiple remote actors.
             num_actors: Number of remote actors.
+            chunk_size: Optionally, the size of a chunk as an integer.
+                If this is given, then the original arguments will be split
+                into chunks with at most this given size.
             num_gpus_per_actor: Number of GPUs to be allocated by each actor.
             split_arguments_into_chunks: A tuple of booleans, in which the i-th
                 boolean says if the i-th positional argument for the wrapped
@@ -831,10 +883,12 @@ class _DistributedFunctionHandler(Problem):
                 when a non-empty `devices` argument is provided.
         """
         self.__function = function
+        self.__chunk_size = chunk_size
         self.__split_arguments = split_arguments
         self.__devices = devices
         self.__parallelized = False
         self.__parallelization_lock = _LockForTheMainProcess()
+        self.__actor_pool = None
 
         super().__init__(
             objective_sense="min",
@@ -879,6 +933,9 @@ class _DistributedFunctionHandler(Problem):
                 " or if one sets `num_actors` as an integer that is smaller than 2."
             )
 
+        # NOTE: do we need this, or could we actually use the actor pool of the underlying Problem?
+        self.__actor_pool = ActorPool(self.actors)
+
     def _iter_split_arguments(self, args: Sequence):
         num_split_arguments = len(self.__split_arguments)
         if num_split_arguments == 0:
@@ -894,17 +951,20 @@ class _DistributedFunctionHandler(Problem):
             for split_arg in self.__split_arguments:
                 yield split_arg
 
-    def _call_wrapped_function_remotely(self, *args) -> Any:
+    def _call_wrapped_function_remotely(self, task_index: int, args: tuple) -> tuple[int, Any]:
         """
         Internal helper method for calling the wrapped function on an actor.
 
         Args:
+            task_index: The index of the task.
             args: Positional arguments to be passed to the wrapped function.
                 The positional arguments that were marked to be split into
                 chunks will be moved to the accelerator device associated with
                 this actor.
         Returns:
-            The result of the wrapped function, moved back to the cpu.
+            A tuple in the form `(task_index, result)` where `task_index` is
+            the index of the task that was given, and `result` is the result
+            of the wrapped function, moved back to the cpu.
         """
 
         if self.is_main:
@@ -927,7 +987,7 @@ class _DistributedFunctionHandler(Problem):
         result = self.__function(*prepared_args)
 
         # Move the result of this function back to the cpu, and return it.
-        return move_shallow_container_to_device(result, device="cpu")
+        return task_index, move_shallow_container_to_device(result, device="cpu")
 
     def call_wrapped_function(self, *args) -> Any:
         """
@@ -958,27 +1018,38 @@ class _DistributedFunctionHandler(Problem):
 
         # split the arguments into chunks, BUT ONLY IF the argument is marked via `split_arguments`
         chunked_args = split_arguments_into_chunks(
-            args, list(self._iter_split_arguments(args)), self.num_actors, target_device="cpu"
+            args,
+            list(self._iter_split_arguments(args)),
+            self.num_actors,
+            chunk_size=self.__chunk_size,
+            target_device="cpu",
         )
         num_chunks = len(chunked_args[0])
 
-        args_per_actor = [[arg_chunk[i_actor] for arg_chunk in chunked_args] for i_actor in range(num_chunks)]
-        chunk_size_per_actor = [
-            _loosely_find_leftmost_dimension_size(args_per_actor[i_actor]) for i_actor in range(num_chunks)
+        args_per_task = [[arg_chunk[i_task] for arg_chunk in chunked_args] for i_task in range(num_chunks)]
+        chunk_size_per_task = [
+            _loosely_find_leftmost_dimension_size(args_per_task[i_task]) for i_task in range(num_chunks)
         ]
 
-        # prepare and start a remote task to operate on each chunk
-        tasks = [
-            self.actors[i_actor].call.remote(
-                "_call_wrapped_function_remotely",
-                args_per_actor[i_actor],
-                {},
-            )
-            for i_actor in range(num_chunks)
+        call_args_per_task = [
+            ["_call_wrapped_function_remotely", [i_task, args_per_task[i_task]], {}] for i_task in range(num_chunks)
         ]
+
+        unordered_map_result = list(
+            self.__actor_pool.map_unordered(
+                (lambda actor, chunk: actor.call.remote(*chunk)),
+                call_args_per_task,
+            )
+        )
+
+        assert len(unordered_map_result) == num_chunks
+
+        ordered_map_result = [None for _ in range(num_chunks)]
+        for i_task, returned_chunk in unordered_map_result:
+            ordered_map_result[i_task] = returned_chunk
 
         # collect the remote results and combine the tensors
-        result = stack_chunks(ray.get(tasks), expect_chunk_sizes=chunk_size_per_actor)
+        result = stack_chunks(ordered_map_result, expect_chunk_sizes=chunk_size_per_task)
 
         return result
 
@@ -996,6 +1067,7 @@ class _DistributedFunction:
         self.problem = _DistributedFunctionHandler(
             function=wrap_info.function,
             num_actors=wrap_info.num_actors,
+            chunk_size=wrap_info.chunk_size,
             num_gpus_per_actor=wrap_info.num_gpus_per_actor,
             split_arguments=wrap_info.split_arguments,
             devices=wrap_info.devices,
@@ -1015,6 +1087,7 @@ def _prepare_distributed_function(
     *,
     split_arguments: Sequence[bool] | np.ndarray | torch.Tensor | None = None,
     num_actors: int | str | None = None,
+    chunk_size: int | None = None,
     num_gpus_per_actor: int | float | str | None = None,
     devices: Sequence[torch.device | str],
 ) -> Callable:
@@ -1085,6 +1158,7 @@ def _prepare_distributed_function(
         function=function,
         split_arguments=split_arguments,
         num_actors=num_actors,
+        chunk_size=chunk_size,
         num_gpus_per_actor=num_gpus_per_actor,
         devices=devices,
     )
@@ -1115,11 +1189,13 @@ class DecoratorForDistributingFunctions:
         *,
         split_arguments: Sequence[bool] | np.ndarray | torch.Tensor | None = None,
         num_actors: str | int | None = None,
+        chunk_size: int | None = None,
         num_gpus_per_actor: int | float | str | None = None,
         devices: Sequence[bool] | None = None,
     ):
         self.split_arguments = split_arguments
         self.num_actors = num_actors
+        self.chunk_size = chunk_size
         self.num_gpus_per_actor = num_gpus_per_actor
         self.devices = devices
 
@@ -1128,6 +1204,7 @@ class DecoratorForDistributingFunctions:
             function,
             split_arguments=self.split_arguments,
             num_actors=self.num_actors,
+            chunk_size=self.chunk_size,
             num_gpus_per_actor=self.num_gpus_per_actor,
             devices=self.devices,
         )
