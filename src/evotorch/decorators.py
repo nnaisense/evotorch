@@ -273,7 +273,7 @@ def vectorized(*args) -> Callable:
     return _simple_decorator("__evotorch_vectorized__", args, decorator_name="vectorized")
 
 
-def on_device(device: Device, *, move_only_from_cpu: bool = False) -> Callable:
+def on_device(device: Device, *, move_only_from_cpu: bool = False, chunk_size: int | None = None) -> Callable:
     """
     Transform a function so that it will compute on the specified device.
 
@@ -371,8 +371,16 @@ def on_device(device: Device, *, move_only_from_cpu: bool = False) -> Callable:
         device: The device to which the arguments will be moved.
         move_only_from_cpu: If this True, only the tensors which are on the
             cpu will be moved to the specified target tensor.
+        chunk_size: Optionally an integer. If provided as a positive integer,
+            the arguments will be split into chunks of this given size,
+            and those chunks will be sent to the target device and sent to
+            the decorated function one by one, and then the results will be
+            combined and returned. Please note that, for this feature to work,
+            the decorated function's arguments and result must have the same
+            leftmost dimension size.
     """
 
+    from ._distribute import _loosely_find_leftmost_dimension_size, split_arguments_into_chunks, stack_chunks
     from .core import Problem, Solution, SolutionBatch
     from .tools._shallow_containers import most_favored_device_among_arguments, move_shallow_container_to_device
 
@@ -410,11 +418,35 @@ def on_device(device: Device, *, move_only_from_cpu: bool = False) -> Callable:
             # This most favored device is the target device for the produced output.
             result_device = most_favored_device_among_arguments(args, slightly_favor_cpu=True)
 
-            # Move each argument to the target device, and apply the wrapped function on the moved data.
-            result_value = original_behavior(*[move_shallow_container_to_device(arg, device=device) for arg in args])
-
-            # Move the result back to the most favored device among the input arguments.
-            result_value = move_shallow_container_to_device(result_value, device=result_device)
+            if chunk_size is None:
+                # Move each argument to the target device, and apply the wrapped function on the moved data.
+                result_value = original_behavior(
+                    *[move_shallow_container_to_device(arg, device=device) for arg in args]
+                )
+                # Move the result back to the most favored device among the input arguments.
+                result_value = move_shallow_container_to_device(result_value, device=result_device)
+            else:
+                num_args = len(args)
+                chunked_args = split_arguments_into_chunks(
+                    args, [True for _ in range(num_args)], 1, chunk_size=chunk_size
+                )
+                num_chunks = len(chunked_args[0])
+                args_per_task = [[arg_chunk[i_task] for arg_chunk in chunked_args] for i_task in range(num_chunks)]
+                chunk_size_per_task = [
+                    _loosely_find_leftmost_dimension_size(args_per_task[i_task][0]) for i_task in range(num_chunks)
+                ]
+                result_value = stack_chunks(
+                    [
+                        move_shallow_container_to_device(
+                            original_behavior(
+                                *[move_shallow_container_to_device(arg, device=device) for arg in task_args]
+                            ),
+                            device=result_device,
+                        )
+                        for task_args in args_per_task
+                    ],
+                    expect_chunk_sizes=chunk_size_per_task,
+                )
 
             # Finally, we return the result here.
             return result_value
