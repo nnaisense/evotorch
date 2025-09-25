@@ -1028,7 +1028,7 @@ class _DistributedFunctionHandler(Problem):
 
         args_per_task = [[arg_chunk[i_task] for arg_chunk in chunked_args] for i_task in range(num_chunks)]
         chunk_size_per_task = [
-            _loosely_find_leftmost_dimension_size(args_per_task[i_task]) for i_task in range(num_chunks)
+            _loosely_find_leftmost_dimension_size(args_per_task[i_task][0]) for i_task in range(num_chunks)
         ]
 
         call_args_per_task = [
