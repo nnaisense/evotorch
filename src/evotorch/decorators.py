@@ -273,7 +273,12 @@ def vectorized(*args) -> Callable:
     return _simple_decorator("__evotorch_vectorized__", args, decorator_name="vectorized")
 
 
-def on_device(device: Device, *, move_only_from_cpu: bool = False, chunk_size: int | None = None) -> Callable:
+def on_device(
+    *positional_args,
+    move_only_from_cpu: bool = False,
+    chunk_size: int | None = None,
+    device: Device | None = None,
+) -> Callable:
     """
     Transform a function so that it will compute on the specified device.
 
@@ -367,6 +372,90 @@ def on_device(device: Device, *, move_only_from_cpu: bool = False, chunk_size: i
             batch.set_evals(evals)
     ```
 
+    **Specifying which arguments are to be moved to the target device.**
+    One might want to decorate, via `on_device` a function whose arguments
+    are not all tensors. For example, consider the following function:
+
+    ```python
+    def my_fn(x: torch.Tensor, s: str) -> torch.Tensor: ...
+    ```
+
+    As can be seen, the example function above has an argument `x` which can
+    be transferred to a computation device, but has another argument `s` whose
+    type is `str` and therefore cannot be subject to moving operations.
+    To tell `on_device` which arguments are subject to moving operations,
+    one can decorate `my_fn` like this:
+
+    ```python
+    @on_device("cuda", True, False)
+    def my_fn(x: torch.Tensor, s: str) -> torch.Tensor: ...
+    ```
+
+    or alternatively, like this:
+
+    ```python
+    @on_device(True, False, device="cuda")
+    def my_fn(x: torch.Tensor, s: str) -> torch.Tensor: ...
+    ```
+
+    The first boolean (True) says that the first positional argument (x) is to
+    be moved to cuda. The second boolean (False) says that the second
+    positional argument (s) is NOT to be operated on by `on_device` and to be
+    passed as it is.
+
+    **Moving the input tensors in chunks.**
+    Let us imagine that we have a function that we want to run on cuda, and
+    that this function has high memory demands. For example, if the input
+    tensor has the leftmost dimension 10, it will work, but it will raise
+    a memory error if the input tensor's leftmost dimension is larger than
+    10. In such cases, we can use the keyword argument `chunk_size`, so that
+    `on_device` will split the input tensors into chunks, and run the
+    underlying function on each chunk. Example usage:
+
+    ```python
+    @on_device("cuda", chunk_size=10)
+    def memory_hungry_fn(x: torch.Tensor) -> torch.Tensor: ...
+    ```
+
+    If the function has some non-tensor arguments, those non-tensor arguments
+    can be marked so that they will not be subject to chunking:
+
+    ```python
+    @on_device("cuda", True, False, chunk_size=10)
+    # alternatively: @on_device(True, False, chunk_size=10, device="cuda")
+    def memory_hungry_fn2(x: torch.Tensor, s: str) -> torch.Tensor: ...
+    ```
+
+    In the case of the decoration of `memory_hungry_fn2`, the first boolean
+    (True) tells that the first positional argument (x) is to be split into
+    chunks of size 10, and then each chunk is to be moved to cuda.
+    The second boolean (False) tells that the second positional argument (s)
+    is not to be split into chunks, and not to be moved to any device,
+    but to be passed as it is, for every chunk of x.
+
+    **Using `on_device` in its inline form.**
+    Instead of as a decorator, one may use `on_device` as an immediate
+    functional transformation tool. Examples:
+
+    ```python
+    transformed_function = on_device(existing_function, device="cuda")
+    ```
+
+    or if you want to mark the positional arguments of the existing
+    function:
+
+    ```python
+    transformed_function2 = on_device(existing_function2, (True, False), device="cuda")
+    ```
+
+    Inline functional transformation with chunk size:
+
+    ```python
+    transformed_function3 = on_device(
+        existing_function3, (True, False), chunk_size=10, device="cuda"
+    )
+    ```
+
     Args:
         device: The device to which the arguments will be moved.
         move_only_from_cpu: If this True, only the tensors which are on the
@@ -384,6 +473,36 @@ def on_device(device: Device, *, move_only_from_cpu: bool = False, chunk_size: i
     from .core import Problem, Solution, SolutionBatch
     from .tools._shallow_containers import most_favored_device_among_arguments, move_shallow_container_to_device
 
+    if (len(positional_args) > 1) and isinstance(positional_args[0], Callable):
+        if (len(positional_args) not in (1, 2)) or (not isinstance(positional_args[1], tuple)):
+            raise TypeError(
+                "The first argument of `on_device` is given as a callable object."
+                " In this situation, it is assumed that the user is using `on_device` not in its decorator"
+                " form, but in its inline function transformation form."
+                " The interface for inline transformation is:"
+                " `on_device(my_function, device=...)` or `on_device(my_function, tuple_of_booleans, device=...)`"
+                " where `tuple_of_booleans` is a tuple specifying which argument is to be moved to the device"
+                " (and to be split into chunks, if the keyword argument `chunk_size` is also provided)."
+                " However, the provided positional arguments do not seem to match the interface of the"
+                " inline transformation."
+            )
+        function_to_transform = positional_args[0]
+        arguments_to_process = positional_args[1]
+        return on_device(
+            *arguments_to_process,
+            move_only_from_cpu=move_only_from_cpu,
+            chunk_size=chunk_size,
+            device=device,
+        )(function_to_transform)
+
+    if device is None:
+        device = torch.device(positional_args[0])
+        positional_args = positional_args[1:]
+
+    process_args = tuple(bool(positional_arg) for positional_arg in positional_args)
+    if len(process_args) == 0:
+        process_args = None
+
     # Make sure that the device is expressed as an instance of `torch.device`
     device = torch.device(device)
 
@@ -394,6 +513,11 @@ def on_device(device: Device, *, move_only_from_cpu: bool = False, chunk_size: i
             is_evaluation_method = False
             if isinstance(args[0], Problem):
                 if (len(args) == 2) and isinstance(args[1], (Solution, SolutionBatch)):
+                    if chunk_size is not None:
+                        raise ValueError(
+                            "When decorating a `Problem` method via `@on_device` (or `@on_aux_device` or `@on_cuda`),"
+                            " `chunk_size` is not supported"
+                        )
                     is_evaluation_method = True
                 else:
                     raise TypeError(
@@ -414,32 +538,66 @@ def on_device(device: Device, *, move_only_from_cpu: bool = False, chunk_size: i
                 # So, we just pass the positional arguments to the original function:
                 return original_behavior(*args)
 
+            num_args = len(args)
+            if process_args is None:
+                which_args = [True for _ in range(num_args)]
+            else:
+                which_args = process_args
+
             # Get the most favored device among the tensors of the received arguments.
             # This most favored device is the target device for the produced output.
-            result_device = most_favored_device_among_arguments(args, slightly_favor_cpu=True)
+            result_device = most_favored_device_among_arguments(
+                [args[i_arg] for i_arg in range(num_args) if which_args[i_arg]], slightly_favor_cpu=True
+            )
+
+            first_process_arg_index = None
+            for i_arg, process_this_arg in enumerate(which_args):
+                if process_this_arg:
+                    first_process_arg_index = i_arg
+                    break
+            if first_process_arg_index is None:
+                raise ValueError(
+                    "None of the arguments is marked for moving to a device, which is not a supported configuration."
+                )
 
             if chunk_size is None:
                 # Move each argument to the target device, and apply the wrapped function on the moved data.
                 result_value = original_behavior(
-                    *[move_shallow_container_to_device(arg, device=device) for arg in args]
+                    *[
+                        (
+                            move_shallow_container_to_device(
+                                args[i_arg], device=device, move_only_from_cpu=move_only_from_cpu
+                            )
+                            if which_args[i_arg]
+                            else args[i_arg]
+                        )
+                        for i_arg in range(num_args)
+                    ]
                 )
                 # Move the result back to the most favored device among the input arguments.
                 result_value = move_shallow_container_to_device(result_value, device=result_device)
             else:
-                num_args = len(args)
-                chunked_args = split_arguments_into_chunks(
-                    args, [True for _ in range(num_args)], 1, chunk_size=chunk_size
-                )
-                num_chunks = len(chunked_args[0])
+                chunked_args = split_arguments_into_chunks(args, which_args, 1, chunk_size=chunk_size)
+                num_chunks = len(chunked_args[first_process_arg_index])
                 args_per_task = [[arg_chunk[i_task] for arg_chunk in chunked_args] for i_task in range(num_chunks)]
                 chunk_size_per_task = [
-                    _loosely_find_leftmost_dimension_size(args_per_task[i_task][0]) for i_task in range(num_chunks)
+                    _loosely_find_leftmost_dimension_size(args_per_task[i_task][first_process_arg_index])
+                    for i_task in range(num_chunks)
                 ]
                 result_value = stack_chunks(
                     [
                         move_shallow_container_to_device(
                             original_behavior(
-                                *[move_shallow_container_to_device(arg, device=device) for arg in task_args]
+                                *[
+                                    (
+                                        move_shallow_container_to_device(
+                                            task_args[i_arg], device=device, move_only_from_cpu=move_only_from_cpu
+                                        )
+                                        if which_args[i_arg]
+                                        else task_args[i_arg]
+                                    )
+                                    for i_arg in range(num_args)
+                                ]
                             ),
                             device=result_device,
                         )

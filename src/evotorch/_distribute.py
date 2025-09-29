@@ -1016,6 +1016,16 @@ class _DistributedFunctionHandler(Problem):
             raise RuntimeError("This method must be executed only from within the main actor")
         self._ensure_dummy_problem_is_parallelized()
 
+        first_split_arg_index = None
+        for i_arg, split_arg in enumerate(self._iter_split_arguments(args)):
+            if split_arg:
+                first_split_arg_index = i_arg
+                break
+        if first_split_arg_index is None:
+            raise ValueError(
+                "None of the arguments is marked for being split into chunks, which is not a supported configuration."
+            )
+
         # split the arguments into chunks, BUT ONLY IF the argument is marked via `split_arguments`
         chunked_args = split_arguments_into_chunks(
             args,
@@ -1024,11 +1034,12 @@ class _DistributedFunctionHandler(Problem):
             chunk_size=self.__chunk_size,
             target_device="cpu",
         )
-        num_chunks = len(chunked_args[0])
+        num_chunks = len(chunked_args[first_split_arg_index])
 
         args_per_task = [[arg_chunk[i_task] for arg_chunk in chunked_args] for i_task in range(num_chunks)]
         chunk_size_per_task = [
-            _loosely_find_leftmost_dimension_size(args_per_task[i_task][0]) for i_task in range(num_chunks)
+            _loosely_find_leftmost_dimension_size(args_per_task[i_task][first_split_arg_index])
+            for i_task in range(num_chunks)
         ]
 
         call_args_per_task = [
