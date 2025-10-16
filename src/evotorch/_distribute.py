@@ -446,12 +446,12 @@ def _all_are_instances(objects: Iterable, type_or_types: type | tuple[type, ...]
 
 def _all_are_non_scalars(tensors: Iterable[torch.Tensor]) -> bool:
     """
-    Return True if the given `tensors` are all scalars (0-dimensional).
+    Return True if `tensors` are all non-scalars (having 1 or more dimensions).
 
     Args:
         tensors: An iterable of PyTorch tensors.
     Returns:
-        True if all `tensors` are scalars; False otherwise.
+        True if all `tensors` are non-scalars; False otherwise.
     """
     for t in tensors:
         if t.ndim == 0:
