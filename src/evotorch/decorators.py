@@ -973,7 +973,7 @@ def expects_ndim(  # noqa: C901
                     if (cls.encountered_dtypes is None) or (cls.encountered_devices is None):
                         cls.encountered_dtypes = set()
                         cls.encountered_devices = set()
-                        for expected_arg_ndim, arg in zip(expected_ndims, args):
+                        for expected_arg_ndims, arg in zip(expected_ndims, args):
                             if (expected_arg_ndims is not None) and isinstance(arg, torch.Tensor):
                                 # If the argument has a declared expected ndim, and also if it is a PyTorch tensor,
                                 # then we add its dtype and device information to the sets `encountered_dtypes` and

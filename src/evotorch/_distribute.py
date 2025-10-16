@@ -15,11 +15,11 @@
 
 from collections.abc import Callable, Iterable, Mapping, Sequence
 from itertools import chain
+from numbers import Integral
 from threading import Lock
 from typing import Any, NamedTuple
 
 import numpy as np
-import ray
 import torch
 from ray.util import ActorPool
 
@@ -1086,7 +1086,7 @@ class _DistributedFunction:
         if hasattr(self.wrap_info.function, "__evotorch_vectorized__"):
             self.__evotorch_vectorized__ = self.wrap_info.function.__evotorch_vectorized__
         if hasattr(self.wrap_info.function, "__evotorch_pass_info__"):
-            self.__evotorch_pass_info__ = self.wrap_info.function__evotorch_pass_info__
+            self.__evotorch_pass_info__ = self.wrap_info.function.__evotorch_pass_info__
         self.__evotorch_distribute__ = True
 
     def __call__(self, *args):
@@ -1129,7 +1129,7 @@ def _prepare_distributed_function(
         split_arguments = tuple(_actual_split_arguments)
 
     if devices is None:
-        if (num_actors is None) or (num_actors <= 1):
+        if (num_actors is None) or ((isinstance(num_actors, Integral)) and (num_actors <= 1)):
             raise ValueError(
                 "The argument `devices` was received as None."
                 " When `devices` is None, `num_actors` is expected as an integer that is at least 2."
