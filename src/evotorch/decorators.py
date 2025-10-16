@@ -273,7 +273,7 @@ def vectorized(*args) -> Callable:
     return _simple_decorator("__evotorch_vectorized__", args, decorator_name="vectorized")
 
 
-def on_device(
+def on_device(  # noqa: C901
     *positional_args,
     move_only_from_cpu: bool = False,
     chunk_size: int | None = None,
@@ -473,8 +473,11 @@ def on_device(
     from .core import Problem, Solution, SolutionBatch
     from .tools._shallow_containers import most_favored_device_among_arguments, move_shallow_container_to_device
 
-    if (len(positional_args) > 1) and isinstance(positional_args[0], Callable):
-        if (len(positional_args) not in (1, 2)) or (not isinstance(positional_args[1], tuple)):
+    if (len(positional_args) >= 1) and isinstance(positional_args[0], Callable):
+        complain_about_args = (len(positional_args) not in (1, 2)) or (
+            (len(positional_args) == 2) and (not isinstance(positional_args[1], tuple))
+        )
+        if complain_about_args:
             raise TypeError(
                 "The first argument of `on_device` is given as a callable object."
                 " In this situation, it is assumed that the user is using `on_device` not in its decorator"
@@ -487,7 +490,10 @@ def on_device(
                 " inline transformation."
             )
         function_to_transform = positional_args[0]
-        arguments_to_process = positional_args[1]
+        if len(positional_args) == 1:
+            arguments_to_process = tuple()
+        else:
+            arguments_to_process = positional_args[1]
         return on_device(
             *arguments_to_process,
             move_only_from_cpu=move_only_from_cpu,
@@ -611,6 +617,7 @@ def on_device(
 
         if hasattr(original_behavior, "__evotorch_vectorized__"):
             modified_behavior.__evotorch_vectorized__ = original_behavior.__evotorch_vectorized__
+        modified_behavior.__evotorch_on_device__ = True
         modified_behavior.device = device
         if move_only_from_cpu:
             modified_behavior.__evotorch_move_only_from_cpu__ = True
@@ -730,6 +737,8 @@ def on_aux_device(*args) -> Callable:
 
     def decorator(fn: Callable) -> Callable:
         fn = on_device(target_device, move_only_from_cpu=True)(fn)
+        if hasattr(fn, "__evotorch_on_device__"):
+            del fn.__evotorch_on_device__
         fn.__evotorch_on_aux_device__ = True
         return fn
 
@@ -1017,6 +1026,7 @@ def expects_ndim(  # noqa: C901
                     if isinstance(scalar, (bool, np.bool_)):
                         # If the given scalar argument is a boolean, we declare the dtype of its tensor counterpart as
                         # torch.bool.
+                        scalar = bool(scalar)
                         dtype = torch.bool
                     else:
                         # If the given scalar argument is not a boolean, we declare the dtype of its tensor counterpart
