@@ -320,14 +320,14 @@ def split_into_chunks(
         # Here, we actively prevent objects that are technically instances of collections.abc.Sequence
         # but cannot contain any tensor/TensorFrame/ObjectArray
         raise TypeError(f"Unsupported type: {type(x)}")
+    elif isinstance(x, (torch.Tensor, TensorFrame, ObjectArray)):
+        result = _split_tensor(
+            x, num_actors, chunk_size=chunk_size, expect_size=expect_size, target_device=target_device
+        )
     elif isinstance(x, Mapping):
         result = _split_dict(x, num_actors, chunk_size=chunk_size, expect_size=expect_size, target_device=target_device)
     elif isinstance(x, Sequence):
         result = _split_sequence(
-            x, num_actors, chunk_size=chunk_size, expect_size=expect_size, target_device=target_device
-        )
-    elif isinstance(x, (torch.Tensor, TensorFrame, ObjectArray)):
-        result = _split_tensor(
             x, num_actors, chunk_size=chunk_size, expect_size=expect_size, target_device=target_device
         )
     else:
@@ -527,7 +527,7 @@ def _stack_chunked_tensors(
             raise ValueError("Received a chunk in the form of a scalar tensor, which is unexpected")
     elif _all_are_instances(chunks, ObjectArray):
         _ensure_chunk_lengths_are_valid(chunks, expect_chunk_sizes)
-        resulting_stack = as_tensor(list(chain(chunks)), dtype=object)
+        resulting_stack = as_tensor(list(chain(*chunks)), dtype=object)
         got_read_only = False
         for chunk in chunks:
             if chunk.is_read_only:
@@ -689,12 +689,12 @@ def stack_chunks(
         ValueError: if the tensor/array lengths do not match with what is
             specified within `expect_chunk_sizes`.
     """
-    if _all_are_instances(chunks, Sequence):
+    if _all_are_instances(chunks, (torch.Tensor, ObjectArray, TensorFrame)):
+        return _stack_chunked_tensors(chunks, expect_chunk_sizes=expect_chunk_sizes)
+    elif _all_are_instances(chunks, Sequence):
         return _stack_chunked_sequences(chunks, expect_chunk_sizes=expect_chunk_sizes)
     elif _all_are_instances(chunks, Mapping):
         return _stack_chunked_dicts(chunks, expect_chunk_sizes=expect_chunk_sizes)
-    elif _all_are_instances(chunks, (torch.Tensor, ObjectArray, TensorFrame)):
-        return _stack_chunked_tensors(chunks, expect_chunk_sizes=expect_chunk_sizes)
     else:
         raise TypeError(
             "Received a sequence in which some or all elements have unsupported types,"

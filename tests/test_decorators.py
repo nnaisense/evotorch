@@ -12,12 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Any
-
+import numpy as np
 import pytest
 import torch
 
 from evotorch.decorators import distribute, on_aux_device, on_cuda, on_device, pass_info, vectorized
+from evotorch.tools import ObjectArray, as_tensor
 
 
 @pytest.mark.parametrize(
@@ -226,3 +226,33 @@ def test_distribute(decoration_form: bool, distribute_config: dict, chunk_size: 
 
     assert recombined_result.shape == expected_result.shape
     assert bool(torch.all(recombined_result == expected_result))
+
+
+def test_distribute_with_objectarray():
+
+    input_array = as_tensor(
+        [
+            [1, 2, 3],
+            [5, 6],
+            [10, 20, 30, 40],
+            [100],
+        ],
+        dtype=object,
+    )
+
+    def f(x: ObjectArray) -> ObjectArray:
+        n = len(x)
+        y = ObjectArray(n)
+        for i in range(n):
+            y[i] = sum(x[i])
+        return y
+
+    distributed_f = distribute(f, devices=["cpu", "cpu"])
+
+    recombined_result = distributed_f(input_array)
+    expected_result = f(input_array)
+
+    assert isinstance(recombined_result, ObjectArray)
+    assert isinstance(expected_result, ObjectArray)
+    assert len(recombined_result) == len(expected_result)
+    assert np.all(expected_result.numpy() == recombined_result.numpy())
