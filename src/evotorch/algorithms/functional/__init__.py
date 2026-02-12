@@ -308,6 +308,7 @@ latest_center = state.center
 from .funcadam import adam, adam_ask, adam_tell
 from .funccem import cem, cem_ask, cem_tell
 from .funcclipup import clipup, clipup_ask, clipup_tell
+from .funcdcem import dcem, dcem_ask, dcem_tell
 from .funcpgpe import pgpe, pgpe_ask, pgpe_tell
 from .funcsgd import sgd, sgd_ask, sgd_tell
 
@@ -318,6 +319,9 @@ __all__ = [
     "cem",
     "cem_ask",
     "cem_tell",
+    "dcem",
+    "dcem_ask",
+    "dcem_tell",
     "clipup",
     "clipup_ask",
     "clipup_tell",
