@@ -118,7 +118,7 @@ def _probability_for_single_variable(
         if num_choices < 2:
             raise ValueError(
                 "When the population consists of non-boolean integer variables, `num_choices` must be at least 2."
-                " However, it is omitted (i.e. left as None)."
+                f" However, its value is {num_choices}."
             )
         result = torch.hstack(
             [_true_div(torch.sum(samples == i_choice), num_samples, float_dtype) for i_choice in range(num_choices - 1)]
@@ -303,7 +303,7 @@ def dcem(
         maximize = True
     else:
         raise ValueError(
-            "`objective_sense` was expected as 'min' or 'max', but it was received as: {repr(objective_sense)}."
+            f"`objective_sense` was expected as 'min' or 'max', but it was received as: {repr(objective_sense)}."
         )
 
     if num_choices is not None:
@@ -416,7 +416,7 @@ def _dcem_tell(
     return new_center
 
 
-def dcem_tell(state: DCEMState, population: torch.Tensor, evals: torch.Tensor) -> DCEMState:
+def dcem_tell(state: DCEMState, values: torch.Tensor, evals: torch.Tensor) -> DCEMState:
     """
     Given the old state and the evals (fitnesses), obtain the next state.
 
@@ -453,7 +453,7 @@ def dcem_tell(state: DCEMState, population: torch.Tensor, evals: torch.Tensor) -
         The new state of the discrete cross entropy method search.
     """
     new_center = _dcem_tell(
-        population,
+        values,
         evals,
         state.num_choices,
         state.prob_min,
