@@ -14,7 +14,7 @@
 
 
 from collections import OrderedDict
-from collections.abc import Mapping, Sequence
+from collections.abc import Iterable, Mapping, Sequence
 from io import StringIO
 from typing import Any, Callable, Optional, Union
 
@@ -307,6 +307,7 @@ class TensorFrame(RecursivePrintable):
         *,
         to_work_with: Optional[Union[str, np.str_, torch.Tensor]] = None,
         broadcast_if_scalar: bool = False,
+        validate_size: bool = False,
     ) -> torch.Tensor:
         """
         Convert the given object `x` to a PyTorch tensor.
@@ -323,6 +324,12 @@ class TensorFrame(RecursivePrintable):
                 is a scalar, its tensor-counterpart will be broadcast to a
                 vector of length `n`, where `n` is the number of rows of this
                 TensorFrame.
+            validate_size: If this argument is given as True, the size
+                belonging to the leftmost dimension `x` will be checked.
+                If it turns out that the size of `x` is incompatible with the
+                number of rows of this TensorFrame, an error will be raised.
+                Note, however, that if this TensorFrame has no tensor in it,
+                validation will not be performed at all.
         Returns:
             The tensor counterpart of `x`.
         """
@@ -351,11 +358,20 @@ class TensorFrame(RecursivePrintable):
             else:
                 result = convert(x, **(self.__get_first_tensor_device_kwargs()))
 
+        first_tensor = self.__get_first_tensor()
+
         if broadcast_if_scalar and (result.ndim == 0):
-            first_tensor = self.__get_first_tensor()
             if first_tensor is None:
                 raise ValueError("The first column cannot be given as a scalar.")
             result = result * torch.ones(first_tensor.shape[0], dtype=result.dtype, device=result.device)
+        elif validate_size:
+            if result.ndim == 0:
+                raise ValueError("Cannot use a scalar tensor as a column for a TensorFrame.")
+            if (first_tensor is not None) and (result.shape[0] != first_tensor.shape[0]):
+                raise ValueError(
+                    f"The size of the leftmost dimension of the new tensor ({result.shape[0]})"
+                    f" is not compatible with this TensorFrame's number of rows ({first_tensor.shape[0]})."
+                )
 
         return result
 
@@ -364,7 +380,7 @@ class TensorFrame(RecursivePrintable):
             raise TypeError("Cannot modify a read-only TensorFrame")
 
         column_name = str(column_name)
-        values = self.as_tensor(values, broadcast_if_scalar=True)
+        values = self.as_tensor(values, broadcast_if_scalar=True, validate_size=True)
         self.__data[column_name] = values
 
     def __getitem__(
@@ -1124,8 +1140,8 @@ class TensorFrame(RecursivePrintable):
                 "The argument `columns` was expected as a string or as a sequence of strings."
                 f" However, it was received as an instance of this unrecognized type: {type(columns)}."
             )
-        all_columns = set(self.__data.keys())
-        columns_to_drop = set(str(s) for s in columns)
+        all_columns = _OrderedSet(self.__data.keys())
+        columns_to_drop = _OrderedSet(str(s) for s in columns)
         if not columns_to_drop.issubset(all_columns):
             raise ValueError(
                 "Some of the `columns` cannot be found within the original TensorFrame,"
@@ -1151,8 +1167,8 @@ class TensorFrame(RecursivePrintable):
         original TensorFrame, the resulting TensorFrame will have a new column
         `A` with the given `new_a_values`.
         """
-        columns_to_update = set(kwargs.keys())
-        columns_already_updated = set()
+        columns_to_update = _OrderedSet(kwargs.keys())
+        columns_already_updated = _OrderedSet()
         result = TensorFrame(device=self.__device)
         for col in self.__data.keys():
             if col in columns_to_update:
@@ -1310,9 +1326,9 @@ class Picker:
         index, columns = self.__unpack_location(location)
 
         if isinstance(new_values, TensorFrame):
-            incoming_columns = set(new_values.columns)
+            incoming_columns = _OrderedSet(new_values.columns)
         elif isinstance(new_values, Mapping):
-            incoming_columns = set(new_values.keys())
+            incoming_columns = _OrderedSet(new_values.keys())
         elif isinstance(new_values, (np.ndarray, torch.Tensor, Sequence)):
             if len(columns) != 1:
                 raise ValueError(
@@ -1320,7 +1336,7 @@ class Picker:
                     " there must be only one target column on the left-hand side of the assignment."
                     f" However, the number of target columns is {len(columns)}."
                 )
-            incoming_columns = set(columns)
+            incoming_columns = _OrderedSet(columns)
             [only_column] = columns
             new_values = {only_column: new_values}
         else:
@@ -1331,8 +1347,120 @@ class Picker:
                 f" However, the encountered right-hand side object has this unrecognized type: {type(new_values)}."
             )
 
-        if set(columns) != incoming_columns:
+        if _OrderedSet(columns) != incoming_columns:
             raise ValueError("The columns of the left-hand side do not match the columns of the right-hand side")
 
         for col in columns:
             self.__frame[col] = _set_values(self.__frame[col], index, new_values[col])
+
+
+class _OrderedSet:
+    """
+    Like Python's native `set`, but that preserves order of items.
+    """
+
+    def __init__(self, items: Optional[Iterable] = None):
+        """
+        `__init__(...)`: Initialize the ordered set.
+
+        Args:
+            items: An iterable that contains the items to put into the
+                ordered set.
+        """
+        self.__items = OrderedDict()
+        if items is not None:
+            for item in items:
+                self.__items[item] = None
+
+    @classmethod
+    def ensure_ordered_set(cls, items: Iterable) -> "_OrderedSet":
+        """
+        Return the ordered set counterpart of the given iterable.
+
+        Args:
+            items: An iterable of objects. If this is already an ordered set,
+                this argument itself will be returned. Otherwise, an ordered
+                set will be formed containing these items, and this newly
+                made ordered set will be returned.
+        Returns:
+            The ordered set counterpart of the given items.
+        """
+        if isinstance(items, _OrderedSet):
+            return items
+        return _OrderedSet(items)
+
+    def add(self, item: Any):
+        """
+        Put an item into the set.
+
+        If the item already exists, the ordered set is left unmodified.
+
+        Args:
+            item: The item to put into the ordered set.
+        """
+        self.__items[item] = None
+
+    def difference(self, other: Iterable) -> "_OrderedSet":
+        """
+        Result of subtracting the other set from this ordered set.
+
+        Args:
+            other: An iterable of items, representing the other set of items.
+        Returns:
+            Result of subtracting the other set from this ordered set.
+        """
+        other = self.ensure_ordered_set(other)
+        result = _OrderedSet()
+        for item in self.__items:
+            if item not in other:
+                result.add(item)
+        return result
+
+    def __len__(self) -> int:
+        """Number of items within the ordered set."""
+        return len(self.__items)
+
+    def __contains__(self, item: Any) -> bool:
+        """Return True if the specified item exists within the ordered set"""
+        return item in self.__items
+
+    def __iter__(self):
+        """Iterate over the contained items"""
+        for item in self.__items.keys():
+            yield item
+
+    def issubset(self, other: Iterable) -> bool:
+        """
+        Return True if this ordered set is a subset of the other set.
+
+        Args:
+            other: An iterable of items which represents the other set.
+        Returns:
+            True if this ordered set is a subset of the other; False otherwise.
+        """
+        other = self.ensure_ordered_set(other)
+        if len(self) > len(other):
+            return False
+        for item in self.__items:
+            if item not in other:
+                return False
+        return True
+
+    def __eq__(self, other: Iterable) -> bool:
+        other = self.ensure_ordered_set(other)
+        if len(other) != len(self):
+            return False
+        for item in other:
+            if item not in self:
+                return False
+        return True
+
+    def __to_string(self) -> str:
+        clsname = type(self).__name__
+        return f"{clsname}({list(self)})"
+
+    def __str__(self) -> str:
+        return self.__to_string()
+
+    def __repr__(self) -> str:
+        return self.__to_string()
