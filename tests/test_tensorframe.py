@@ -447,3 +447,23 @@ def test_drop():
 
     with pytest.raises(ValueError):
         tbl2.drop(columns=["Y"])
+
+
+def test_scalar_broadcasting():
+    tolerance = 1e-4
+
+    tbl1 = TensorFrame()
+    with pytest.raises(ValueError):
+        tbl1["A"] = 10.0
+
+    tbl2 = TensorFrame({"A": [1.0, 2.0, 3.0]})
+    tbl2["B"] = 10.0
+
+    assert tbl2.columns == ["A", "B"]
+    assert_allclose(tbl2.B, [10.0, 10.0, 10.0], atol=tolerance)
+
+
+def test_erroneously_sized_column_tensor():
+    tbl = TensorFrame({"A": [1, 2, 3]})
+    with pytest.raises(ValueError):
+        tbl["C"] = [-1, -2, -3, -4]
