@@ -402,7 +402,7 @@ def test_with_columns():
         B=[4, 5, 6],
         C=7,
     )
-    assert set(tbl.columns) == set(["A", "B", "C"])
+    assert tbl.columns == ["A", "B", "C"]
     assert_allclose(tbl.B, [4, 5, 6], atol=tolerance)
     assert_allclose(tbl.C, [7, 7, 7], atol=tolerance)
 
@@ -412,6 +412,58 @@ def test_with_columns():
     )
 
     assert tbl.is_read_only
-    assert set(tbl.columns) == set(["A", "B", "C", "Z"])
+    assert tbl.columns == ["A", "B", "C", "Z"]
     assert_allclose(tbl.A, [10, 20, 30], atol=tolerance)
     assert_allclose(tbl.Z, [100, 200, 300], atol=tolerance)
+
+
+def test_drop():
+    tolerance = 1e-4
+
+    tbl = TensorFrame(
+        dict(
+            A=[1, 2, 3],
+            B=[10, 20, 30],
+            C=[100, 200, 300],
+            D=[1000, 2000, 3000],
+        ),
+    )
+
+    tbl2 = tbl.drop(columns=["B", "C"])
+
+    assert tbl.columns == ["A", "B", "C", "D"]
+    assert_allclose(tbl.A, [1, 2, 3], atol=tolerance)
+    assert_allclose(tbl.B, [10, 20, 30], atol=tolerance)
+    assert_allclose(tbl.C, [100, 200, 300], atol=tolerance)
+    assert_allclose(tbl.D, [1000, 2000, 3000], atol=tolerance)
+
+    assert tbl2.columns == ["A", "D"]
+    assert_allclose(tbl2.A, [1, 2, 3], atol=tolerance)
+    assert_allclose(tbl2.D, [1000, 2000, 3000], atol=tolerance)
+
+    with pytest.raises(ValueError):
+        tbl2 = tbl2.drop(columns=["A", "Z"])
+    assert tbl2.columns == ["A", "D"]
+
+    with pytest.raises(ValueError):
+        tbl2.drop(columns=["Y"])
+
+
+def test_scalar_broadcasting():
+    tolerance = 1e-4
+
+    tbl1 = TensorFrame()
+    with pytest.raises(ValueError):
+        tbl1["A"] = 10.0
+
+    tbl2 = TensorFrame({"A": [1.0, 2.0, 3.0]})
+    tbl2["B"] = 10.0
+
+    assert tbl2.columns == ["A", "B"]
+    assert_allclose(tbl2.B, [10.0, 10.0, 10.0], atol=tolerance)
+
+
+def test_erroneously_sized_column_tensor():
+    tbl = TensorFrame({"A": [1, 2, 3]})
+    with pytest.raises(ValueError):
+        tbl["C"] = [-1, -2, -3, -4]
