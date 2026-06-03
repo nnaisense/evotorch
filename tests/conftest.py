@@ -12,11 +12,24 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import os
 import random
-from pathlib import Path
+import sys
 
 import numpy as np
-import ray
+import torch
+
+# Insert the path of the mock ray implementation to the path list of Python.
+# The mock ray implementation within the directory _mock-site-packages/ does not create remote actors,
+# and instead executes the tasks in sequence.
+# This mock ray implementation is used as a replacement for the now-obsolete local mode of the actual
+# ray library.
+_TESTS_DIR = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, os.path.join(_TESTS_DIR, "_mock-site-packages"))
+
+import ray  # noqa: E402
+
+assert ray._THIS_IS_MOCK
 
 SEED = 0
 
@@ -24,20 +37,8 @@ SEED = 0
 def pytest_sessionstart(session):
     random.seed(SEED)
     np.random.seed(SEED)
-
-    ray.init(
-        num_cpus=1,
-        log_to_driver=False,
-        local_mode=True,
-        include_dashboard=False,
-        object_store_memory=256 * 1024**2,
-        _memory=512 * 1024**2,
-        _system_config={
-            "object_timeout_milliseconds": 200,
-            # "num_heartbeats_timeout": 10,
-            "object_store_full_delay_ms": 100,
-        },
-    )
+    torch.manual_seed(SEED)
+    # ray.init()  # Let us not do ray.init() and test if EvoTorch initializes ray by itself
 
 
 def pytest_sessionfinish(session, exitstatus):
