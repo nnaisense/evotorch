@@ -29,6 +29,8 @@ sys.path.insert(0, os.path.join(_TESTS_DIR, "_mock-site-packages"))
 
 import ray  # noqa: E402
 
+assert ray._THIS_IS_MOCK
+
 SEED = 0
 
 
