@@ -117,7 +117,7 @@ def test_mlflow_logger(set_client, set_run, raises, tmpdir, searcher_gym):
 
         from evotorch.logging import MlflowLogger
 
-        mlflow.set_tracking_uri(f"file://{tmpdir}")
+        mlflow.set_tracking_uri(f"sqlite:///{tmpdir}/tmp.db")
         experiment_id = mlflow.create_experiment(f"exp_{set_client:d}{set_run:d}{raises:d}")
         client = mlflow.tracking.MlflowClient() if set_client else None
         run = mlflow.start_run(experiment_id=experiment_id)
