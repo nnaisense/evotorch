@@ -47,11 +47,9 @@ def test_str_to_net_with_kwargs_and_spaces_and_comments():
 
 
 def test_str_to_net_with_kwargs_and_spaces_and_comments_and_newlines():
-    net = str_to_net(
-        """Linear( in_features = 4 , out_features = 2 ) # comment
+    net = str_to_net("""Linear( in_features = 4 , out_features = 2 ) # comment
 
-    """
-    )
+    """)
     assert isinstance(net, torch.nn.Linear)
     assert net.in_features == 4
     assert net.out_features == 2
@@ -74,14 +72,12 @@ def test_str_to_net_more_complex():
 
 
 def test_str_to_net_more_complex_multiline():
-    net = str_to_net(
-        """
+    net = str_to_net("""
         Linear(8, 16)
         >> Tanh()
         >> Linear(16, 4, bias=False)
         >> ReLU()
-        """
-    )
+        """)
 
     assert isinstance(net, MultiLayered)
     assert len(net) == 4
