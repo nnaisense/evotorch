@@ -29,9 +29,7 @@ from .tools import (
 )
 from .tools import multiply_rows_by_scalars as dot
 from .tools import rowwise_sum as total
-from .tools import (
-    to_torch_dtype,
-)
+from .tools import to_torch_dtype
 from .tools.cloning import Serializable, deep_clone
 from .tools.ranking import rank
 from .tools.tensormaker import TensorMakerMixin
