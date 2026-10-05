@@ -132,7 +132,6 @@ print(pop_best_cost)
 ```
 """
 
-
 from typing import Iterable, NamedTuple, Optional, Union
 
 import torch

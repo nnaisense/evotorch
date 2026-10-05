@@ -16,7 +16,6 @@
 This namespace contains various utility functions, classes, and type aliases.
 """
 
-
 __all__ = (
     "BatchableScalar",
     "BatchableVector",
