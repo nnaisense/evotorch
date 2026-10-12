@@ -1658,7 +1658,7 @@ class SyncVectorEnv(BaseVectorEnv):
         if self.__random_state is None:
             return [{} for _ in range(self.num_envs)]
         else:
-            seeds = self.__random_state.randint(0, 2**32, self.num_envs)
+            seeds = self.__random_state.randint(0, 2**32, self.num_envs, dtype=np.int64)
             result = [{"seed": int(seed_integer)} for seed_integer in seeds]
             self.__random_state = None
             return result

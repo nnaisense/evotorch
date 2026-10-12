@@ -13,14 +13,29 @@
 # limitations under the License.
 
 
+import gymnasium as gym
+import numpy as np
 import torch
 from torch import nn
 
 from evotorch.neuroevolution.net import fill_parameters, parameter_vector
 from evotorch.neuroevolution.net.layers import LSTM, RNN
-from evotorch.neuroevolution.net.vecrl import Policy, reset_tensors
+from evotorch.neuroevolution.net.vecrl import Policy, SyncVectorEnv, reset_tensors
 from evotorch.testing import assert_allclose
 from evotorch.tools import clone
+
+
+def test_sync_vector_env_seeding_with_32bit_default_int(monkeypatch):
+    # On some platforms (e.g. Windows), `numpy.random.RandomState.randint` defaults to a 32-bit integer dtype.
+    # We emulate this here, and ensure that the seeding of `SyncVectorEnv` does not depend on the default dtype.
+    class _RandomStateWith32BitDefault(np.random.RandomState):
+        def randint(self, low, high=None, size=None, dtype=np.int32):
+            return super().randint(low, high, size, dtype)
+
+    monkeypatch.setattr(np.random, "RandomState", _RandomStateWith32BitDefault)
+
+    env = SyncVectorEnv([lambda: gym.make("CartPole-v1") for _ in range(3)])
+    env.reset(seed=0)
 
 
 def test_reset_tensors_simple():
