@@ -17,9 +17,8 @@ from copy import copy, deepcopy
 import numpy as np
 import pytest
 
-from evotorch.tools import clone
+from evotorch.tools import clone, make_tensor, storage_ptr
 from evotorch.tools import immutable as imm
-from evotorch.tools import make_tensor, storage_ptr
 from evotorch.tools.objectarray import ObjectArray
 
 
